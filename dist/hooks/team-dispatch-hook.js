@@ -277,6 +277,13 @@ function paneIsBootstrapping(captured) {
         || /\bmodel:\s*loading\b/i.test(line)
         || /\bconnecting\s+to\b/i.test(line));
 }
+function paneLineLooksLikeIdlePrompt(line) {
+    // Claude Code can render its idle input prompt inside a box/left gutter
+    // (for example "│ ❯"). Treat that as ready while still requiring the prompt
+    // glyph to be at the visual start of the line, not embedded in arbitrary
+    // output text.
+    return /^\s*(?:[│┃║▌▐▏▕╎┆┊]\s*)?[›>❯]\s*/u.test(line);
+}
 function paneLooksReady(captured) {
     const content = safeString(captured).trimEnd();
     if (content === '')
@@ -288,13 +295,9 @@ function paneLooksReady(captured) {
     if (paneIsBootstrapping(content))
         return false;
     const lastLine = lines.length > 0 ? lines[lines.length - 1] : '';
-    if (/^\s*[›>❯]\s*/u.test(lastLine))
+    if (paneLineLooksLikeIdlePrompt(lastLine))
         return true;
-    const hasCodexPromptLine = lines.some((line) => /^\s*›\s*/u.test(line));
-    const hasClaudePromptLine = lines.some((line) => /^\s*❯\s*/u.test(line));
-    if (hasCodexPromptLine || hasClaudePromptLine)
-        return true;
-    return false;
+    return lines.some(paneLineLooksLikeIdlePrompt);
 }
 async function runProcess(cmd, args, timeoutMs) {
     const { execFile } = await import('child_process');
