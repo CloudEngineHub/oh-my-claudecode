@@ -139,6 +139,9 @@ function buildSessionStartAdditionalContext(messages) {
     return selected.join("\n");
 }
 function readLinuxBootId() {
+    const testBootId = process.env.OMC_TEST_BOOT_ID?.trim();
+    if (testBootId)
+        return testBootId;
     try {
         if (!existsSync(LINUX_BOOT_ID_PATH))
             return undefined;
@@ -1630,22 +1633,63 @@ The CLAUDE.md instruction "Pass model on Task calls: haiku, sonnet, opus" applie
     }
     return { continue: true };
 }
+function stringOrUndefined(value) {
+    return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+export function extractAskUserQuestionPrompts(toolInput) {
+    const input = toolInput;
+    const questions = Array.isArray(input?.questions) ? input.questions : [];
+    return questions
+        .map((question) => {
+        const questionText = stringOrUndefined(question.question);
+        if (!questionText)
+            return null;
+        const rawOptions = Array.isArray(question.options) ? question.options : [];
+        const options = rawOptions
+            .map((option) => {
+            const label = stringOrUndefined(option.label);
+            if (!label)
+                return null;
+            const value = stringOrUndefined(option.value);
+            const description = stringOrUndefined(option.description);
+            return {
+                label,
+                ...(value ? { value } : {}),
+                ...(description ? { description } : {}),
+            };
+        })
+            .filter((option) => option !== null);
+        const allowOther = question.allowOther ?? question.allow_other;
+        const otherLabel = stringOrUndefined(question.otherLabel ?? question.other_label);
+        const multiSelect = question.multiSelect ?? question.multi_select;
+        const header = stringOrUndefined(question.header);
+        return {
+            question: questionText,
+            ...(header ? { header } : {}),
+            options,
+            allowOther: allowOther === false ? false : true,
+            otherLabel: otherLabel ?? "Other",
+            multiSelect: multiSelect === true,
+        };
+    })
+        .filter((question) => question !== null);
+}
 /**
  * Fire-and-forget notification for AskUserQuestion (issue #597).
  * Extracted for testability; the dynamic import makes direct assertion
  * on the notify() call timing-sensitive, so tests spy on this wrapper instead.
  */
 export function dispatchAskUserQuestionNotification(sessionId, directory, toolInput) {
-    const input = toolInput;
-    const questions = input?.questions || [];
-    const questionText = questions
-        .map((q) => q.question || "")
+    const prompts = extractAskUserQuestionPrompts(toolInput);
+    const questionText = prompts
+        .map((q) => q.question)
         .filter(Boolean)
         .join("; ") || "User input requested";
     dispatchNotificationInBackground("ask-user-question", {
         sessionId,
         projectPath: directory,
         question: questionText,
+        askUserQuestionPrompts: prompts,
         profileName: process.env.OMC_NOTIFY_PROFILE,
     });
 }

@@ -3429,14 +3429,21 @@ function assertCleanLeaderWorktree(repoRoot) {
     throw error;
   }
 }
+function canonicalPathForComparison(path4) {
+  try {
+    return (0, import_node_fs.realpathSync)(path4);
+  } catch {
+    return (0, import_node_path.resolve)(path4);
+  }
+}
 function getRegisteredWorktreeBranch(repoRoot, wtPath) {
   try {
     const output = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = (0, import_node_path.resolve)(wtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
     let currentMatches = false;
     for (const line of output.split("\n")) {
       if (line.startsWith("worktree ")) {
-        currentMatches = (0, import_node_path.resolve)(line.slice("worktree ".length).trim()) === resolvedWtPath;
+        currentMatches = canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath;
         continue;
       }
       if (!currentMatches) continue;
@@ -3450,8 +3457,8 @@ function getRegisteredWorktreeBranch(repoRoot, wtPath) {
 function isRegisteredWorktreePath(repoRoot, wtPath) {
   try {
     const output = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = (0, import_node_path.resolve)(wtPath);
-    return output.split("\n").some((line) => line.startsWith("worktree ") && (0, import_node_path.resolve)(line.slice("worktree ".length).trim()) === resolvedWtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
+    return output.split("\n").some((line) => line.startsWith("worktree ") && canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath);
   } catch {
     return false;
   }

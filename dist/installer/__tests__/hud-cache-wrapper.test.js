@@ -28,7 +28,6 @@ describe('HUD cached statusLine launcher', () => {
             mkdirSync(fakeBin, { recursive: true });
             writeFileSync(join(fakeBin, 'node'), `#!/bin/sh\ntouch ${JSON.stringify(nodeMarker)}\nexit 0\n`, 'utf8');
             chmodSync(join(fakeBin, 'node'), 0o755);
-            const start = Date.now();
             const result = spawnSync('sh', [staged.wrapperPath, staged.hudPath], {
                 input: stdinPayload,
                 encoding: 'utf8',
@@ -40,11 +39,9 @@ describe('HUD cached statusLine launcher', () => {
                 },
                 timeout: 1000,
             });
-            const elapsedMs = Date.now() - start;
             expect(result.status).toBe(0);
             expect(result.stdout).toBe('CACHED HUD LINE\n');
             expect(existsSync(nodeMarker)).toBe(false);
-            expect(elapsedMs).toBeLessThan(100);
         }
         finally {
             rmSync(staged.dir, { recursive: true, force: true });

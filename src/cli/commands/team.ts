@@ -19,8 +19,8 @@ import type { CliAgentType } from '../../team/model-contract.js';
 import type { TeamTaskDelegationPlan } from '../../team/types.js';
 import { loadConfig } from '../../config/loader.js';
 import { existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { tmuxExec } from '../tmux-utils.js';
 
 const HELP_TOKENS = new Set(['--help', '-h', 'help']);
 const MIN_WORKER_COUNT = 1;
@@ -287,7 +287,7 @@ function isTeamStateLive(config: { tmux_session?: string } | null): boolean {
   const target = typeof config?.tmux_session === 'string' ? config.tmux_session.trim() : '';
   if (!target) return false;
   try {
-    execFileSync('tmux', ['has-session', '-t', target], { stdio: 'ignore' });
+    tmuxExec(['has-session', '-t', target], { stdio: 'ignore' });
     return true;
   } catch {
     return false;

@@ -1,41 +1,45 @@
-# oh-my-claudecode v4.14.0: ultragoal port, autopilot/team launch hardening, plugin skill registry
+# oh-my-claudecode v4.14.1: goal workflow polish, launch reliability, diagnostics hardening
 
 ## Release Notes
 
-Release with **1 new feature**, **11 bug fixes / hardening changes** across **12 merged PRs**.
+Patch release with **19 user-facing fixes / hardening changes** across goal workflows, team launch, diagnostics, HUD, MCP/profile handling, and Claude Code v2.1.x compatibility.
 
 ### Highlights
 
-- **feat(ultragoal): port OMX ultragoal to OMC** (#2995) — durable multi-goal workflow with `omc ultragoal` CLI, persisted plan/ledger artifacts under `.omc/ultragoal`, and Claude Code `/goal` handoff guidance. Checkpointing fails closed: only the active in-progress microgoal can be completed, failed, or blocked.
-- **Preserve Claude Code across OMC updates** (#2997) — `omc update` now snapshots the global `@anthropic-ai/claude-code` install before running and restores it if the OMC update path removes it; users without a prior global Claude Code install are left untouched.
-- **Keep plugin skill registry concise** (#2989) — re-register every bundled plugin skill now that plugin cache sync compacts native `skills/*/SKILL.md` files into small registry shims, while preserving full on-demand skill bodies under `skill-bodies/*/SKILL.md` (loaded via a Windows-safe `omc-full-body` pointer at invocation time).
-
-### New Features
-
-- **feat(ultragoal): port OMX ultragoal to OMC** (#2995) — @probepark
+- **Goal workflow polish** (#3004, #3005, #3006) — document the Claude `/goal` adapter boundary, clarify workflow UX expectations, and map goal artifacts to OMC storage roots so durable goal state is easier to reason about across sessions.
+- **Team launch reliability** — keep Claude prompt delivery working from TUI idle state, handle Claude Code v2.1.x banner / Enter-swallow stalls, and preserve OSC 52 clipboard behavior in OMC tmux sessions.
+- **Tooling and integration hardening** — preserve MCP registry headers and launch-profile MCP availability, keep upgrade CI deterministic before publish, and surface LSP install hints from aggregated diagnostics.
 
 ### Bug Fixes & Hardening
 
-- **Fix team launch fixed worker plans** (#3011) — honor explicit `N:agent` worker specs for fixed/pre-authored team launch plans, add `--no-decompose`, fail closed when explicit worker count and decomposed scope count disagree, ignore dead tmux-backed stale team state during spawn gating.
-- **fix(pre-tool-enforcer): cover extra naming slop boundary** (#3013) — neutral domain qualifiers like `extra`/`additional` (e.g. `extraSecretFetch`, `extraSecrets []extraSecretFetch`) no longer trigger the SLOP fallback warning.
-- **Harden HUD cache stale lock cleanup** (#3003) — resolve the HUD cache dir before cleanup, GC stale render locks early, remove only zero-byte HUD temp/error files (preserve non-empty diagnostics), and clean up render locks and stdout temp files on background-refresh EXIT/signal without blocking the statusLine hot path.
-- **Fix autopilot state cleanup stop-hook loop** (#3001) — make persistent-mode autopilot enforcement read `phase ?? current_phase ?? "unspecified"`, clean orphan autopilot routing echoes, prevent `state_clear` from clearing a live singleton autopilot owned by another session, and write/read autopilot `phase`/`current_phase` aliases for compatibility.
-- **Preserve Claude Code across OMC updates** (#2997) — see Highlights.
-- **Fix doctor warning for synced omc-reference fallback** (#2993) — suppress doctor legacy-skill collision warnings only when `~/.claude/skills/omc-reference/SKILL.md` byte-for-byte matches the bundled fallback; modified copies and non-contract `omc-reference.md` legacy files still warn.
-- **Suppress persistent reinforcement after oversized tool redirects** (#2990) — focused Stop classifier requires both a `tool-results/*.txt` pointer and oversize/redirect wording; reinforcement is suppressed only for the first few consecutive redirect stops, then normal Ralph/todo stall protection resumes.
-- **Keep plugin skill registry concise** (#2989) — see Highlights.
-- **Fix doctor package version lookup** (#2982).
-- **Fix launch credential mirroring** (#2979).
-- **Fix cancel-ralph skill alias** (#2974).
+- Map goal artifacts to OMC storage roots (#3006).
+- Clarify goal workflow UX boundaries (#3005).
+- Document Claude `/goal` adapter boundary (#3004).
+- Preserve MCP registry headers (#3054).
+- Fix gyoshu bridge exec sandbox.
+- Preserve AskUserQuestion mobile reply round-trip.
+- Fix AskUserQuestion verbosity override.
+- Surface LSP install hints from `runLspAggregatedDiagnostics` (#3040, #3049).
+- Enable Vue LSP catalog discovery (#3035).
+- Clear local worktree state on cancel fallback (#3033).
+- Show Claude model metadata in OMC HUD (#3022).
+- Guard deep-interview plugin invocation (#3031).
+- Expose deep-interview threshold source before scoring (#3029).
+- Guard plugin manifest hook autoloading.
+- Deliver Claude prompts from TUI idle state.
+- Handle Claude Code v2.1.x banner and Enter-swallow stalls.
+- Keep OSC 52 clipboard working in OMC tmux sessions.
+- Preserve MCP availability in OMC launch profiles.
+- Keep upgrade CI deterministic before npm publish.
 
 ### Stats
 
-- **12 PRs merged** | **1 new feature** | **11 bug fixes / hardening changes**
+- **19 post-4.14.0 changes** | **patch release** | **goal, team, diagnostics, HUD, and integration hardening**
 
 ### Install / Update
 
 ```bash
-npm install -g oh-my-claude-sisyphus@4.14.0
+npm install -g oh-my-claude-sisyphus@4.14.1
 ```
 
 Or reinstall the plugin:
@@ -43,10 +47,10 @@ Or reinstall the plugin:
 claude /install-plugin oh-my-claudecode
 ```
 
-**Full Changelog**: https://github.com/Yeachan-Heo/oh-my-claudecode/compare/v4.13.7...v4.14.0
+**Full Changelog**: https://github.com/Yeachan-Heo/oh-my-claudecode/compare/v4.14.0...v4.14.1
 
 ## Contributors
 
 Thank you to all contributors who made this release possible!
 
-@probepark @Yeachan-Heo
+@Yeachan-Heo @Taeknology @snowlaxc

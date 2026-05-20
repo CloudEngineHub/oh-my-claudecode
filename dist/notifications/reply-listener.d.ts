@@ -15,6 +15,7 @@
  *
  * Follows the daemon pattern from src/features/rate-limit-wait/daemon.ts
  */
+import { type SessionMapping } from './session-registry.js';
 import type { ReplyConfig } from './types.js';
 import { SlackConnectionStateTracker, type SlackValidationResult } from './slack-socket.js';
 /** Reply listener daemon state */
@@ -84,6 +85,19 @@ declare class RateLimiter {
     canProceed(): boolean;
     reset(): void;
 }
+/**
+ * Inject reply text into a tmux pane after verification and sanitization.
+ *
+ * Returns true if injection succeeded, false otherwise.
+ */
+export type ReplyInjectionStep = {
+    kind: 'literal';
+    value: string;
+} | {
+    kind: 'key';
+    value: string;
+};
+export declare function buildReplyInjectionSteps(text: string, platform: string, config: Pick<ReplyListenerDaemonConfig, 'includePrefix' | 'maxMessageLength'>, mapping?: Pick<SessionMapping, 'event' | 'askUserQuestionOptionCount' | 'askUserQuestionAllowOther'>): ReplyInjectionStep[];
 /**
  * Main daemon polling loop
  */

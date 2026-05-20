@@ -11,8 +11,8 @@ import { TEAM_API_OPERATIONS, resolveTeamApiOperation, executeTeamApiOperation, 
 import { inferDelegationPlanForTeamTask } from '../../team/delegation-evidence.js';
 import { loadConfig } from '../../config/loader.js';
 import { existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { tmuxExec } from '../tmux-utils.js';
 const HELP_TOKENS = new Set(['--help', '-h', 'help']);
 const MIN_WORKER_COUNT = 1;
 const MAX_WORKER_COUNT = 20;
@@ -220,7 +220,7 @@ function isTeamStateLive(config) {
     if (!target)
         return false;
     try {
-        execFileSync('tmux', ['has-session', '-t', target], { stdio: 'ignore' });
+        tmuxExec(['has-session', '-t', target], { stdio: 'ignore' });
         return true;
     }
     catch {

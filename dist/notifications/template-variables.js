@@ -83,6 +83,11 @@ export const TEMPLATE_VARIABLES = {
         example: 'Which file should I edit?',
         availableIn: ['ask-user-question']
     },
+    questionOptions: {
+        description: 'Formatted AskUserQuestion options, including the Other/free-text choice when available',
+        example: '1. PostgreSQL — relational DB\n2. Other — reply with free text',
+        availableIn: ['ask-user-question']
+    },
     // Mode info
     activeMode: {
         description: 'Currently active OMC mode',

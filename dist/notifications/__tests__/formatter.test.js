@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatSessionIdle, formatSessionEnd, formatAgentCall, formatNotification, parseTmuxTail, } from "../formatter.js";
+import { formatSessionIdle, formatSessionEnd, formatAgentCall, formatNotification, parseTmuxTail, formatAskUserQuestion, } from "../formatter.js";
 describe("formatSessionIdle", () => {
     const basePayload = {
         event: "session-idle",
@@ -452,6 +452,35 @@ describe("tmuxTail in formatters", () => {
         expect(result).toContain("**Recent output:**");
         expect(result).toContain("Build complete");
         expect(result).toContain("Done in 5.2s");
+    });
+});
+describe("formatAskUserQuestion", () => {
+    it("includes AskUserQuestion options and the free-text Other choice", () => {
+        const result = formatAskUserQuestion({
+            event: "ask-user-question",
+            sessionId: "sess-3039",
+            message: "",
+            timestamp: new Date("2026-05-19T00:00:00Z").toISOString(),
+            projectPath: "/tmp/project",
+            question: "Which database should we use?",
+            askUserQuestionPrompts: [
+                {
+                    question: "Which database should we use?",
+                    header: "Database",
+                    options: [
+                        { label: "PostgreSQL", description: "Relational DB" },
+                        { label: "MongoDB", description: "Document DB" },
+                    ],
+                    allowOther: true,
+                    otherLabel: "Other",
+                    multiSelect: false,
+                },
+            ],
+        });
+        expect(result).toContain("**Options:**");
+        expect(result).toContain("1. PostgreSQL — Relational DB");
+        expect(result).toContain("2. MongoDB — Document DB");
+        expect(result).toContain("3. Other — reply with free text");
     });
 });
 //# sourceMappingURL=formatter.test.js.map

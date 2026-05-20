@@ -68,6 +68,19 @@ export interface SlackBotNotificationConfig {
     mention?: string;
 }
 /** Generic webhook configuration */
+export interface AskUserQuestionOption {
+    label: string;
+    value?: string;
+    description?: string;
+}
+export interface AskUserQuestionPrompt {
+    question: string;
+    header?: string;
+    options: AskUserQuestionOption[];
+    allowOther?: boolean;
+    otherLabel?: string;
+    multiSelect?: boolean;
+}
 export interface WebhookNotificationConfig {
     enabled: boolean;
     /** Webhook URL (POST with JSON body) */
@@ -152,6 +165,8 @@ export interface NotificationPayload {
     maxIterations?: number;
     /** Question text (for ask-user-question events) */
     question?: string;
+    /** Structured AskUserQuestion prompts/options preserved from tool input */
+    askUserQuestionPrompts?: AskUserQuestionPrompt[];
     /** Incomplete task count */
     incompleteTasks?: number;
     /** tmux pane ID for reply injection target */

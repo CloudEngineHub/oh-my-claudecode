@@ -5192,7 +5192,7 @@ var init_file_lock = __esm({
 });
 
 // src/team/git-worktree.ts
-import { existsSync as existsSync10, readFileSync as readFileSync7, readdirSync as readdirSync3, rmSync as rmSync2, unlinkSync as unlinkSync4, writeFileSync as writeFileSync2 } from "node:fs";
+import { existsSync as existsSync10, realpathSync as realpathSync2, readFileSync as readFileSync7, readdirSync as readdirSync3, rmSync as rmSync2, unlinkSync as unlinkSync4, writeFileSync as writeFileSync2 } from "node:fs";
 import { join as join15, resolve as resolve3 } from "node:path";
 import { execFileSync as execFileSync3 } from "node:child_process";
 function getWorktreePath(repoRoot, teamName, workerName) {
@@ -5220,14 +5220,21 @@ function assertCleanLeaderWorktree(repoRoot) {
     throw error;
   }
 }
+function canonicalPathForComparison(path4) {
+  try {
+    return realpathSync2(path4);
+  } catch {
+    return resolve3(path4);
+  }
+}
 function getRegisteredWorktreeBranch(repoRoot, wtPath) {
   try {
     const output2 = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = resolve3(wtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
     let currentMatches = false;
     for (const line of output2.split("\n")) {
       if (line.startsWith("worktree ")) {
-        currentMatches = resolve3(line.slice("worktree ".length).trim()) === resolvedWtPath;
+        currentMatches = canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath;
         continue;
       }
       if (!currentMatches) continue;
@@ -5241,8 +5248,8 @@ function getRegisteredWorktreeBranch(repoRoot, wtPath) {
 function isRegisteredWorktreePath(repoRoot, wtPath) {
   try {
     const output2 = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = resolve3(wtPath);
-    return output2.split("\n").some((line) => line.startsWith("worktree ") && resolve3(line.slice("worktree ".length).trim()) === resolvedWtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
+    return output2.split("\n").some((line) => line.startsWith("worktree ") && canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath);
   } catch {
     return false;
   }

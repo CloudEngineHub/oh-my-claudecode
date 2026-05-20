@@ -77,6 +77,7 @@ export async function notify(event, data) {
             iteration: data.iteration,
             maxIterations: data.maxIterations,
             question: data.question,
+            askUserQuestionPrompts: data.askUserQuestionPrompts,
             incompleteTasks: data.incompleteTasks,
             agentName: data.agentName,
             agentType: data.agentType,
@@ -149,6 +150,12 @@ export async function notify(event, data) {
                             event: payload.event,
                             createdAt: new Date().toISOString(),
                             projectPath: payload.projectPath,
+                            ...(payload.event === "ask-user-question" && payload.askUserQuestionPrompts?.[0]
+                                ? {
+                                    askUserQuestionOptionCount: payload.askUserQuestionPrompts[0].options.length,
+                                    askUserQuestionAllowOther: payload.askUserQuestionPrompts[0].allowOther !== false,
+                                }
+                                : {}),
                         });
                     }
                 }

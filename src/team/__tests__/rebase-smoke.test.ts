@@ -11,6 +11,7 @@ import {
   createGitFixture,
   orchestratorEventLogPath,
   readEventLog,
+  waitForEventInLog,
   type GitFixture,
 } from './helpers/git-fixture.js';
 import {
@@ -161,8 +162,8 @@ describe('rebase conflict mailbox delivery', () => {
 
     const eventLog = orchestratorEventLogPath(fixture.repoRoot, fixture.teamName);
 
-    expectEvent(eventLog, 'merge_succeeded', 'worker-1');
-    expectEvent(eventLog, 'rebase_triggered', 'worker-2');
+    await waitForEventInLog({ eventLogPath: eventLog, eventType: 'merge_succeeded', worker: 'worker-1', timeoutMs: 8000 });
+    await waitForEventInLog({ eventLogPath: eventLog, eventType: 'rebase_triggered', worker: 'worker-2', timeoutMs: 8000 });
 
     // Wait for either rebase_conflict or rebase_succeeded
     const deadline = Date.now() + 5000;
@@ -280,8 +281,9 @@ describe('M4: dirty-tree audit on rebase resolution', () => {
 
     const eventLog = orchestratorEventLogPath(fixture.repoRoot, fixture.teamName);
 
-    expectEvent(eventLog, 'merge_succeeded', 'worker-1');
-    expectEvent(eventLog, 'rebase_triggered', 'worker-2');
+    await handle.pollOnce();
+    await waitForEventInLog({ eventLogPath: eventLog, eventType: 'merge_succeeded', worker: 'worker-1', timeoutMs: 8000 });
+    await waitForEventInLog({ eventLogPath: eventLog, eventType: 'rebase_triggered', worker: 'worker-2', timeoutMs: 8000 });
 
     // Check if we got a conflict
     await new Promise((r) => setTimeout(r, 500));
@@ -317,7 +319,7 @@ describe('M4: dirty-tree audit on rebase resolution', () => {
 
       // Run orchestrator once to detect rebase-merge gone and fire M4 audit
       await handle.pollOnce();
-      expectEvent(eventLog, 'rebase_resolved', 'worker-2');
+      await waitForEventInLog({ eventLogPath: eventLog, eventType: 'rebase_resolved', worker: 'worker-2', timeoutMs: 8000 });
 
       // Check inbox for audit message
       const worker2InboxPath = join(

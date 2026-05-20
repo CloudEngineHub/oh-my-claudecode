@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, normalize } from 'node:path';
 import { execFileSync } from 'node:child_process';
 const RESOLVER = join(process.cwd(), 'skills', 'self-improve', 'scripts', 'resolve-paths.mjs');
 const VALIDATE = join(process.cwd(), 'skills', 'self-improve', 'scripts', 'validate.sh');
@@ -51,7 +51,9 @@ describe('self-improve path scoping helpers', () => {
             cwd: root,
             encoding: 'utf-8',
         });
-        expect(output).toContain(`Settings: ${join(scopedConfigDir, 'settings.json')}`);
+        const expectedSettings = normalize(join(scopedConfigDir, 'settings.json')).replace(/^\/private(?=\/var\/)/, '');
+        const normalizedOutput = normalize(output).replace(/^Settings: \/private(?=\/var\/)/m, 'Settings: ');
+        expect(normalizedOutput).toContain(`Settings: ${expectedSettings}`);
         expect(output).toContain('All checks passed');
     });
     it('validate.sh errors when multiple scoped topics exist without an explicit selector', () => {

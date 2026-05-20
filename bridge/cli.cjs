@@ -8873,12 +8873,14 @@ function normalizeRegistryEntry(value) {
   }
   const args = Array.isArray(raw.args) && raw.args.every((item) => typeof item === "string") ? [...raw.args] : [];
   const env2 = isStringRecord(raw.env) ? { ...raw.env } : void 0;
+  const headers = isStringRecord(raw.headers) ? { ...raw.headers } : void 0;
   const timeout = typeof raw.timeout === "number" && Number.isFinite(raw.timeout) && raw.timeout > 0 ? raw.timeout : void 0;
   const effectiveTimeout = timeout ?? (command && isLauncherBackedMcpCommand(command, args) ? DEFAULT_LAUNCHER_MCP_STARTUP_TIMEOUT_SEC : void 0);
   return {
     ...command ? { command } : {},
     ...args.length > 0 ? { args } : {},
     ...env2 && Object.keys(env2).length > 0 ? { env: env2 } : {},
+    ...headers && Object.keys(headers).length > 0 ? { headers } : {},
     ...url ? { url } : {},
     ...type ? { type } : {},
     ...effectiveTimeout ? { timeout: effectiveTimeout } : {}
@@ -9044,9 +9046,23 @@ function parseTomlStringArray(value) {
     return void 0;
   }
 }
-function renderTomlEnvTable(env2) {
-  const entries = Object.entries(env2).sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => `${key} = ${renderTomlString(value)}`);
+function renderTomlBareKey(key) {
+  return /^[A-Za-z0-9_-]+$/.test(key) ? key : renderTomlString(key);
+}
+function parseTomlKey(value) {
+  const trimmed = value.trim();
+  if (/^[A-Za-z0-9_-]+$/.test(trimmed)) {
+    return trimmed;
+  }
+  const parsed = parseTomlQuotedString(trimmed);
+  return parsed && parsed.trim().length > 0 ? parsed : void 0;
+}
+function renderTomlStringMapInline(values) {
+  const entries = Object.entries(values).sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => `${renderTomlBareKey(key)} = ${renderTomlString(value)}`);
   return `{ ${entries.join(", ")} }`;
+}
+function renderTomlEnvTable(env2) {
+  return renderTomlStringMapInline(env2);
 }
 function parseTomlEnvTable(value) {
   const trimmed = value.trim();
@@ -9055,10 +9071,13 @@ function parseTomlEnvTable(value) {
   }
   const env2 = {};
   const inner = trimmed.slice(1, -1);
-  const entryPattern = /([A-Za-z0-9_-]+)\s*=\s*"((?:\\.|[^"\\])*)"/g;
+  const entryPattern = /((?:[A-Za-z0-9_-]+)|(?:"(?:\\.|[^"\\])*"))\s*=\s*"((?:\\.|[^"\\])*)"/g;
   let match;
   while ((match = entryPattern.exec(inner)) !== null) {
-    env2[match[1]] = unescapeTomlString(match[2]);
+    const key = parseTomlKey(match[1]);
+    if (key) {
+      env2[key] = unescapeTomlString(match[2]);
+    }
   }
   return Object.keys(env2).length > 0 ? env2 : void 0;
 }
@@ -9081,6 +9100,12 @@ function renderCodexServerBlock(name, entry) {
   }
   if (entry.timeout) {
     lines.push(`startup_timeout_sec = ${entry.timeout}`);
+  }
+  if (entry.headers && Object.keys(entry.headers).length > 0) {
+    lines.push("", `[mcp_servers.${name}.headers]`);
+    for (const [key, value] of Object.entries(entry.headers).sort(([left], [right]) => left.localeCompare(right))) {
+      lines.push(`${renderTomlBareKey(key)} = ${renderTomlString(value)}`);
+    }
   }
   return lines.join("\n");
 }
@@ -9138,6 +9163,7 @@ function parseCodexMcpRegistryEntries(content) {
   const lines = content.split(/\r?\n/);
   let currentName = null;
   let currentEntry = {};
+  let currentSection = null;
   const flushCurrent = () => {
     if (!currentName) return;
     const normalized = normalizeRegistryEntry(currentEntry);
@@ -9146,10 +9172,22 @@ function parseCodexMcpRegistryEntries(content) {
     }
     currentName = null;
     currentEntry = {};
+    currentSection = null;
   };
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) {
+      continue;
+    }
+    const headersSectionMatch = line.match(/^\[mcp_servers\.([^\]]+)\.headers\]$/);
+    if (headersSectionMatch) {
+      const name = headersSectionMatch[1].trim();
+      if (!currentName || currentName !== name) {
+        flushCurrent();
+        currentName = name;
+        currentEntry = {};
+      }
+      currentSection = "headers";
       continue;
     }
     const sectionMatch = line.match(/^\[mcp_servers\.([^\]]+)\]$/);
@@ -9157,18 +9195,27 @@ function parseCodexMcpRegistryEntries(content) {
       flushCurrent();
       currentName = sectionMatch[1].trim();
       currentEntry = {};
+      currentSection = "server";
       continue;
     }
-    if (!currentName) {
+    if (!currentName || !currentSection) {
       continue;
     }
     const [rawKey, ...rawValueParts] = line.split("=");
     if (!rawKey || rawValueParts.length === 0) {
       continue;
     }
-    const key = rawKey.trim();
+    const key = currentSection === "headers" ? parseTomlKey(rawKey) : rawKey.trim();
+    if (!key) {
+      continue;
+    }
     const value = rawValueParts.join("=").trim();
-    if (key === "command") {
+    if (currentSection === "headers") {
+      const parsed = parseTomlQuotedString(value);
+      if (parsed !== void 0) {
+        currentEntry.headers = { ...currentEntry.headers ?? {}, [key]: parsed };
+      }
+    } else if (key === "command") {
       const parsed = parseTomlQuotedString(value);
       if (parsed) currentEntry.command = parsed;
     } else if (key === "args") {
@@ -9183,6 +9230,9 @@ function parseCodexMcpRegistryEntries(content) {
     } else if (key === "env") {
       const parsed = parseTomlEnvTable(value);
       if (parsed) currentEntry.env = parsed;
+    } else if (key === "headers") {
+      const parsed = parseTomlEnvTable(value);
+      if (parsed) currentEntry.headers = parsed;
     } else if (key === "startup_timeout_sec") {
       const parsed = Number(value);
       if (Number.isFinite(parsed) && parsed > 0) currentEntry.timeout = parsed;
@@ -22159,29 +22209,6 @@ var init_agents_overlay = __esm({
   }
 });
 
-// src/utils/daemon-module-path.ts
-function resolveDaemonModulePath(currentFilename, distSegments) {
-  const isWindowsStylePath = /^[a-zA-Z]:\\/.test(currentFilename) || currentFilename.includes("\\");
-  const pathApi = isWindowsStylePath ? import_path66.win32 : { basename: import_path66.basename, dirname: import_path66.dirname, join: import_path66.join };
-  const tsCompiledPath = currentFilename.replace(/\.ts$/, ".js");
-  if (tsCompiledPath !== currentFilename) {
-    return tsCompiledPath;
-  }
-  const currentDir = pathApi.dirname(currentFilename);
-  const inBundledCli = pathApi.basename(currentFilename) === "cli.cjs" && pathApi.basename(currentDir) === "bridge";
-  if (inBundledCli) {
-    return pathApi.join(currentDir, "..", "dist", ...distSegments);
-  }
-  return currentFilename;
-}
-var import_path66;
-var init_daemon_module_path = __esm({
-  "src/utils/daemon-module-path.ts"() {
-    "use strict";
-    import_path66 = require("path");
-  }
-});
-
 // src/cli/tmux-utils.ts
 function tmuxEnv() {
   const { TMUX: _, ...env2 } = process.env;
@@ -22271,7 +22298,7 @@ function resolveTmuxBinaryPath() {
     if (result.status !== 0) return "tmux";
     const candidates = result.stdout?.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) ?? [];
     const first = candidates[0];
-    if (first && ((0, import_path67.isAbsolute)(first) || import_path67.win32.isAbsolute(first))) {
+    if (first && ((0, import_path66.isAbsolute)(first) || import_path66.win32.isAbsolute(first))) {
       return first;
     }
   } catch {
@@ -22319,7 +22346,7 @@ function resolveLaunchPolicy(env2 = process.env, args = [], options = {}) {
   return "outside-tmux";
 }
 function buildTmuxSessionName(cwd2) {
-  const dirToken = sanitizeTmuxToken((0, import_path67.basename)(cwd2));
+  const dirToken = sanitizeTmuxToken((0, import_path66.basename)(cwd2));
   let branchToken = "detached";
   try {
     const branch = (0, import_child_process19.execFileSync)("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
@@ -22368,7 +22395,7 @@ function wrapWithLoginShell(command) {
     return `${quoteForCmd(comspec)} /d /s /c ${quoteForCmd(command)}`;
   }
   const shell = process.env.SHELL || "/bin/sh";
-  const shellName = (0, import_path67.basename)(shell).replace(/\.(exe|cmd|bat)$/i, "");
+  const shellName = (0, import_path66.basename)(shell).replace(/\.(exe|cmd|bat)$/i, "");
   const rcFile = process.env.HOME ? `${process.env.HOME}/.${shellName}rc` : "";
   const sourcePrefix = rcFile ? `[ -f ${quoteShellArg2(rcFile)} ] && . ${quoteShellArg2(rcFile)}; ` : "";
   return `exec ${quoteShellArg2(shell)} -lc ${quoteShellArg2(`${sourcePrefix}${command}`)}`;
@@ -22376,13 +22403,36 @@ function wrapWithLoginShell(command) {
 function quoteShellArg2(value) {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
-var import_child_process19, import_path67, import_util7;
+var import_child_process19, import_path66, import_util7;
 var init_tmux_utils = __esm({
   "src/cli/tmux-utils.ts"() {
     "use strict";
     import_child_process19 = require("child_process");
-    import_path67 = require("path");
+    import_path66 = require("path");
     import_util7 = require("util");
+  }
+});
+
+// src/utils/daemon-module-path.ts
+function resolveDaemonModulePath(currentFilename, distSegments) {
+  const isWindowsStylePath = /^[a-zA-Z]:\\/.test(currentFilename) || currentFilename.includes("\\");
+  const pathApi = isWindowsStylePath ? import_path67.win32 : { basename: import_path67.basename, dirname: import_path67.dirname, join: import_path67.join };
+  const tsCompiledPath = currentFilename.replace(/\.ts$/, ".js");
+  if (tsCompiledPath !== currentFilename) {
+    return tsCompiledPath;
+  }
+  const currentDir = pathApi.dirname(currentFilename);
+  const inBundledCli = pathApi.basename(currentFilename) === "cli.cjs" && pathApi.basename(currentDir) === "bridge";
+  if (inBundledCli) {
+    return pathApi.join(currentDir, "..", "dist", ...distSegments);
+  }
+  return currentFilename;
+}
+var import_path67;
+var init_daemon_module_path = __esm({
+  "src/utils/daemon-module-path.ts"() {
+    "use strict";
+    import_path67 = require("path");
   }
 });
 
@@ -24334,6 +24384,7 @@ __export(reply_listener_exports, {
   RateLimiter: () => RateLimiter,
   SlackConnectionStateTracker: () => SlackConnectionStateTracker,
   buildDaemonConfig: () => buildDaemonConfig,
+  buildReplyInjectionSteps: () => buildReplyInjectionSteps,
   getReplyListenerStatus: () => getReplyListenerStatus,
   isDaemonRunning: () => isDaemonRunning,
   pollLoop: () => pollLoop,
@@ -24454,19 +24505,51 @@ function isDaemonRunning() {
 function sanitizeReplyInput(text) {
   return text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "").replace(/[\u202a-\u202e\u2066-\u2069]/g, "").replace(/\r?\n/g, " ").replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\(/g, "\\$(").replace(/\$\{/g, "\\${").trim();
 }
-function injectReply(paneId, text, platform, config2) {
+function buildReplyInjectionSteps(text, platform, config2, mapping) {
+  const prefix = config2.includePrefix ? `[reply:${platform}] ` : "";
+  const sanitized = sanitizeReplyInput(prefix + text);
+  const truncated = sanitized.slice(0, config2.maxMessageLength);
+  if (mapping?.event === "ask-user-question" && mapping.askUserQuestionAllowOther !== false && Number.isFinite(mapping.askUserQuestionOptionCount)) {
+    const optionCount = Math.max(0, Math.floor(mapping.askUserQuestionOptionCount ?? 0));
+    return [
+      ...Array.from({ length: optionCount }, () => ({ kind: "key", value: "Down" })),
+      { kind: "key", value: "Enter" },
+      { kind: "literal", value: truncated },
+      { kind: "key", value: "Enter" }
+    ];
+  }
+  return [
+    { kind: "literal", value: truncated },
+    { kind: "key", value: "Enter" }
+  ];
+}
+function sendReplyInjectionSteps(paneId, steps) {
+  try {
+    for (const step of steps) {
+      if (step.kind === "literal") {
+        tmuxExec(["send-keys", "-t", paneId, "-l", step.value], { stripTmux: true, timeout: 2e3 });
+      } else {
+        tmuxExec(["send-keys", "-t", paneId, step.value], { stripTmux: true, timeout: 2e3 });
+      }
+    }
+    return true;
+  } catch (error2) {
+    log(`ERROR: Failed to send reply injection steps to pane ${paneId}: ${error2 instanceof Error ? error2.message : String(error2)}`);
+    return false;
+  }
+}
+function injectReply(paneId, text, platform, config2, mapping) {
   const content = capturePaneContent(paneId, 15);
   if (!content.trim()) {
     log(`WARN: Pane ${paneId} appears empty. Skipping injection, removing stale mapping.`);
     removeMessagesByPane(paneId);
     return false;
   }
-  const prefix = config2.includePrefix ? `[reply:${platform}] ` : "";
-  const sanitized = sanitizeReplyInput(prefix + text);
-  const truncated = sanitized.slice(0, config2.maxMessageLength);
-  const success = sendToPane(paneId, truncated, true);
+  const steps = buildReplyInjectionSteps(text, platform, config2, mapping);
+  const preview = steps.find((step) => step.kind === "literal")?.value ?? "";
+  const success = mapping?.event === "ask-user-question" ? sendReplyInjectionSteps(paneId, steps) : sendToPane(paneId, preview, true);
   if (success) {
-    log(`Injected reply from ${platform} into pane ${paneId}: "${truncated.slice(0, 50)}${truncated.length > 50 ? "..." : ""}"`);
+    log(`Injected reply from ${platform} into pane ${paneId}: "${preview.slice(0, 50)}${preview.length > 50 ? "..." : ""}"`);
   } else {
     log(`ERROR: Failed to inject reply into pane ${paneId}`);
   }
@@ -24532,7 +24615,7 @@ async function pollDiscord(config2, state, rateLimiter) {
       }
       state.discordLastMessageId = msg.id;
       writeDaemonState(state);
-      const success = injectReply(mapping.tmuxPaneId, msg.content, "discord", config2);
+      const success = injectReply(mapping.tmuxPaneId, msg.content, "discord", config2, mapping);
       if (success) {
         state.messagesInjected++;
         try {
@@ -24658,7 +24741,7 @@ async function pollTelegram(config2, state, rateLimiter) {
       }
       state.telegramLastUpdateId = update.update_id;
       writeDaemonState(state);
-      const success = injectReply(mapping.tmuxPaneId, text, "telegram", config2);
+      const success = injectReply(mapping.tmuxPaneId, text, "telegram", config2, mapping);
       if (success) {
         state.messagesInjected++;
         try {
@@ -24757,17 +24840,19 @@ async function pollLoop() {
               return;
             }
             let targetPaneId = null;
+            let targetMapping;
             if (event.thread_ts && event.thread_ts !== event.ts) {
               const mapping = lookupByMessageId("slack-bot", event.thread_ts);
               if (mapping) {
                 targetPaneId = mapping.tmuxPaneId;
+                targetMapping = mapping;
               }
             }
             if (!targetPaneId) {
               log("WARN: No target pane found for Slack message, skipping");
               return;
             }
-            const success = injectReply(targetPaneId, event.text, "slack", config2);
+            const success = injectReply(targetPaneId, event.text, "slack", config2, targetMapping);
             if (success) {
               state.messagesInjected++;
               writeDaemonState(state);
@@ -25024,6 +25109,7 @@ var init_reply_listener = __esm({
     import_path72 = require("path");
     import_url11 = require("url");
     import_child_process20 = require("child_process");
+    init_tmux_utils();
     import_https = require("https");
     init_daemon_module_path();
     init_paths();
@@ -26019,6 +26105,24 @@ function formatAskUserQuestion(payload) {
     lines.push(`**Question:** ${payload.question}`);
     lines.push("");
   }
+  if (payload.askUserQuestionPrompts?.length) {
+    for (const [promptIndex, prompt] of payload.askUserQuestionPrompts.entries()) {
+      if (payload.askUserQuestionPrompts.length > 1) {
+        lines.push(`**${prompt.header || `Question ${promptIndex + 1}`}:** ${prompt.question}`);
+      }
+      if (prompt.options.length > 0 || prompt.allowOther !== false) {
+        lines.push("**Options:**");
+        prompt.options.forEach((option, optionIndex) => {
+          const description = option.description ? ` \u2014 ${option.description}` : "";
+          lines.push(`${optionIndex + 1}. ${option.label}${description}`);
+        });
+        if (prompt.allowOther !== false) {
+          lines.push(`${prompt.options.length + 1}. ${prompt.otherLabel || "Other"} \u2014 reply with free text`);
+        }
+        lines.push("");
+      }
+    }
+  }
   lines.push(`Claude is waiting for your response.`);
   lines.push("");
   lines.push(buildFooter(payload, true));
@@ -26477,6 +26581,16 @@ function computeTemplateVariables(payload) {
   vars.iteration = payload.iteration != null ? String(payload.iteration) : "";
   vars.maxIterations = payload.maxIterations != null ? String(payload.maxIterations) : "";
   vars.question = payload.question || "";
+  vars.questionOptions = payload.askUserQuestionPrompts?.map((prompt) => {
+    const optionLines = prompt.options.map((option, index) => {
+      const description = option.description ? ` \u2014 ${option.description}` : "";
+      return `${index + 1}. ${option.label}${description}`;
+    });
+    if (prompt.allowOther !== false) {
+      optionLines.push(`${prompt.options.length + 1}. ${prompt.otherLabel || "Other"} \u2014 reply with free text`);
+    }
+    return optionLines.join("\n");
+  }).filter(Boolean).join("\n\n") || "";
   vars.incompleteTasks = payload.incompleteTasks != null ? String(payload.incompleteTasks) : "";
   vars.agentName = payload.agentName || "";
   vars.agentType = payload.agentType || "";
@@ -26882,6 +26996,7 @@ async function sendWebhook(config2, payload) {
         reason: payload.reason,
         active_mode: payload.activeMode,
         question: payload.question,
+        ask_user_question_prompts: payload.askUserQuestionPrompts,
         ...payload.replyChannel && { channel: payload.replyChannel },
         ...payload.replyTarget && { to: payload.replyTarget },
         ...payload.replyThread && { thread_id: payload.replyThread }
@@ -27174,6 +27289,7 @@ async function notify(event, data) {
       iteration: data.iteration,
       maxIterations: data.maxIterations,
       question: data.question,
+      askUserQuestionPrompts: data.askUserQuestionPrompts,
       incompleteTasks: data.incompleteTasks,
       agentName: data.agentName,
       agentType: data.agentType,
@@ -27242,7 +27358,11 @@ async function notify(event, data) {
               tmuxSessionName: payload.tmuxSession || "",
               event: payload.event,
               createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-              projectPath: payload.projectPath
+              projectPath: payload.projectPath,
+              ...payload.event === "ask-user-question" && payload.askUserQuestionPrompts?.[0] ? {
+                askUserQuestionOptionCount: payload.askUserQuestionPrompts[0].options.length,
+                askUserQuestionAllowOther: payload.askUserQuestionPrompts[0].allowOther !== false
+              } : {}
             });
           }
         }
@@ -30784,14 +30904,21 @@ function assertCleanLeaderWorktree(repoRoot) {
     throw error2;
   }
 }
+function canonicalPathForComparison(path22) {
+  try {
+    return (0, import_node_fs6.realpathSync)(path22);
+  } catch {
+    return (0, import_node_path7.resolve)(path22);
+  }
+}
 function getRegisteredWorktreeBranch(repoRoot, wtPath) {
   try {
     const output = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = (0, import_node_path7.resolve)(wtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
     let currentMatches = false;
     for (const line of output.split("\n")) {
       if (line.startsWith("worktree ")) {
-        currentMatches = (0, import_node_path7.resolve)(line.slice("worktree ".length).trim()) === resolvedWtPath;
+        currentMatches = canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath;
         continue;
       }
       if (!currentMatches) continue;
@@ -30805,8 +30932,8 @@ function getRegisteredWorktreeBranch(repoRoot, wtPath) {
 function isRegisteredWorktreePath(repoRoot, wtPath) {
   try {
     const output = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = (0, import_node_path7.resolve)(wtPath);
-    return output.split("\n").some((line) => line.startsWith("worktree ") && (0, import_node_path7.resolve)(line.slice("worktree ".length).trim()) === resolvedWtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
+    return output.split("\n").some((line) => line.startsWith("worktree ") && canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath);
   } catch {
     return false;
   }
@@ -45447,7 +45574,7 @@ function getGitRepoName(cwd2) {
   }
   let result = null;
   try {
-    const url = (0, import_node_child_process11.execSync)("git remote get-url origin", {
+    const url = (0, import_node_child_process10.execSync)("git remote get-url origin", {
       cwd: cwd2,
       encoding: "utf-8",
       timeout: 1e3,
@@ -45474,7 +45601,7 @@ function getGitBranch(cwd2) {
   }
   let result = null;
   try {
-    const branch = (0, import_node_child_process11.execSync)("git branch --show-current", {
+    const branch = (0, import_node_child_process10.execSync)("git branch --show-current", {
       cwd: cwd2,
       encoding: "utf-8",
       timeout: 1e3,
@@ -45503,8 +45630,8 @@ function getWorktreeInfo(cwd2) {
   };
   let result = { isWorktree: false, worktreeName: null };
   try {
-    const gitDir = (0, import_node_child_process11.execSync)("git rev-parse --git-dir", execOpts).trim();
-    const gitCommonDir = (0, import_node_child_process11.execSync)("git rev-parse --git-common-dir", execOpts).trim();
+    const gitDir = (0, import_node_child_process10.execSync)("git rev-parse --git-dir", execOpts).trim();
+    const gitCommonDir = (0, import_node_child_process10.execSync)("git rev-parse --git-common-dir", execOpts).trim();
     let resolvedGitDir = (0, import_node_path16.resolve)(key, gitDir);
     let resolvedCommonDir = (0, import_node_path16.resolve)(key, gitCommonDir);
     try {
@@ -45545,7 +45672,7 @@ function getGitStatusCounts(cwd2) {
   }
   let result = null;
   try {
-    const output = (0, import_node_child_process11.execSync)("git --no-optional-locks status --porcelain -b", {
+    const output = (0, import_node_child_process10.execSync)("git --no-optional-locks status --porcelain -b", {
       cwd: cwd2,
       encoding: "utf-8",
       timeout: 1e3,
@@ -45595,11 +45722,11 @@ function renderGitStatus(cwd2, labels = DEFAULT_HUD_LABELS) {
   if (behind > 0) parts.push(`${red(labels.behind)}${behind}`);
   return parts.join(" ");
 }
-var import_node_child_process11, import_node_fs12, import_node_path16, CACHE_TTL_MS3, repoCache, branchCache, worktreeCache, statusCache;
+var import_node_child_process10, import_node_fs12, import_node_path16, CACHE_TTL_MS3, repoCache, branchCache, worktreeCache, statusCache;
 var init_git = __esm({
   "src/hud/elements/git.ts"() {
     "use strict";
-    import_node_child_process11 = require("node:child_process");
+    import_node_child_process10 = require("node:child_process");
     import_node_fs12 = require("node:fs");
     import_node_path16 = require("node:path");
     init_colors();
@@ -72390,7 +72517,13 @@ async function runLspAggregatedDiagnostics(directory, extensions = [".ts", ".tsx
   const files = findFiles(directory, extensions, ["node_modules", "dist", "build", ".git"]);
   const allDiagnostics = [];
   let filesChecked = 0;
+  const skippedFiles = [];
+  const installHintSet = /* @__PURE__ */ new Set();
   for (const file of files) {
+    if (!getServerForFile(file)) {
+      skippedFiles.push({ file, reason: "no language server registered for extension" });
+      continue;
+    }
     try {
       await lspClientManager.runWithClientLease(file, async (client) => {
         await client.openDocument(file);
@@ -72404,18 +72537,29 @@ async function runLspAggregatedDiagnostics(directory, extensions = [".ts", ".tsx
         }
         filesChecked++;
       });
-    } catch (_error) {
-      continue;
+    } catch (error2) {
+      const message = error2 instanceof Error ? error2.message : String(error2);
+      const match = message.match(/^Language server '([^']+)' not found\.\nInstall with: (.+)$/s);
+      if (match) {
+        installHintSet.add(match[2].trim());
+        skippedFiles.push({ file, reason: `missing language server: ${match[1]}` });
+      } else {
+        skippedFiles.push({ file, reason: message });
+      }
     }
   }
   const errorCount = allDiagnostics.filter((d) => d.diagnostic.severity === 1).length;
   const warningCount = allDiagnostics.filter((d) => d.diagnostic.severity === 2).length;
+  const installHints = Array.from(installHintSet);
+  const allFilesSkipped = filesChecked === 0 && files.length > 0;
   return {
-    success: errorCount === 0,
+    success: errorCount === 0 && !allFilesSkipped,
     diagnostics: allDiagnostics,
     errorCount,
     warningCount,
-    filesChecked
+    filesChecked,
+    skippedFiles,
+    installHints
   };
 }
 
@@ -72475,25 +72619,41 @@ function formatTscResult(result) {
 function formatLspResult(result) {
   let diagnostics = "";
   let summary = "";
-  if (result.diagnostics.length === 0) {
+  if (result.diagnostics.length === 0 && result.installHints.length === 0 && result.skippedFiles.length === 0) {
     diagnostics = `Checked ${result.filesChecked} files. No diagnostics found!`;
     summary = `LSP check passed: 0 errors, 0 warnings (${result.filesChecked} files)`;
   } else {
-    const byFile = /* @__PURE__ */ new Map();
-    for (const item of result.diagnostics) {
-      if (!byFile.has(item.file)) {
-        byFile.set(item.file, []);
+    const hasSkips = result.skippedFiles.length > 0;
+    const parts = [];
+    if (result.installHints.length > 0) {
+      const hintLines = result.installHints.map((h) => `  - ${h}`).join("\n");
+      parts.push(
+        `\u26A0 Missing language servers detected:
+${hintLines}
+Install the language server(s) above and re-run, or these files cannot be checked.`
+      );
+    }
+    if (result.diagnostics.length > 0) {
+      const byFile = /* @__PURE__ */ new Map();
+      for (const item of result.diagnostics) {
+        if (!byFile.has(item.file)) {
+          byFile.set(item.file, []);
+        }
+        byFile.get(item.file).push(item);
       }
-      byFile.get(item.file).push(item);
-    }
-    const fileOutputs = [];
-    for (const [file, items] of byFile) {
-      const diags = items.map((i) => i.diagnostic);
-      fileOutputs.push(`${file}:
+      const fileOutputs = [];
+      for (const [file, items] of byFile) {
+        const diags = items.map((i) => i.diagnostic);
+        fileOutputs.push(`${file}:
 ${formatDiagnostics(diags, file)}`);
+      }
+      parts.push(fileOutputs.join("\n\n"));
     }
-    diagnostics = fileOutputs.join("\n\n");
-    summary = `LSP check ${result.success ? "passed" : "failed"}: ${result.errorCount} errors, ${result.warningCount} warnings (${result.filesChecked} files)`;
+    if (hasSkips) {
+      parts.push(`Skipped ${result.skippedFiles.length} file(s) due to missing or unregistered language servers.`);
+    }
+    diagnostics = parts.join("\n\n");
+    summary = hasSkips ? `LSP check incomplete: ${result.errorCount} errors, ${result.warningCount} warnings (${result.filesChecked}/${result.filesChecked + result.skippedFiles.length} files checked)` : `LSP check ${result.success ? "passed" : "failed"}: ${result.errorCount} errors, ${result.warningCount} warnings (${result.filesChecked} files)`;
   }
   return {
     strategy: "lsp",
@@ -82569,6 +82729,8 @@ function buildSessionStartAdditionalContext(messages) {
   return selected.join("\n");
 }
 function readLinuxBootId() {
+  const testBootId = process.env.OMC_TEST_BOOT_ID?.trim();
+  if (testBootId) return testBootId;
   try {
     if (!(0, import_fs81.existsSync)(LINUX_BOOT_ID_PATH)) return void 0;
     const bootId = (0, import_fs81.readFileSync)(LINUX_BOOT_ID_PATH, "utf-8").trim();
@@ -83882,14 +84044,49 @@ The CLAUDE.md instruction "Pass model on Task calls: haiku, sonnet, opus" applie
   }
   return { continue: true };
 }
-function dispatchAskUserQuestionNotification(sessionId, directory, toolInput) {
+function stringOrUndefined(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : void 0;
+}
+function extractAskUserQuestionPrompts(toolInput) {
   const input = toolInput;
-  const questions = input?.questions || [];
-  const questionText = questions.map((q) => q.question || "").filter(Boolean).join("; ") || "User input requested";
+  const questions = Array.isArray(input?.questions) ? input.questions : [];
+  return questions.map((question) => {
+    const questionText = stringOrUndefined(question.question);
+    if (!questionText) return null;
+    const rawOptions = Array.isArray(question.options) ? question.options : [];
+    const options = rawOptions.map((option) => {
+      const label = stringOrUndefined(option.label);
+      if (!label) return null;
+      const value = stringOrUndefined(option.value);
+      const description = stringOrUndefined(option.description);
+      return {
+        label,
+        ...value ? { value } : {},
+        ...description ? { description } : {}
+      };
+    }).filter((option) => option !== null);
+    const allowOther = question.allowOther ?? question.allow_other;
+    const otherLabel = stringOrUndefined(question.otherLabel ?? question.other_label);
+    const multiSelect = question.multiSelect ?? question.multi_select;
+    const header = stringOrUndefined(question.header);
+    return {
+      question: questionText,
+      ...header ? { header } : {},
+      options,
+      allowOther: allowOther === false ? false : true,
+      otherLabel: otherLabel ?? "Other",
+      multiSelect: multiSelect === true
+    };
+  }).filter((question) => question !== null);
+}
+function dispatchAskUserQuestionNotification(sessionId, directory, toolInput) {
+  const prompts = extractAskUserQuestionPrompts(toolInput);
+  const questionText = prompts.map((q) => q.question).filter(Boolean).join("; ") || "User input requested";
   dispatchNotificationInBackground("ask-user-question", {
     sessionId,
     projectPath: directory,
     question: questionText,
+    askUserQuestionPrompts: prompts,
     profileName: process.env.OMC_NOTIFY_PROFILE
   });
 }
@@ -87844,8 +88041,8 @@ function inferDelegationPlanForTeamTask(text) {
 // src/cli/commands/team.ts
 init_loader();
 var import_node_fs9 = require("node:fs");
-var import_node_child_process10 = require("node:child_process");
 var import_node_path12 = require("node:path");
+init_tmux_utils();
 var HELP_TOKENS = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
 var MIN_WORKER_COUNT = 1;
 var MAX_WORKER_COUNT = 20;
@@ -88016,7 +88213,7 @@ function isTeamStateLive(config2) {
   const target = typeof config2?.tmux_session === "string" ? config2.tmux_session.trim() : "";
   if (!target) return false;
   try {
-    (0, import_node_child_process10.execFileSync)("tmux", ["has-session", "-t", target], { stdio: "ignore" });
+    tmuxExec(["has-session", "-t", target], { stdio: "ignore" });
     return true;
   } catch {
     return false;

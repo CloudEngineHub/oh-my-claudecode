@@ -1151,10 +1151,17 @@ $ ultrawork search the codebase`,
           }),
         );
 
+        const previousTestBootId = process.env.OMC_TEST_BOOT_ID;
+        process.env.OMC_TEST_BOOT_ID = 'current-test-boot-id';
         const result = await processHook('session-start', {
           sessionId: currentSessionId,
           directory: tempDir,
         } as HookInput);
+        if (previousTestBootId === undefined) {
+          delete process.env.OMC_TEST_BOOT_ID;
+        } else {
+          process.env.OMC_TEST_BOOT_ID = previousTestBootId;
+        }
 
         expect(result.continue).toBe(true);
         expect(existsSync(join(staleSessionDir, 'ralph-state.json'))).toBe(false);

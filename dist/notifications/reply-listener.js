@@ -19,6 +19,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, chmodSy
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
+import { tmuxExec } from '../cli/tmux-utils.js';
 import { request as httpsRequest } from 'https';
 import { resolveDaemonModulePath } from '../utils/daemon-module-path.js';
 import { getGlobalOmcStateRoot } from '../utils/paths.js';
@@ -269,15 +270,44 @@ class RateLimiter {
         this.timestamps = [];
     }
 }
-// ============================================================================
-// Injection
-// ============================================================================
-/**
- * Inject reply text into a tmux pane after verification and sanitization.
- *
- * Returns true if injection succeeded, false otherwise.
- */
-function injectReply(paneId, text, platform, config) {
+export function buildReplyInjectionSteps(text, platform, config, mapping) {
+    const prefix = config.includePrefix ? `[reply:${platform}] ` : '';
+    const sanitized = sanitizeReplyInput(prefix + text);
+    const truncated = sanitized.slice(0, config.maxMessageLength);
+    if (mapping?.event === 'ask-user-question' &&
+        mapping.askUserQuestionAllowOther !== false &&
+        Number.isFinite(mapping.askUserQuestionOptionCount)) {
+        const optionCount = Math.max(0, Math.floor(mapping.askUserQuestionOptionCount ?? 0));
+        return [
+            ...Array.from({ length: optionCount }, () => ({ kind: 'key', value: 'Down' })),
+            { kind: 'key', value: 'Enter' },
+            { kind: 'literal', value: truncated },
+            { kind: 'key', value: 'Enter' },
+        ];
+    }
+    return [
+        { kind: 'literal', value: truncated },
+        { kind: 'key', value: 'Enter' },
+    ];
+}
+function sendReplyInjectionSteps(paneId, steps) {
+    try {
+        for (const step of steps) {
+            if (step.kind === 'literal') {
+                tmuxExec(['send-keys', '-t', paneId, '-l', step.value], { stripTmux: true, timeout: 2000 });
+            }
+            else {
+                tmuxExec(['send-keys', '-t', paneId, step.value], { stripTmux: true, timeout: 2000 });
+            }
+        }
+        return true;
+    }
+    catch (error) {
+        log(`ERROR: Failed to send reply injection steps to pane ${paneId}: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+    }
+}
+function injectReply(paneId, text, platform, config, mapping) {
     // 1. Verify pane has content (non-empty pane = active session per registry)
     const content = capturePaneContent(paneId, 15);
     if (!content.trim()) {
@@ -285,16 +315,13 @@ function injectReply(paneId, text, platform, config) {
         removeMessagesByPane(paneId);
         return false;
     }
-    // 2. Build prefixed text if configured
-    const prefix = config.includePrefix ? `[reply:${platform}] ` : '';
-    // 3. Sanitize the reply text
-    const sanitized = sanitizeReplyInput(prefix + text);
-    // 4. Truncate to max length
-    const truncated = sanitized.slice(0, config.maxMessageLength);
-    // 5. Inject via sendToPane (which applies its own sanitizeForTmux)
-    const success = sendToPane(paneId, truncated, true);
+    const steps = buildReplyInjectionSteps(text, platform, config, mapping);
+    const preview = steps.find((step) => step.kind === 'literal')?.value ?? '';
+    const success = mapping?.event === 'ask-user-question'
+        ? sendReplyInjectionSteps(paneId, steps)
+        : sendToPane(paneId, preview, true);
     if (success) {
-        log(`Injected reply from ${platform} into pane ${paneId}: "${truncated.slice(0, 50)}${truncated.length > 50 ? '...' : ''}"`);
+        log(`Injected reply from ${platform} into pane ${paneId}: "${preview.slice(0, 50)}${preview.length > 50 ? '...' : ''}"`);
     }
     else {
         log(`ERROR: Failed to inject reply into pane ${paneId}`);
@@ -381,7 +408,7 @@ async function pollDiscord(config, state, rateLimiter) {
             state.discordLastMessageId = msg.id;
             writeDaemonState(state);
             // Inject reply
-            const success = injectReply(mapping.tmuxPaneId, msg.content, 'discord', config);
+            const success = injectReply(mapping.tmuxPaneId, msg.content, 'discord', config, mapping);
             if (success) {
                 state.messagesInjected++;
                 // Send confirmation reaction (non-critical)
@@ -521,7 +548,7 @@ async function pollTelegram(config, state, rateLimiter) {
             state.telegramLastUpdateId = update.update_id;
             writeDaemonState(state);
             // Inject reply
-            const success = injectReply(mapping.tmuxPaneId, text, 'telegram', config);
+            const success = injectReply(mapping.tmuxPaneId, text, 'telegram', config, mapping);
             if (success) {
                 state.messagesInjected++;
                 // Send confirmation reply (non-critical)
@@ -632,11 +659,13 @@ async function pollLoop() {
                     }
                     // Find target pane for injection
                     let targetPaneId = null;
+                    let targetMapping;
                     // Thread replies: look up parent message in session registry
                     if (event.thread_ts && event.thread_ts !== event.ts) {
                         const mapping = lookupByMessageId('slack-bot', event.thread_ts);
                         if (mapping) {
                             targetPaneId = mapping.tmuxPaneId;
+                            targetMapping = mapping;
                         }
                     }
                     // No thread match: skip injection to avoid sending to an unrelated session.
@@ -646,7 +675,7 @@ async function pollLoop() {
                         return;
                     }
                     // Inject reply
-                    const success = injectReply(targetPaneId, event.text, 'slack', config);
+                    const success = injectReply(targetPaneId, event.text, 'slack', config, targetMapping);
                     if (success) {
                         state.messagesInjected++;
                         writeDaemonState(state);

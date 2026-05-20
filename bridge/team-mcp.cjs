@@ -18693,11 +18693,18 @@ function getBranchName(teamName, workerName) {
 function git(repoRoot, args, cwd = repoRoot) {
   return (0, import_node_child_process.execFileSync)("git", args, { cwd, encoding: "utf-8", stdio: "pipe" }).trim();
 }
+function canonicalPathForComparison(path4) {
+  try {
+    return (0, import_node_fs.realpathSync)(path4);
+  } catch {
+    return (0, import_node_path.resolve)(path4);
+  }
+}
 function isRegisteredWorktreePath(repoRoot, wtPath) {
   try {
     const output = git(repoRoot, ["worktree", "list", "--porcelain"]);
-    const resolvedWtPath = (0, import_node_path.resolve)(wtPath);
-    return output.split("\n").some((line) => line.startsWith("worktree ") && (0, import_node_path.resolve)(line.slice("worktree ".length).trim()) === resolvedWtPath);
+    const resolvedWtPath = canonicalPathForComparison(wtPath);
+    return output.split("\n").some((line) => line.startsWith("worktree ") && canonicalPathForComparison(line.slice("worktree ".length).trim()) === resolvedWtPath);
   } catch {
     return false;
   }

@@ -82,7 +82,7 @@ describe('setup-progress.sh', () => {
     const originalConfig = '{\n  "existing": true\n}\n';
     writeFileSync(configPath, originalConfig);
 
-    const result = spawnSync('/usr/bin/bash', [SCRIPT_PATH, 'complete', 'v9.9.9'], {
+    const result = spawnSync('/bin/bash', [SCRIPT_PATH, 'complete', 'v9.9.9'], {
       cwd: projectRoot,
       env: {
         ...process.env,
@@ -94,7 +94,7 @@ describe('setup-progress.sh', () => {
     });
 
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain('jq is required');
+    expect(`${result.stderr ?? ''}${result.stdout ?? ''}`).toContain('jq is required');
     expect(readFileSync(configPath, 'utf-8')).toBe(originalConfig);
   });
 });
