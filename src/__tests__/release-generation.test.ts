@@ -156,6 +156,7 @@ describe('release generation', () => {
     expect(workflow).toContain('npm install --global npm@11.17.0');
     expect(workflow).toContain('test "$(npm --version)" = "11.17.0"');
 
+    const setupNode = stepIndex('Setup Node.js');
     const npmPin = stepIndex('Pin npm for attestation verification');
     const install = stepIndex('Install dependencies');
     const trigger = stepIndex('Assert release trigger and npm availability');
@@ -171,6 +172,7 @@ describe('release generation', () => {
     const finalizedEvidence = stepIndex('Upload finalized release evidence');
     const githubRelease = stepIndex('Create GitHub Release');
 
+    expect(setupNode).toBeLessThan(npmPin);
     expect(npmPin).toBeLessThan(install);
     expect(install).toBeLessThan(trigger);
     expect(trigger).toBeLessThan(notes);
