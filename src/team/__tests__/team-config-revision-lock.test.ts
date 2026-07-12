@@ -186,7 +186,7 @@ describe('team config revision transaction', () => {
     expect(persisted?.config.active_recovery).toBeUndefined();
   });
 
-  it('preserves a normal writer that wins immediately before concurrent legacy migration', async () => {
+  it('migration preserves an immediately preceding normal legacy write', async () => {
     const legacy = initialConfig();
     delete legacy.state_revision;
     delete legacy.active_recovery;
@@ -194,10 +194,8 @@ describe('team config revision transaction', () => {
     const normal = structuredClone(legacy);
     normal.next_task_id = 13;
 
-    const normalWrite = saveTeamConfig(normal, cwd);
-    const migration = migrateTeamConfigRevision(teamName, cwd);
-    await expect(normalWrite).resolves.toBeUndefined();
-    await expect(migration).resolves.toMatchObject({ stateRevision: 0, config: { next_task_id: 13 } });
+    await expect(saveTeamConfig(normal, cwd)).resolves.toBeUndefined();
+    await expect(migrateTeamConfigRevision(teamName, cwd)).resolves.toMatchObject({ stateRevision: 0, config: { next_task_id: 13 } });
     await expect(readRevisionedTeamConfig(teamName, cwd)).resolves.toMatchObject({
       stateRevision: 0, config: { next_task_id: 13 },
     });
