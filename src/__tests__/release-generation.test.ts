@@ -144,7 +144,7 @@ describe('release generation', () => {
       return index;
     };
 
-    expect(workflow).toContain('group: release-${{ github.ref_name }}');
+    expect(workflow).toContain('group: release-${{ github.event.inputs.tag || github.ref_name }}');
     expect(workflow).toContain('cancel-in-progress: false');
     expect(workflow).toContain('body_path: release-notes.md');
     expect(workflow).toContain('GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}');
@@ -155,6 +155,7 @@ describe('release generation', () => {
     );
     expect(workflow).toContain('npm install --global npm@11.17.0');
     expect(workflow).toContain('test "$(npm --version)" = "11.17.0"');
+    expect(workflow).not.toContain('\npermissions:\n');
 
     const setupNode = stepIndex('Setup Node.js');
     const npmPin = stepIndex('Pin npm for attestation verification');
@@ -376,5 +377,303 @@ describe('release generation', () => {
     expect(fallbackClassification).toBeLessThan(evidenceAssertion);
     expect(evidenceAssertion).toBeLessThan(fallbackPublish);
     expect(fallbackPublish).toBeLessThan(fallbackVerification);
+
+    const fallbackPropagationLimit = workflow.indexOf('MAX_FALLBACK_PROPAGATION_ATTEMPTS=6');
+    const fallbackPropagationLoop = workflow.indexOf(
+      'while [ "$FALLBACK_ATTEMPT" -le "$MAX_FALLBACK_PROPAGATION_ATTEMPTS" ]; do',
+    );
+    const fallbackPropagationExhaustion = workflow.indexOf(
+      'if [ "$FALLBACK_ATTEMPT" -eq "$MAX_FALLBACK_PROPAGATION_ATTEMPTS" ]; then',
+    );
+    const fallbackPropagationFailure = workflow.indexOf(
+      'npm registry propagation did not complete after $MAX_FALLBACK_PROPAGATION_ATTEMPTS fallback attempts',
+    );
+    const fallbackPropagationExit = workflow.indexOf(
+      'exit 1',
+      fallbackPropagationExhaustion,
+    );
+    expect(fallbackPublish).toBeLessThan(fallbackPropagationLimit);
+    expect(fallbackPropagationLimit).toBeLessThan(fallbackPropagationLoop);
+    expect(fallbackPropagationLoop).toBeLessThan(fallbackVerification);
+    expect(fallbackVerification).toBeLessThan(fallbackPropagationExhaustion);
+    expect(fallbackPropagationExhaustion).toBeLessThan(fallbackPropagationFailure);
+    expect(fallbackPropagationFailure).toBeLessThan(fallbackPropagationExit);
+    expect(workflow).toContain(
+      'workflow_dispatch:\n    inputs:\n      tag:\n        description: Exact annotated release tag to recover\n        required: true\n        type: string\n      sha:\n        description: Exact 40-character hexadecimal commit SHA to recover\n        required: true\n        type: string',
+    );
+
+    const releaseJob = workflow.slice(
+      workflow.indexOf('  release:'),
+      workflow.indexOf('  recover:'),
+    );
+    const recoveryJob = workflow.slice(workflow.indexOf('  recover:'));
+    expect(releaseJob).toContain('if: github.event_name == \'push\'');
+    expect(releaseJob).toContain('permissions:\n      contents: write\n      id-token: write');
+    expect(recoveryJob).toContain('if: github.event_name == \'workflow_dispatch\'');
+    expect(recoveryJob).toContain('permissions:\n      contents: write');
+    expect(recoveryJob).not.toContain('id-token: write');
+
+    expect(recoveryJob).not.toContain('npm publish');
+
+    expect(releaseJob).toContain('MAX_PROPAGATION_ATTEMPTS=6');
+    expect(releaseJob).toContain(
+      'while [ "$ATTEMPT" -le "$MAX_PROPAGATION_ATTEMPTS" ]; do',
+    );
+    expect(releaseJob).toContain('rm -rf "$VERIFICATION_PREFIX"');
+    expect(releaseJob).toContain('test -s "$AUDIT_JSON"; then');
+    expect(releaseJob).toContain(
+      'if [ "$ATTEMPT" -eq "$MAX_PROPAGATION_ATTEMPTS" ]; then',
+    );
+    expect(releaseJob).toContain(
+      'npm registry propagation did not complete after $MAX_PROPAGATION_ATTEMPTS attempts',
+    );
+    expect(releaseJob).toContain('ATTEMPT=$((ATTEMPT + 1))');
+
+    const propagationLimit = releaseJob.indexOf('MAX_PROPAGATION_ATTEMPTS=6');
+    const propagationLoop = releaseJob.indexOf(
+      'while [ "$ATTEMPT" -le "$MAX_PROPAGATION_ATTEMPTS" ]; do',
+    );
+    const propagationCleanup = releaseJob.indexOf('rm -rf "$VERIFICATION_PREFIX"');
+    const propagationInstall = releaseJob.indexOf(
+      'npm install --ignore-scripts --no-audit --no-fund --prefix "$VERIFICATION_PREFIX" "oh-my-claude-sisyphus@$VERSION"',
+    );
+    const propagationAudit = releaseJob.indexOf(
+      'npm audit signatures --json --include-attestations --prefix "$VERIFICATION_PREFIX" > "$AUDIT_JSON"',
+    );
+    const nonemptyAudit = releaseJob.indexOf('test -s "$AUDIT_JSON"; then');
+    const propagationExhaustion = releaseJob.indexOf(
+      'if [ "$ATTEMPT" -eq "$MAX_PROPAGATION_ATTEMPTS" ]; then',
+    );
+    const propagationFailure = releaseJob.indexOf(
+      'npm registry propagation did not complete after $MAX_PROPAGATION_ATTEMPTS attempts',
+    );
+    const propagationExit = releaseJob.indexOf('exit 1', propagationExhaustion);
+
+    const requiredRegistryVerifications = [
+      ...releaseJob.matchAll(
+        /node scripts\/release-boundary\.mjs verify-registry[^\n]*--provenance required[^\n]*/g,
+      ),
+    ].map((match) => match[0]);
+    const requiredRegistryVerification = releaseJob.indexOf(
+      'node scripts/release-boundary.mjs verify-registry --package oh-my-claude-sisyphus --version "$VERSION" --tag "$GITHUB_REF_NAME" --sha "$GITHUB_SHA" --evidence "$EVIDENCE_JSON" --tarball "$FINAL_TARBALL" --provenance required --audit "$AUDIT_JSON"',
+    );
+    expect(requiredRegistryVerifications).toHaveLength(1);
+    expect(propagationLimit).toBeLessThan(propagationLoop);
+    expect(propagationLoop).toBeLessThan(propagationCleanup);
+    expect(propagationCleanup).toBeLessThan(propagationInstall);
+    expect(propagationInstall).toBeLessThan(propagationAudit);
+    expect(propagationAudit).toBeLessThan(nonemptyAudit);
+    expect(nonemptyAudit).toBeLessThan(propagationExhaustion);
+    expect(propagationExhaustion).toBeLessThan(propagationFailure);
+    expect(propagationFailure).toBeLessThan(propagationExit);
+    expect(propagationExit).toBeLessThan(requiredRegistryVerification);
+
+    expect(recoveryJob).toContain(
+      'RECOVERY_TAG: v4.15.4\n      RECOVERY_SHA: cb6932311ac956687e3c66bb6a48d52a8df14d56\n      RECOVERY_INPUT_TAG: ${{ inputs.tag }}\n      RECOVERY_INPUT_SHA: ${{ inputs.sha }}',
+    );
+    expect(recoveryJob).toContain(
+      'uses: actions/checkout@v4\n        with:\n          ref: cb6932311ac956687e3c66bb6a48d52a8df14d56\n          fetch-depth: 0\n          persist-credentials: false',
+    );
+    expect(recoveryJob).toContain(
+      'git fetch --no-tags --force origin "refs/tags/$RECOVERY_TAG:refs/tags/$RECOVERY_TAG"',
+    );
+    expect(recoveryJob).toContain(
+      'TAG_OBJECT=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG")',
+    );
+    expect(recoveryJob).toContain('test "$(git cat-file -t "$TAG_OBJECT")" = "tag"');
+
+    expect(recoveryJob).toContain(
+      'TAG_SHA=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG^{}")',
+    );
+    expect(recoveryJob).toContain('test "$TAG_SHA" = "$RECOVERY_SHA"');
+    expect(recoveryJob).toContain('test "$(git rev-parse HEAD)" = "$RECOVERY_SHA"');
+    expect(recoveryJob).toContain(
+      'node scripts/release-boundary.mjs assert-trigger --tag "$RECOVERY_TAG" --sha "$RECOVERY_SHA"',
+    );
+    expect(recoveryJob).not.toContain('cache: "npm"');
+    expect(recoveryJob).not.toContain('npm ci');
+    expect(recoveryJob).not.toContain("printf 'RECOVERY_AUDIT_JSON=%s\\n'");
+    expect(recoveryJob).not.toContain('[[ "$RECOVERY_TAG" =~');
+    expect(recoveryJob).toContain(
+      '- name: Validate recovery inputs\n        run: |\n          test "$RECOVERY_INPUT_TAG" = "v4.15.4"\n          test "$RECOVERY_INPUT_SHA" = "cb6932311ac956687e3c66bb6a48d52a8df14d56"',
+    );
+
+    const recoveryTagFetch = recoveryJob.indexOf(
+      'git fetch --no-tags --force origin "refs/tags/$RECOVERY_TAG:refs/tags/$RECOVERY_TAG"',
+    );
+    const recoveryTagObject = recoveryJob.indexOf(
+      'TAG_OBJECT=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG")',
+    );
+    const recoveryTagType = recoveryJob.indexOf(
+      'test "$(git cat-file -t "$TAG_OBJECT")" = "tag"',
+    );
+    const recoveryPeeledSha = recoveryJob.indexOf(
+      'TAG_SHA=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG^{}")',
+    );
+    const recoveryShaBinding = recoveryJob.indexOf(
+      'test "$TAG_SHA" = "$RECOVERY_SHA"',
+    );
+    const recoveryHeadBinding = recoveryJob.indexOf(
+      'test "$(git rev-parse HEAD)" = "$RECOVERY_SHA"',
+    );
+    const recoveryTriggerAssertion = recoveryJob.indexOf(
+      'node scripts/release-boundary.mjs assert-trigger --tag "$RECOVERY_TAG" --sha "$RECOVERY_SHA"',
+    );
+    expect(recoveryTagFetch).toBeLessThan(recoveryTagObject);
+    expect(recoveryTagObject).toBeLessThan(recoveryTagType);
+    expect(recoveryTagType).toBeLessThan(recoveryPeeledSha);
+    expect(recoveryPeeledSha).toBeLessThan(recoveryShaBinding);
+    expect(recoveryShaBinding).toBeLessThan(recoveryHeadBinding);
+    expect(recoveryHeadBinding).toBeLessThan(recoveryTriggerAssertion);
+
+    const recoveryPack = recoveryJob.indexOf(
+      'npm pack --ignore-scripts --pack-destination "$RECOVERY_ARCHIVE_DIR" --silent "oh-my-claude-sisyphus@$VERSION"',
+    );
+    const recoveryArchiveAssertion = recoveryJob.indexOf(
+      'node scripts/release-boundary.mjs assert-archive --tarball "$RECOVERY_TARBALL" --version "$VERSION" --git-head "$RECOVERY_SHA"',
+    );
+    const recoveryEvidenceWrite = recoveryJob.indexOf(
+      'node scripts/release-boundary.mjs write-evidence --tarball "$RECOVERY_TARBALL" --output "$RECOVERY_EVIDENCE_JSON"',
+    );
+    const recoveryInstall = recoveryJob.indexOf(
+      'npm install --ignore-scripts --no-audit --no-fund --prefix "$RECOVERY_PREFIX" "oh-my-claude-sisyphus@$VERSION"',
+    );
+    const recoveryAudit = recoveryJob.indexOf(
+      'npm audit signatures --json --include-attestations --prefix "$RECOVERY_PREFIX" > "$RECOVERY_AUDIT_JSON"',
+    );
+    const recoveryRequiredVerification = recoveryJob.indexOf(
+      'node scripts/release-boundary.mjs verify-registry --package oh-my-claude-sisyphus --version "$VERSION" --tag "$RECOVERY_TAG" --sha "$RECOVERY_SHA" --evidence "$RECOVERY_EVIDENCE_JSON" --tarball "$RECOVERY_TARBALL" --provenance required --audit "$RECOVERY_AUDIT_JSON"',
+    );
+    expect(recoveryPack).toBeGreaterThanOrEqual(0);
+    expect(recoveryArchiveAssertion).toBeGreaterThanOrEqual(0);
+    expect(recoveryEvidenceWrite).toBeGreaterThanOrEqual(0);
+    expect(recoveryInstall).toBeGreaterThanOrEqual(0);
+    expect(recoveryAudit).toBeGreaterThanOrEqual(0);
+    expect(recoveryRequiredVerification).toBeGreaterThanOrEqual(0);
+    expect(recoveryPack).toBeLessThan(recoveryArchiveAssertion);
+    expect(recoveryArchiveAssertion).toBeLessThan(recoveryEvidenceWrite);
+    expect(recoveryEvidenceWrite).toBeLessThan(recoveryInstall);
+    expect(recoveryInstall).toBeLessThan(recoveryAudit);
+    expect(recoveryAudit).toBeLessThan(recoveryRequiredVerification);
+
+    const recoveryInputValidation = stepIndex('Validate recovery inputs');
+    const recoveryCheckout = stepIndex('Checkout recovery source');
+    const recoveryTagIdentity = stepIndex('Assert recovered tag identity');
+    const recoverySetup = stepIndex('Setup recovery Node.js');
+    const recoveryNpmPin = stepIndex('Pin npm for recovery attestation verification');
+    const recoveryTrigger = stepIndex('Assert recovery trigger');
+    expect(recoveryInputValidation).toBeLessThan(recoveryCheckout);
+    expect(recoveryCheckout).toBeLessThan(recoveryTagIdentity);
+    expect(recoveryTagIdentity).toBeLessThan(recoverySetup);
+    expect(recoverySetup).toBeLessThan(recoveryNpmPin);
+    expect(recoveryNpmPin).toBeLessThan(recoveryTrigger);
+    const recoveryStepNames = [...recoveryJob.matchAll(/- name: ([^\n]+)/g)].map(
+      (match) => match[1],
+    );
+    expect(recoveryStepNames.slice(0, 3)).toEqual([
+      'Validate recovery inputs',
+      'Checkout recovery source',
+      'Assert recovered tag identity',
+    ]);
+
+    const recoveryArchive = stepIndex('Download published archive and generate recovery evidence');
+    const recoveryProvenance = stepIndex('Verify recovered package provenance');
+
+    const recoveryArtifact = stepIndex('Upload recovered release evidence');
+    const recoveryAbsence = stepIndex('Assert GitHub Release is absent');
+    const recoveredRelease = stepIndex('Create recovered GitHub Release');
+    const recoveryReleaseVerification = stepIndex('Verify recovered GitHub Release');
+    const recoveryArtifactStep = recoveryJob.slice(
+      recoveryJob.indexOf('- name: Upload recovered release evidence'),
+      recoveryJob.indexOf('- name: Assert GitHub Release is absent'),
+    );
+    const recoveryAbsenceStep = recoveryJob.slice(
+      recoveryJob.indexOf('- name: Assert GitHub Release is absent'),
+      recoveryJob.indexOf('- name: Create recovered GitHub Release'),
+    );
+    const recoveredReleaseStep = recoveryJob.slice(
+      recoveryJob.indexOf('- name: Create recovered GitHub Release'),
+      recoveryJob.indexOf('- name: Verify recovered GitHub Release'),
+    );
+    const recoveryVerificationStep = recoveryJob.slice(
+      recoveryJob.indexOf('- name: Verify recovered GitHub Release'),
+    );
+    expect(recoveryArtifactStep).toContain('${{ runner.temp }}/recovery-archive/*.tgz');
+    expect(recoveryArtifactStep).toContain('${{ runner.temp }}/recovery-evidence.json');
+    expect(recoveryArtifactStep).toContain(
+      '${{ runner.temp }}/recovery-provenance-verification/audit-signatures.json',
+    );
+    expect(recoveryArtifactStep).toContain('uses: actions/upload-artifact@v4');
+    expect(recoveryArtifactStep).toContain('name: npm-release-boundary-recovery-v4.15.4');
+    expect(recoveryArtifactStep).toContain('if-no-files-found: error');
+    expect(recoveryArtifactStep).toContain('retention-days: 30');
+    expect(recoveryArtifact).toBeLessThan(recoveredRelease);
+    expect(recoveryArchive).toBeLessThan(recoveryProvenance);
+    expect(recoveryProvenance).toBeLessThan(recoveryArtifact);
+
+    expect(recoveryAbsenceStep).toContain(
+      'if gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$RECOVERY_TAG" > "$RECOVERY_RELEASE_HTTP"; then',
+    );
+    expect(recoveryAbsenceStep).toContain('case "$GH_STATUS:$HTTP_STATUS" in\n            1:404) ;;');
+    expect(recoveryAbsenceStep).toContain('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}');
+    expect(recoveryAbsence).toBeLessThan(recoveredRelease);
+
+    expect(recoveredReleaseStep).toContain(
+      'uses: softprops/action-gh-release@v1\n        with:\n          tag_name: v4.15.4\n          body_path: release-notes.md\n          draft: false\n          prerelease: false\n        env:\n          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}',
+    );
+    expect(recoveredRelease).toBeLessThan(recoveryReleaseVerification);
+
+    expect(recoveryVerificationStep).toContain(
+      'if gh api --include "repos/$GITHUB_REPOSITORY/releases/tags/$RECOVERY_TAG" > "$RECOVERY_RELEASE_HTTP"; then',
+    );
+    expect(recoveryVerificationStep).toContain('case "$GH_STATUS:$HTTP_STATUS" in\n            0:200) ;;');
+    expect(recoveryVerificationStep).toContain(
+      'git fetch --no-tags --force origin "refs/tags/$RECOVERY_TAG:refs/tags/$RECOVERY_TAG"',
+    );
+    expect(recoveryVerificationStep).toContain(
+      'POST_CREATE_TAG_OBJECT=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG")',
+    );
+    expect(recoveryVerificationStep).toContain(
+      'test "$(git cat-file -t "$POST_CREATE_TAG_OBJECT")" = "tag"',
+    );
+    expect(recoveryVerificationStep).toContain(
+      'POST_CREATE_TAG_SHA=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG^{}")',
+    );
+    expect(recoveryVerificationStep).toContain(
+      'test "$POST_CREATE_TAG_SHA" = "$RECOVERY_SHA"',
+    );
+    const postCreateTagFetch = recoveryVerificationStep.indexOf(
+      'git fetch --no-tags --force origin "refs/tags/$RECOVERY_TAG:refs/tags/$RECOVERY_TAG"',
+    );
+    const postCreateTagObject = recoveryVerificationStep.indexOf(
+      'POST_CREATE_TAG_OBJECT=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG")',
+    );
+    const postCreateTagType = recoveryVerificationStep.indexOf(
+      'test "$(git cat-file -t "$POST_CREATE_TAG_OBJECT")" = "tag"',
+    );
+    const postCreateTagSha = recoveryVerificationStep.indexOf(
+      'POST_CREATE_TAG_SHA=$(git rev-parse --verify "refs/tags/$RECOVERY_TAG^{}")',
+    );
+    const postCreateTagBinding = recoveryVerificationStep.indexOf(
+      'test "$POST_CREATE_TAG_SHA" = "$RECOVERY_SHA"',
+    );
+    const postCreateReleaseApi = recoveryVerificationStep.indexOf('gh api --include');
+    expect(postCreateTagFetch).toBeLessThan(postCreateTagObject);
+    expect(postCreateTagObject).toBeLessThan(postCreateTagType);
+    expect(postCreateTagType).toBeLessThan(postCreateTagSha);
+    expect(postCreateTagSha).toBeLessThan(postCreateTagBinding);
+    expect(postCreateTagBinding).toBeLessThan(postCreateReleaseApi);
+    expect(recoveryVerificationStep).toContain(
+      'const expectedBody = readFileSync(\'.github/release-body.md\', \'utf8\');',
+    );
+    expect(recoveryVerificationStep).toContain(
+      'if (release.tag_name !== process.env.RECOVERY_TAG)',
+    );
+    expect(recoveryVerificationStep).toContain(
+      'if (release.draft !== false || release.prerelease !== false)',
+    );
+    expect(recoveryVerificationStep).toContain('if (release.body !== expectedBody)');
+    expect(recoveryVerificationStep).toContain('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}');
+    expect(recoveryVerificationStep.indexOf('- name:', 1)).toBe(-1);
   });
 });
