@@ -1,6 +1,6 @@
 # Reference Documentation
 
-Complete reference for oh-my-claudecode. For quick start, see the main [README.md](../README.md).
+Complete reference for oh-my-claudecode. The 5.3.0 package ships 19 agents, 37 skills, and 21 commands, and its single configured MCP server exposes 55 tools. For quick start, see the main [README.md](../README.md).
 
 ---
 
@@ -12,7 +12,7 @@ Complete reference for oh-my-claudecode. For quick start, see the main [README.m
 - [Plugin directory flags](#plugin-directory-flags)
 - [CLI Commands: ask/team/session](#cli-commands-askteamsession)
 - [Legacy MCP Team Runtime Tools (Deprecated)](#legacy-mcp-team-runtime-tools-deprecated-opt-in-only)
-- [Agents (29 Total)](#agents-29-total)
+- [Agents (19 Total)](#agents-19-total)
 - [Goal Workflow UX: `/goal`, Ralph, Team, Ultragoal](#goal-workflow-ux-goal-ralph-team-ultragoal)
 - [Skills (37 Total)](#skills-37-total)
 - [Slash Commands](#slash-commands)
@@ -218,7 +218,7 @@ Once a workspace is anchored, multiple Claude Code sessions in different sub-rep
 
 **Only the `team` skill writes to `.omc/handoffs/`.** All other code that reads the directory does so read-only. This is enforced by the lint test `tests/lint/handoffs-writers.test.ts`, which scans `src/**` and `templates/**` and fails if any file outside `src/team/` or `src/hooks/team-pipeline/` references `handoffs/` as a write target.
 
-- Handoff files survive team cancellation and OMC state cleanup intentionally — they are post-mortem artifacts. Claude Code 2.1.178+ has no `TeamDelete`.
+- Handoff files survive team cancellation and OMC state cleanup intentionally — they are post-mortem artifacts. Claude Code 2.1.178+ removed native `TeamCreate`/`TeamDelete`; teams use the implicit agent team with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, spawning teammates through the Agent/Task tool with distinct `name` values.
 - Do **not** session-scope `.omc/handoffs/` unless the `team` skill explicitly evolves to per-session inboxes (tracked as a follow-up in the ADR).
 
 #### Branded path types (`ReadPath` / `WritePath`)
@@ -723,69 +723,57 @@ Bounded handoff policy:
 2. For larger payloads, pass a short summary plus the descriptor.
 3. Keep durable content in artifact paths such as `.omc/plans/`, `.omc/prompts/`, and related artifact stores rather than embedding full bodies into queue or status records.
 
-## Agents (29 Total)
+## Agents (19 Total)
 
 Always use `oh-my-claudecode:` prefix when calling via Task tool.
 
 ### By Domain and Tier
 
-| Domain             | LOW (Haiku)             | MEDIUM (Sonnet)       | HIGH (Opus)         |
-| ------------------ | ----------------------- | --------------------- | ------------------- |
-| **Analysis**       | `architect-low`         | `architect-medium`    | `architect`         |
-| **Execution**      | `executor-low`          | `executor`            | `executor-high`     |
-| **Search**         | `explore`               | -                     | `explore-high`      |
-| **Research**       | -                       | `document-specialist` | -                   |
-| **Frontend**       | `designer-low`          | `designer`            | `designer-high`     |
-| **Docs**           | `writer`                | -                     | -                   |
-| **Visual**         | -                       | `vision`              | -                   |
-| **Planning**       | -                       | -                     | `planner`           |
-| **Critique**       | -                       | -                     | `critic`            |
-| **Pre-Planning**   | -                       | -                     | `analyst`           |
-| **Testing**        | -                       | `qa-tester`           | -                   |
-| **Tracing**        | -                       | `tracer`              | -                   |
-| **Security**       | `security-reviewer-low` | -                     | `security-reviewer` |
-| **Build**          | -                       | `debugger`            | -                   |
-| **TDD**            | -                       | `test-engineer`       | -                   |
-| **Code Review**    | -                       | -                     | `code-reviewer`     |
-| **Data Analysis** | -                       | `scientist`           | `scientist-high`    |
-| **Git**            | -                       | `git-master`          | -                   |
-| **Simplification** | -                       | -                     | `code-simplifier`   |
+| Domain | Agent(s) | Default model |
+| ------ | --------- | ------------- |
+| **Analysis** | `architect` | opus |
+| **Pre-planning** | `analyst` | opus |
+| **Planning** | `planner` | opus |
+| **Critique** | `critic` | opus |
+| **Execution** | `executor` | sonnet |
+| **Debugging** | `debugger` | sonnet |
+| **Verification** | `verifier` | sonnet |
+| **Tracing** | `tracer` | sonnet |
+| **Search** | `explore` | haiku |
+| **Research** | `document-specialist` | sonnet |
+| **Frontend** | `designer` | sonnet |
+| **Docs** | `writer` | haiku |
+| **Interactive QA** | `qa-tester` | sonnet |
+| **Testing** | `test-engineer` | sonnet |
+| **Security** | `security-reviewer` | sonnet |
+| **Code Review** | `code-reviewer` | opus |
+| **Data Analysis** | `scientist` | sonnet |
+| **Git** | `git-master` | sonnet |
+| **Simplification** | `code-simplifier` | opus |
 
 ### Agent Selection Guide
 
-| Task Type                      | Best Agent                                                             | Model  |
-| ------------------------------ | ---------------------------------------------------------------------- | ------ |
-| Quick code lookup              | `explore`                                                              | haiku  |
-| Find files/patterns            | `explore`                                                              | haiku  |
-| Complex architectural search   | `explore-high`                                                         | opus   |
-| Simple code change             | `executor-low`                                                         | haiku  |
-| Feature implementation         | `executor`                                                             | sonnet |
-| Complex refactoring            | `executor-high`                                                        | opus   |
-| Debug simple issue             | `architect-low`                                                        | haiku  |
-| Debug complex issue            | `architect`                                                            | opus   |
-| UI component                   | `designer`                                                             | sonnet |
-| Complex UI system              | `designer-high`                                                        | opus   |
-| Write docs/comments            | `writer`                                                               | haiku  |
-| Research docs/APIs             | `document-specialist` (repo docs first; optional Context Hub / `chub`) | sonnet |
-| Analyze images/diagrams        | `vision`                                                               | sonnet |
-| Strategic planning             | `planner`                                                              | opus   |
-| Review/critique plan           | `critic`                                                               | opus   |
-| Pre-planning analysis          | `analyst`                                                              | opus   |
-| Test CLI interactively         | `qa-tester`                                                            | sonnet |
-| Evidence-driven causal tracing | `tracer`                                                               | sonnet |
-| Security review                | `security-reviewer`                                                    | sonnet |
-| Quick security scan            | `security-reviewer-low`                                                | haiku  |
-| Fix build errors               | `debugger`                                                             | sonnet |
-| Simple build fix               | `debugger` (model=haiku)                                               | haiku  |
-| TDD workflow                   | `test-engineer`                                                        | sonnet |
-| Quick test suggestions         | `test-engineer` (model=haiku)                                          | haiku  |
-| Code review                    | `code-reviewer`                                                        | opus   |
-| Quick code check               | `code-reviewer` (model=haiku)                                          | haiku  |
-| Data analysis/stats            | `scientist`                                                            | sonnet |
-| Quick data inspection          | `scientist` (model=haiku)                                              | haiku  |
-| Deep data analysis            | `scientist-high`                                                       | opus   |
-| Git operations                 | `git-master`                                                           | sonnet |
-| Code simplification            | `code-simplifier`                                                      | opus   |
+| Task Type | Best Agent | Model |
+| ---------- | ---------- | ----- |
+| Codebase discovery and file mapping | `explore` | haiku |
+| Requirements analysis | `analyst` | opus |
+| System architecture and interfaces | `architect` | opus |
+| Strategic planning | `planner` | opus |
+| Plan or design critique | `critic` | opus |
+| Feature implementation | `executor` | sonnet |
+| Debugging and build errors | `debugger` | sonnet |
+| Completion verification | `verifier` | sonnet |
+| Evidence-driven tracing | `tracer` | sonnet |
+| UI component design | `designer` | sonnet |
+| Documentation | `writer` | haiku |
+| External docs/API research | `document-specialist` | sonnet |
+| Interactive CLI/service validation | `qa-tester` | sonnet |
+| Test strategy and coverage | `test-engineer` | sonnet |
+| Security review | `security-reviewer` | sonnet |
+| Code review | `code-reviewer` | opus |
+| Data analysis and statistics | `scientist` | sonnet |
+| Git operations | `git-master` | sonnet |
+| Code simplification | `code-simplifier` | opus |
 
 ---
 
@@ -935,7 +923,7 @@ Marketplace/plugin installs compact the native plugin `skills/*/SKILL.md` files 
 
 ## Slash Commands
 
-Most installed skills are exposed as `/oh-my-claudecode:<skill-name>`. Deep Interview is intentionally documented with the short `/deep-interview` path because that path receives OMC's rendered runtime threshold guidance before the interview starts. The skills table above is the full runtime-backed list, including frontmatter aliases; the commands below list shipped command files and direct skill entrypoints. Compatibility keyword modes like `deep-analyze` and `tdd` are prompt-triggered behaviors, not standalone slash commands. OMC's manual compaction helper is plugin-scoped as `/oh-my-claudecode:compact`; bare `/compact` remains Claude Code's native command and is not shadowed by OMC. The helper preserves the user's note and instructs them to run bare `/compact`; OMC does not invoke native compaction itself because Claude Code's built-in `/compact` is not a prompt skill.
+The 5.3.0 package ships 21 command files. Most installed skills are exposed as `/oh-my-claudecode:<skill-name>`. Deep Interview is intentionally documented with the short `/deep-interview` path because that path receives OMC's rendered runtime threshold guidance before the interview starts. The skills table above is the full runtime-backed list, including frontmatter aliases; the commands below list shipped command files and direct skill entrypoints. Compatibility keyword modes like `deep-analyze` and `tdd` are prompt-triggered behaviors, not standalone slash commands. OMC's manual compaction helper is plugin-scoped as `/oh-my-claudecode:compact`; bare `/compact` remains Claude Code's native command and is not shadowed by OMC. The helper preserves the user's note and instructs them to run bare `/compact`; OMC does not invoke native compaction itself because Claude Code's built-in `/compact` is not a prompt skill.
 
 | Command                                                  | Description                                                                                   |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -1384,8 +1372,8 @@ Use Claude Code's plugin management:
 Or manually remove the installed files:
 
 ```bash
-rm ~/.claude/agents/{architect,document-specialist,explore,designer,writer,vision,critic,analyst,executor,qa-tester}.md
-rm ~/.claude/commands/{analyze,autopilot,deepsearch,plan,review,ultrawork}.md
+rm ~/.claude/agents/{explore,analyst,planner,architect,debugger,executor,verifier,tracer,security-reviewer,code-reviewer,test-engineer,designer,writer,qa-tester,scientist,git-master,document-specialist,code-simplifier,critic}.md
+rm ~/.claude/commands/{analyze,autopilot,deepsearch,plan,review,execute,team}.md
 ```
 
 ---

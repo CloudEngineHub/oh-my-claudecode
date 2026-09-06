@@ -1,6 +1,6 @@
 # MCP Tools
 
-> OMC provides MCP tools for state management, code intelligence, and data analysis.
+> OMC provides MCP tools for state management, code intelligence, and data analysis. Version 5.3.0 exposes 55 tools through the single configured MCP server.
 
 Unlike skills that users invoke directly, tools are used internally by agents during task execution.
 
@@ -22,7 +22,7 @@ Unlike skills that users invoke directly, tools are used internally by agents du
 
 ## State
 
-State tools manage the state of OMC execution modes (autopilot, ralph, ultrawork, etc.). Each mode records its current progress, active status, and configuration in state files.
+State tools manage the state of OMC execution modes (autopilot, ralph, team, etc.). Legacy/retired mode state such as `ultrawork` may remain only for cleanup and diagnostics; it is not invocable. Each mode records its current progress, active status, and configuration in state files.
 
 ### Storage Path
 
@@ -31,10 +31,10 @@ State tools manage the state of OMC execution modes (autopilot, ralph, ultrawork
 ├── sessions/{sessionId}/     # Session-scoped state
 │   ├── autopilot-state.json
 │   ├── ralph-state.json
-│   └── ultrawork-state.json
+│   └── ultrawork-state.json   # legacy/retired cleanup state; never invoke
 ├── autopilot-state.json      # Legacy fallback
 ├── ralph-state.json
-└── ultrawork-state.json
+└── ultrawork-state.json       # legacy/retired fallback state; never invoke
 ```
 
 When a session ID is provided, the session-scoped path is used; otherwise the legacy path is used as a fallback.

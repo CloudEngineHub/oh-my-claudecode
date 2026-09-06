@@ -65,7 +65,7 @@ npm i -g oh-my-claude-sisyphus@latest
 > yet. The warning is tracked in [#2913](https://github.com/Yeachan-Heo/oh-my-claudecode/issues/2913)
 > and does not by itself mean the OMC CLI install failed.
 
-Both can be installed at the same time. The CLI auto-detects the plugin install and will not double-register skills under `~/.claude/skills/` (if you previously hit the duplicate-skill bug, run `omc update` once on 4.11.2+ — it self-heals leftover standalone skills that the plugin now provides via `prunePluginDuplicateSkills`).
+Both can be installed at the same time. The CLI auto-detects the plugin install and will not double-register skills under `~/.claude/skills/` (if you previously hit the duplicate-skill bug, run `omc update` once on 5.3.0+ — it self-heals leftover standalone skills that the plugin now provides via `prunePluginDuplicateSkills`).
 
 ### Step 3: Run initial setup
 
@@ -220,7 +220,7 @@ To configure the HUD display, run:
 
 ### Starting smaller
 
-If autopilot feels too large, start with a single-task command:
+If autopilot feels too large, start with a focused skill:
 
 ```bash
 # Code analysis
@@ -229,11 +229,11 @@ analyze why this test is failing
 # File search
 deepsearch for files that handle authentication
 
-# Simple implementation
-ultrawork add a health check endpoint
+# Approved implementation task
+/oh-my-claudecode:execute add a health check endpoint
 ```
 
-These keywords invoke a single appropriate agent directly, without running the full pipeline.
+These surfaces invoke focused work without running the full autopilot pipeline. Use `/oh-my-claudecode:team` when the task needs parallel agents.
 
 ### Next steps
 
@@ -281,9 +281,8 @@ Defaults → User config (~/.config/claude-omc/config.jsonc)
     "astTools": true
   },
 
-  // Magic keyword customization
+  // Magic keyword customization for supported categories
   "magicKeywords": {
-    "ultrawork": ["ultrawork", "ulw", "uw"],
     "search": ["search", "find", "locate"],
     "analyze": ["analyze", "investigate", "examine"],
     "ultrathink": ["ultrathink", "think", "reason"]
@@ -361,14 +360,11 @@ You can change the AI model used by each agent:
 
 ### Customizing magic keywords
 
-You can change keywords in four categories via the `magicKeywords` section of `config.jsonc`:
+You can customize the supported search, analysis, and deep-reasoning categories via the `magicKeywords` section of `config.jsonc`:
 
 ```jsonc
 {
   "magicKeywords": {
-    // Triggers parallel execution mode
-    "ultrawork": ["ultrawork", "ulw", "parallel"],
-
     // Triggers codebase search mode
     "search": ["search", "find", "locate", "grep"],
 
@@ -381,7 +377,7 @@ You can change keywords in four categories via the `magicKeywords` section of `c
 }
 ```
 
-> ℹ️ **Note:** The `magicKeywords` section in `config.jsonc` only allows customizing four categories: `ultrawork`, `search`, `analyze`, and `ultrathink`. Keywords such as `autopilot`, `ralph`, and `ccg` are hardcoded in the keyword-detector hook and cannot be changed via config files.
+> ℹ️ **Note:** Parallel work is not configured as a magic keyword. Use `/oh-my-claudecode:team` for coordinated agents, or `/oh-my-claudecode:execute` to carry an approved task through verified implementation. Keywords such as `autopilot` and `ralph` are hardcoded in the keyword-detector hook and cannot be changed via config files.
 
 ### Model routing configuration
 
