@@ -18,7 +18,7 @@ import { sanitizeOutput } from "./sanitize.js";
 import { estimatePayloadFromTranscriptPath } from "./payload-estimate.js";
 import { getRuntimePackageVersion } from "../lib/version.js";
 import { compareVersions } from "../features/auto-update.js";
-import { resolveToWorktreeRoot, resolveTranscriptPath, } from "../lib/worktree-paths.js";
+import { resolveToWorktreeRoot, resolveTranscriptPath, withWorktreePathRenderScope, } from "../lib/worktree-paths.js";
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 import { access, readFile } from "fs/promises";
 import { join, basename, dirname } from "path";
@@ -187,7 +187,7 @@ function showDiagnostic() {
  * Main HUD entry point
  * @param watchMode - true when called from the --watch polling loop (stdin is TTY)
  */
-async function main(watchMode = false, skipInit = false) {
+async function mainImpl(watchMode = false, skipInit = false) {
     try {
         // Read stdin from Claude Code
         const previousStdinCache = readStdinCache();
@@ -277,7 +277,9 @@ async function main(watchMode = false, skipInit = false) {
         // Stdin owns fresher five-hour/seven-day values, while getUsage() may provide
         // Sonnet/Opus weekly, monthly, extra, stale, and error metadata.
         const stdinRateLimits = getRateLimitsFromStdin(stdin);
-        const usageResult = config.elements.rateLimits === false ? null : await getUsage();
+        const usageResult = config.elements.rateLimits === false
+            ? null
+            : await getUsage({ clientVersion: stdin.version });
         const rateLimitsResult = config.elements.rateLimits === false
             ? null
             : mergeStdinRateLimits(stdinRateLimits, usageResult);
@@ -288,6 +290,9 @@ async function main(watchMode = false, skipInit = false) {
         // Read OMC version and update check cache
         let omcVersion = null;
         let updateAvailable = null;
+        let omcUpdateSource = null;
+        const claudeCodeVersion = stdin.version ?? null;
+        let claudeCodeUpdateAvailable = null;
         try {
             omcVersion = getRuntimePackageVersion();
             if (omcVersion === "unknown")
@@ -309,6 +314,16 @@ async function main(watchMode = false, skipInit = false) {
                 omcVersion &&
                 compareVersions(omcVersion, cached.latestVersion) < 0) {
                 updateAvailable = cached.latestVersion;
+            }
+            if (cached?.source === "npm" || cached?.source === "marketplace") {
+                omcUpdateSource = cached.source;
+            }
+            // claudeCodeLatestVersion is absent on caches written before the
+            // Claude Code check existed; treat that as "no update known".
+            if (cached?.claudeCodeLatestVersion &&
+                claudeCodeVersion &&
+                compareVersions(claudeCodeVersion, cached.claudeCodeLatestVersion) < 0) {
+                claudeCodeUpdateAvailable = cached.claudeCodeLatestVersion;
             }
         }
         catch (error) {
@@ -373,6 +388,9 @@ async function main(watchMode = false, skipInit = false) {
             sessionTotalTokens: transcriptData.sessionTotalTokens ?? null,
             omcVersion,
             updateAvailable,
+            omcUpdateSource,
+            claudeCodeVersion,
+            claudeCodeUpdateAvailable,
             toolCallCount: transcriptData.toolCallCount,
             agentCallCount: transcriptData.agentCallCount,
             skillCallCount: transcriptData.skillCallCount,
@@ -462,6 +480,9 @@ async function main(watchMode = false, skipInit = false) {
     }
 }
 // Export for programmatic use (e.g., omc hud --watch loop)
+function main(watchMode = false, skipInit = false) {
+    return withWorktreePathRenderScope(() => mainImpl(watchMode, skipInit));
+}
 export { main };
 // Auto-run (unconditional so dynamic import() via omc-hud.mjs wrapper works correctly)
 main();

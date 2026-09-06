@@ -13,10 +13,10 @@
  * ```
  */
 import { pathToFileURL } from "url";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmdirSync, unlinkSync, writeFileSync, } from "fs";
+import { existsSync, readFileSync, readdirSync, rmdirSync, } from "fs";
 import { dirname, join } from "path";
-import { resolveToWorktreeRoot, getOmcRoot } from "../lib/worktree-paths.js";
-import { readModeState, writeModeState } from "../lib/mode-state-io.js";
+import { resolveToWorktreeRoot, getOmcRoot, getSessionStateDir as resolveSessionStateDir, listSessionIds, resolveStatePath, resolveSessionStatePath, } from "../lib/worktree-paths.js";
+import { canClearStateForSession, clearStateFileLockedIf, readModeState, readModeStateWithMeta, writeModeState, writeStateFileLockedCreateIf, writeStateFileLockedIf, } from "../lib/mode-state-io.js";
 import { SESSION_END_MODE_STATE_FILES } from "../lib/mode-names.js";
 import { formatOmcCliInvocation } from "../utils/omc-cli-rendering.js";
 import { createSwallowedErrorLogger } from "../lib/swallowed-error.js";
@@ -152,7 +152,7 @@ function readLinuxBootId() {
     }
 }
 function sessionStateDir(directory, sessionId) {
-    return join(getOmcRoot(directory), "state", "sessions", sessionId);
+    return resolveSessionStateDir(sessionId, directory);
 }
 function sessionStartedMarkerPath(directory, sessionId) {
     return join(sessionStateDir(directory, sessionId), SESSION_STARTED_MARKER_FILE);
@@ -174,8 +174,6 @@ function writeSessionStartedMarker(directory, sessionId) {
     if (!sessionId || !SAFE_SESSION_ID_PATTERN.test(sessionId))
         return;
     try {
-        const dir = sessionStateDir(directory, sessionId);
-        mkdirSync(dir, { recursive: true });
         const marker = {
             session_id: sessionId,
             started_at: new Date().toISOString(),
@@ -187,10 +185,8 @@ function writeSessionStartedMarker(directory, sessionId) {
             // later SessionStart hooks to falsely clean live session state.
             boot_id: readLinuxBootId(),
         };
-        writeFileSync(sessionStartedMarkerPath(directory, sessionId), JSON.stringify(marker, null, 2), {
-            encoding: "utf-8",
-            mode: 0o600,
-        });
+        const markerPath = sessionStartedMarkerPath(directory, sessionId);
+        writeStateFileLockedCreateIf(markerPath, (current) => current === null || canClearStateForSession(current, sessionId), () => marker);
     }
     catch {
         // SessionStart markers are best-effort and must never block startup.
@@ -201,9 +197,7 @@ function removeSessionStartedMarker(directory, sessionId) {
         return;
     try {
         const markerPath = sessionStartedMarkerPath(directory, sessionId);
-        if (existsSync(markerPath)) {
-            unlinkSync(markerPath);
-        }
+        clearStateFileLockedIf(markerPath, (current) => current.session_id === sessionId && canClearStateForSession(current, sessionId));
     }
     catch {
         // Best-effort marker cleanup only.
@@ -213,40 +207,53 @@ function hasSessionEndSummary(directory, sessionId) {
     return existsSync(join(getOmcRoot(directory), "sessions", `${sessionId}.json`));
 }
 function cleanupSessionModeStateFiles(directory, sessionId) {
-    const dir = sessionStateDir(directory, sessionId);
-    for (const { file } of SESSION_END_MODE_STATE_FILES) {
-        const filePath = join(dir, file);
-        const state = readJsonObject(filePath);
+    for (const { file, mode } of SESSION_END_MODE_STATE_FILES) {
+        let filePath;
+        try {
+            filePath = resolveSessionStatePath(mode, sessionId, directory);
+        }
+        catch {
+            continue;
+        }
         // SessionStart reconciliation is intentionally narrower than SessionEnd:
         // only remove files inside the explicit stale session directory. Do not
         // touch legacy/global state, even if it is unowned or shares a mode name.
-        if (state?.active === true || file === "skill-active-state.json") {
-            try {
-                unlinkSync(filePath);
-            }
-            catch {
-                // Leave files in place when deletion fails.
-            }
-        }
+        // Re-check ownership while holding the mutation lock so metadata-only
+        // foreign state cannot be removed by a stale-session cleanup.
+        clearStateFileLockedIf(filePath, (current) => !Array.isArray(current) &&
+            (current.active === true || file === "skill-active-state.json") &&
+            canClearStateForSession(current, sessionId));
     }
 }
 function cleanupMissionStateForSession(directory, sessionId) {
-    const missionStatePath = join(getOmcRoot(directory), "state", "mission-state.json");
-    const parsed = readJsonObject(missionStatePath);
-    if (!Array.isArray(parsed?.missions))
-        return;
-    const before = parsed.missions.length;
-    parsed.missions = parsed.missions.filter((mission) => {
-        if (mission.source !== "session")
-            return true;
-        const missionId = typeof mission.id === "string" ? mission.id : "";
-        return !missionId.includes(sessionId);
-    });
-    if (parsed.missions.length === before)
-        return;
     try {
-        parsed.updatedAt = new Date().toISOString();
-        writeFileSync(missionStatePath, JSON.stringify(parsed, null, 2));
+        const missionStatePath = resolveStatePath("mission-state", directory);
+        writeStateFileLockedIf(missionStatePath, (current) => {
+            if (!canClearStateForSession(current, sessionId) || !Array.isArray(current.missions)) {
+                return false;
+            }
+            return current.missions.some((mission) => {
+                if (!mission || typeof mission !== "object" || mission.source !== "session") {
+                    return false;
+                }
+                const missionId = typeof mission.id === "string"
+                    ? mission.id
+                    : "";
+                return missionId === `session:${sessionId}` || missionId.startsWith(`session:${sessionId}:`) || missionId.endsWith(`-${sessionId}`);
+            });
+        }, (current) => ({
+            ...current,
+            updatedAt: new Date().toISOString(),
+            missions: current.missions.filter((mission) => {
+                if (!mission || typeof mission !== "object" || mission.source !== "session") {
+                    return true;
+                }
+                const missionId = typeof mission.id === "string"
+                    ? mission.id
+                    : "";
+                return !(missionId === `session:${sessionId}` || missionId.startsWith(`session:${sessionId}:`) || missionId.endsWith(`-${sessionId}`));
+            }),
+        }));
     }
     catch {
         // Best-effort cleanup only.
@@ -275,18 +282,8 @@ function hasDurableAbandonmentEvidence(marker) {
     return false;
 }
 async function reconcileAbandonedSessionStarts(directory, currentSessionId) {
-    const sessionsDir = join(getOmcRoot(directory), "state", "sessions");
-    if (!existsSync(sessionsDir))
-        return;
-    let entries;
-    try {
-        entries = readdirSync(sessionsDir);
-    }
-    catch {
-        return;
-    }
-    for (const sessionId of entries) {
-        if (!SAFE_SESSION_ID_PATTERN.test(sessionId) || sessionId === currentSessionId)
+    for (const sessionId of listSessionIds(directory)) {
+        if (sessionId === currentSessionId)
             continue;
         const markerPath = sessionStartedMarkerPath(directory, sessionId);
         const marker = readJsonObject(markerPath);
@@ -324,15 +321,6 @@ function getExtraField(input, key) {
 function getHookToolUseId(input) {
     const value = getExtraField(input, "tool_use_id");
     return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-}
-function getHookContextString(input, ...keys) {
-    for (const key of keys) {
-        const value = getExtraField(input, key);
-        if (typeof value === "string" && value.trim().length > 0) {
-            return value.trim();
-        }
-    }
-    return undefined;
 }
 function extractAsyncAgentId(toolOutput) {
     if (typeof toolOutput !== "string") {
@@ -379,11 +367,13 @@ function taskLaunchDidFail(toolOutput) {
     return normalized.includes("error") || normalized.includes("failed");
 }
 function getSessionStateDir(directory, sessionId) {
-    const stateDir = join(getOmcRoot(directory), "state");
     if (sessionId && SAFE_SESSION_ID_PATTERN.test(sessionId)) {
-        return join(stateDir, "sessions", sessionId);
+        return resolveSessionStateDir(sessionId, directory);
     }
-    return stateDir;
+    return dirname(resolveStatePath("session-state", directory));
+}
+function getStateDir(directory) {
+    return dirname(resolveStatePath("team", directory));
 }
 function getScheduledWakeupStatePath(directory, sessionId) {
     return join(getSessionStateDir(directory, sessionId), "scheduled-wakeup-state.json");
@@ -416,54 +406,51 @@ function parseWakeupDueAt(toolInput) {
 function recordScheduledWakeup(directory, sessionId, toolInput) {
     try {
         const statePath = getScheduledWakeupStatePath(directory, sessionId);
-        mkdirSync(dirname(statePath), { recursive: true });
-        writeFileSync(statePath, JSON.stringify({
+        writeStateFileLockedCreateIf(statePath, (current) => current === null ||
+            !sessionId ||
+            canClearStateForSession(current, sessionId), () => ({
             active: true,
             pending: true,
             status: "pending",
             session_id: sessionId,
             created_at: new Date().toISOString(),
             due_at: parseWakeupDueAt(toolInput),
-        }, null, 2));
+        }));
     }
     catch {
         // Wakeup state is best-effort; never fail the hook.
     }
 }
 function getModeStatePaths(directory, modeName, sessionId) {
-    const stateDir = join(getOmcRoot(directory), "state");
     const safeSessionId = typeof sessionId === "string" && SAFE_SESSION_ID_PATTERN.test(sessionId)
         ? sessionId
         : undefined;
     return [
-        safeSessionId ? join(stateDir, "sessions", safeSessionId, `${modeName}-state.json`) : null,
-        join(stateDir, `${modeName}-state.json`),
+        safeSessionId ? resolveSessionStatePath(modeName, safeSessionId, directory) : null,
+        resolveStatePath(modeName, directory),
     ].filter((statePath) => Boolean(statePath));
 }
 function updateModeAwaitingConfirmation(directory, modeName, sessionId, awaitingConfirmation) {
     for (const statePath of getModeStatePaths(directory, modeName, sessionId)) {
-        if (!existsSync(statePath)) {
-            continue;
-        }
         try {
-            const state = JSON.parse(readFileSync(statePath, "utf-8"));
-            if (!state || typeof state !== "object") {
-                continue;
-            }
-            if (awaitingConfirmation) {
-                state.awaiting_confirmation = true;
-                state.awaiting_confirmation_set_at = new Date().toISOString();
-            }
-            else if (state.awaiting_confirmation === true) {
-                delete state.awaiting_confirmation;
-                delete state.awaiting_confirmation_set_at;
-            }
-            else {
-                continue;
-            }
-            const tmpPath = `${statePath}.${process.pid}.${Date.now()}.tmp`;
-            writeFileSync(tmpPath, JSON.stringify(state, null, 2));
-            renameSync(tmpPath, statePath);
+            writeStateFileLockedIf(statePath, (state) => {
+                if (sessionId && !canClearStateForSession(state, sessionId)) {
+                    return false;
+                }
+                return awaitingConfirmation || state.awaiting_confirmation === true;
+            }, (state) => {
+                if (awaitingConfirmation) {
+                    return {
+                        ...state,
+                        awaiting_confirmation: true,
+                        awaiting_confirmation_set_at: new Date().toISOString(),
+                    };
+                }
+                const next = { ...state };
+                delete next.awaiting_confirmation;
+                delete next.awaiting_confirmation_set_at;
+                return next;
+            });
         }
         catch {
             // Best-effort state sync only.
@@ -626,34 +613,28 @@ async function seedAutopilotStartupState(directory, prompt, sessionId) {
     }
 }
 function readTeamStagedState(directory, sessionId) {
-    const stateDir = join(getOmcRoot(directory), "state");
-    const statePaths = sessionId
+    const stateCandidates = sessionId
         ? [
-            join(stateDir, "sessions", sessionId, "team-state.json"),
-            join(stateDir, "team-state.json"),
+            readModeStateWithMeta("team", directory, sessionId),
+            readModeStateWithMeta("team", directory),
         ]
-        : [join(stateDir, "team-state.json")];
+        : [readModeStateWithMeta("team", directory)];
     let coarseState = null;
-    for (const statePath of statePaths) {
-        if (!existsSync(statePath)) {
+    for (const candidate of stateCandidates) {
+        if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
             continue;
         }
-        try {
-            const parsed = JSON.parse(readFileSync(statePath, "utf-8"));
-            if (typeof parsed !== "object" || parsed === null) {
-                continue;
-            }
-            const stateSessionId = parsed.session_id || parsed.sessionId;
-            if (sessionId && stateSessionId && stateSessionId !== sessionId) {
-                continue;
-            }
-            coarseState = parsed;
-            if (parsed.active === true && !isTeamStateTerminal(parsed)) {
-                return parsed;
-            }
-        }
-        catch {
+        if (sessionId && !canClearStateForSession(candidate, sessionId)) {
             continue;
+        }
+        const parsed = candidate;
+        const stateSessionId = parsed.session_id || parsed.sessionId;
+        if (sessionId && stateSessionId && stateSessionId !== sessionId) {
+            continue;
+        }
+        coarseState = parsed;
+        if (parsed.active === true && !isTeamStateTerminal(parsed)) {
+            return parsed;
         }
     }
     const canonical = readCanonicalTeamStateCandidate(directory, sessionId);
@@ -703,15 +684,17 @@ function getTeamStageForEnforcement(state) {
     return alias && TEAM_ACTIVE_STAGES.has(alias) ? alias : null;
 }
 function readTeamStopBreakerCount(directory, sessionId) {
-    const stateDir = join(getOmcRoot(directory), "state");
     const breakerPath = sessionId
-        ? join(stateDir, "sessions", sessionId, "team-stop-breaker.json")
-        : join(stateDir, "team-stop-breaker.json");
+        ? join(getSessionStateDir(directory, sessionId), "team-stop-breaker.json")
+        : join(dirname(resolveStatePath("team", directory)), "team-stop-breaker.json");
     try {
         if (!existsSync(breakerPath)) {
             return 0;
         }
         const parsed = JSON.parse(readFileSync(breakerPath, "utf-8"));
+        if (sessionId && !canClearStateForSession(parsed, sessionId)) {
+            return 0;
+        }
         if (typeof parsed.updated_at === "string") {
             const updatedAt = new Date(parsed.updated_at).getTime();
             if (Number.isFinite(updatedAt) &&
@@ -727,16 +710,13 @@ function readTeamStopBreakerCount(directory, sessionId) {
     }
 }
 function writeTeamStopBreakerCount(directory, sessionId, count) {
-    const stateDir = join(getOmcRoot(directory), "state");
     const breakerPath = sessionId
-        ? join(stateDir, "sessions", sessionId, "team-stop-breaker.json")
-        : join(stateDir, "team-stop-breaker.json");
+        ? join(getSessionStateDir(directory, sessionId), "team-stop-breaker.json")
+        : join(dirname(resolveStatePath("team", directory)), "team-stop-breaker.json");
     const safeCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
     if (safeCount === 0) {
         try {
-            if (existsSync(breakerPath)) {
-                unlinkSync(breakerPath);
-            }
+            clearStateFileLockedIf(breakerPath, (current) => !sessionId || canClearStateForSession(current, sessionId));
         }
         catch {
             // no-op
@@ -744,8 +724,9 @@ function writeTeamStopBreakerCount(directory, sessionId, count) {
         return;
     }
     try {
-        mkdirSync(dirname(breakerPath), { recursive: true });
-        writeFileSync(breakerPath, JSON.stringify({ count: safeCount, updated_at: new Date().toISOString() }, null, 2), "utf-8");
+        writeStateFileLockedCreateIf(breakerPath, (current) => current === null ||
+            !sessionId ||
+            canClearStateForSession(current, sessionId), () => ({ count: safeCount, updated_at: new Date().toISOString() }));
     }
     catch {
         // no-op
@@ -997,9 +978,7 @@ function tombstoneWorkflowSlot(directory, skillName, sessionId) {
 }
 function resolveStatePathSafe(stateName, directory) {
     try {
-        // Lazy resolve to avoid a circular import; same module is imported in
-        // skill-state via the mode-paths registry.
-        return join(getOmcRoot(directory), "state", `${stateName}-state.json`);
+        return resolveStatePath(stateName, directory);
     }
     catch {
         return "";
@@ -1007,7 +986,7 @@ function resolveStatePathSafe(stateName, directory) {
 }
 function resolveSessionStatePathSafe(stateName, sessionId, directory) {
     try {
-        return join(getOmcRoot(directory), "state", "sessions", sessionId, `${stateName}-state.json`);
+        return resolveSessionStatePath(stateName, sessionId, directory);
     }
     catch {
         return "";
@@ -1362,7 +1341,7 @@ async function processPersistentMode(input) {
             if (!isAbort && !isContextLimit) {
                 // Per-session cooldown: prevent notification spam when the session idles repeatedly.
                 // Uses session-scoped state so one session does not suppress another.
-                const stateDir = join(getOmcRoot(directory), "state");
+                const stateDir = getStateDir(directory);
                 const { getIdleNotificationRepoState } = await import("./persistent-mode/idle-repo-state.js");
                 const idleRepoState = getIdleNotificationRepoState(directory);
                 if (shouldWakeOpenClawOnStop(stateDir, sessionId, idleRepoState)) {

@@ -1364,6 +1364,15 @@ export const stateClearTool: ToolDefinition<{
     try {
       const root = resolveStateWorkingDirectory(workingDirectory);
       const sessionId = session_id as string | undefined;
+      if (mode === 'ultrawork') {
+        try {
+          if (lstatSync(join(resolve(root), OmcPaths.ROOT)).isSymbolicLink()) {
+            return { content: [{ type: 'text' as const, text: `No state found to clear for mode: ${mode}` }] };
+          }
+        } catch {
+          // Missing roots follow the normal no-state path.
+        }
+      }
 
       // Merge-readiness is an audit gate, so clearing it must leave a durable
       // terminal result and report rather than deleting the evidence trail.

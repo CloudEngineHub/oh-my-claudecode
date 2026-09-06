@@ -11,6 +11,8 @@
 import {
   closeSync,
   constants as fsConstants,
+  fstatSync,
+  ftruncateSync,
   fsyncSync,
   writeSync,
 } from "fs";
@@ -21,6 +23,7 @@ import { resolveRunDirHandle } from "./run-dir.js";
 import type { RunDirHandle } from "./run-dir.js";
 import {
   openNoFollow,
+  assertPrivateRegularFile,
   readContainedFileNoFollow,
   withContainedPath,
 } from "./safe-fs.js";
@@ -93,24 +96,36 @@ export class FileJournal implements Journal {
   private readonly runsRoot: string;
   private readonly runId?: string;
   private readonly handle?: RunDirHandle;
+  private readonly assertOwnership?: () => void;
 
   /**
    * The frozen `Journal` interface is run-scoped but carries no run id, so an
    * instance must be bound to one run. `runId` is optional only to keep the
    * brief's `new FileJournal(runsRoot)` signature constructible; unbound
-   * instances fail closed on use.
+   * instances fail closed on use.  An optional ownership callback binds each
+   * append to the writer's lease epoch.
    */
   constructor(
     runsRoot: string,
     runId?: string,
     runDirHandle?: RunDirHandle,
+    assertOwnership?: () => void,
   ) {
     this.runsRoot = runsRoot;
     this.runId = runId;
     this.handle = runDirHandle;
+    this.assertOwnership = assertOwnership;
   }
 
   async append(record: JournalAppendRecord): Promise<void> {
+    return this.appendInternal(record, this.assertOwnership);
+  }
+
+  private async appendInternal(
+    record: JournalAppendRecord,
+    assertOwnership?: () => void,
+  ): Promise<void> {
+    assertOwnership?.();
     const runDir = this.runDir();
     const unsignedRecord = { ...record } as Record<string, unknown>;
     delete unsignedRecord.journal_fingerprint;
@@ -127,8 +142,12 @@ export class FileJournal implements Journal {
       try {
         fd = openNoFollow(
           filePath,
-          fsConstants.O_APPEND | fsConstants.O_CREAT | fsConstants.O_WRONLY,
+          fsConstants.O_APPEND |
+            fsConstants.O_CREAT |
+            fsConstants.O_WRONLY |
+            (fsConstants.O_NONBLOCK ?? 0),
         );
+        assertPrivateRegularFile(fd, filePath);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code === "ELOOP") {
           throw new JournalCorruptionError(
@@ -139,8 +158,34 @@ export class FileJournal implements Journal {
         throw error;
       }
       try {
-        writeSync(fd, line);
-        fsyncSync(fd);
+        const initialSize = fstatSync(fd).size;
+        assertOwnership?.();
+        let writeCompleted = false;
+        try {
+          writeSync(fd, line);
+          writeCompleted = true;
+          fsyncSync(fd);
+          // This is the publication boundary.  If ownership was lost while
+          // the write/fsync was in flight, remove only our suffix through the
+          // original fd before allowing the stale transition to escape.
+          assertOwnership?.();
+        } catch (error) {
+          if (writeCompleted) {
+            try {
+              const size = fstatSync(fd).size;
+              const expectedSize = initialSize + Buffer.byteLength(line);
+              if (size === expectedSize) {
+                ftruncateSync(fd, initialSize);
+                fsyncSync(fd);
+              }
+            } catch {
+              // If another writer appended to this inode, or the descriptor
+              // became unusable, leave the durable suffix for fail-closed
+              // replay rather than truncating unrelated data.
+            }
+          }
+          throw error;
+        }
       } finally {
         closeSync(fd);
       }

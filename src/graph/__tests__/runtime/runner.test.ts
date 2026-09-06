@@ -8,6 +8,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "fs";
@@ -206,6 +207,43 @@ describe("runGraph", () => {
     expect(records.map((r) => r.transition.node_id)).toEqual(["a", "b", "term"]);
     expect(records[0].epoch).toBe(1);
     expect(records.at(-1)?.epoch).toBeGreaterThanOrEqual(1);
+  });
+
+  it("rebuilds from the journal instead of accepting a stale projection snapshot", async () => {
+    const runsRoot = makeRunsRoot();
+    const sealed = sealGraphDescriptor(linearDescriptor());
+    await runGraph(sealed, {
+      runsRoot,
+      executors: [allSucceed()],
+      prompter: { prompt: async () => "approved" },
+    });
+
+    const projectionPath = join(runsRoot, sealed.run_id, "projection.json");
+    const snapshot = JSON.parse(readFileSync(projectionPath, "utf8")) as {
+      projection: Record<string, unknown>;
+    };
+    // Keep a structurally valid but stale cache. Resume must not consume it;
+    // the committed journal is the sole source of scheduler truth.
+    writeFileSync(
+      projectionPath,
+      canonicalJson({
+        ...snapshot,
+        saved_at_seq: -1,
+        projection: { ...snapshot.projection, activations: {} },
+      }),
+      "utf8",
+    );
+
+    const resumeExecutor = allSucceed();
+    const result = await runGraph(sealed, {
+      runsRoot,
+      executors: [resumeExecutor],
+      prompter: { prompt: async () => "approved" },
+    });
+
+    expect(result.terminal).toBe("succeeded");
+    expect(result.exit_code).toBe(EXIT_CODES.OK);
+    expect(resumeExecutor.calls).toEqual([]);
   });
 
   it("rejects descriptor drift on resume with exit code 21", async () => {

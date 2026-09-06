@@ -7,6 +7,8 @@
 import {
   mkdirSync,
   mkdtempSync,
+  renameSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -17,6 +19,7 @@ import { join } from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { FileProjectionStore } from "../../runtime/store.js";
+import { FileOwnershipFence } from "../../runtime/fence.js";
 import type { ProjectionSnapshotEnvelope } from "../../runtime/types.js";
 import type { GraphSchedulerProjection } from "../../types.js";
 
@@ -162,5 +165,45 @@ describe("FileProjectionStore", () => {
     const loaded = await store.load();
     expect(loaded?.epoch).toBe(2);
     expect(loaded?.saved_at_seq).toBe(9);
+  });
+
+  it("rolls back a snapshot when ownership changes at publication", async () => {
+    const runDir = join(runsRoot, "run-1");
+    mkdirSync(runDir, { recursive: true });
+    const fence = new FileOwnershipFence(runsRoot, "run-1", {
+      staleGraceMs: 1000,
+    });
+    await expect(fence.acquire()).resolves.toEqual({
+      outcome: "acquired",
+      epoch: 1,
+    });
+    const store = new FileProjectionStore(runsRoot, "run-1");
+    const oldEnvelope = makeEnvelope({ epoch: 1, saved_at_seq: 0 });
+    await store.save(oldEnvelope, () => fence.assertEpoch(1));
+
+    let checks = 0;
+    const assertOwnership = (): void => {
+      checks += 1;
+      // save() invokes this callback at the atomic writer's after-rename
+      // boundary. Replace the lock there to emulate a takeover during
+      // publication; the writer must reject and restore oldEnvelope.
+      if (checks === 4) {
+        renameSync(join(runDir, "owner.lock"), join(runDir, "owner.lock.stolen"));
+        writeFileSync(
+          join(runDir, "owner.lock"),
+          JSON.stringify({ pid: process.pid, epoch: 2, timestamp: Date.now() }),
+          "utf8",
+        );
+      }
+      fence.assertEpoch(1);
+    };
+
+    await expect(
+      store.save(makeEnvelope({ epoch: 1, saved_at_seq: 1 }), assertOwnership),
+    ).rejects.toThrow();
+    expect(JSON.parse(readFileSync(join(runDir, "projection.json"), "utf8"))).toEqual(
+      oldEnvelope,
+    );
+    await expect(store.load()).resolves.toEqual(oldEnvelope);
   });
 });

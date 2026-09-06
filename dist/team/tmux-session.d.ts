@@ -214,7 +214,8 @@ export declare function captureTeamPane(paneId: string): Promise<string>;
 export declare function sendTeamPaneKey(paneId: string, key: string): Promise<void>;
 export declare function killTeamPane(paneId: string): Promise<void>;
 export declare function killOwnedWorkerPane(ownership: WorkerPaneOwnership): Promise<void>;
-export declare function paneHasTrustPrompt(captured: string): boolean;
+export declare function paneHasTrustPrompt(captured: string, provider?: CliAgentType): boolean;
+export declare function paneHasCursorWorkspaceTrustPrompt(captured: string): boolean;
 export declare function paneHasActiveTask(captured: string, provider?: CliAgentType): boolean;
 export declare function paneLooksReady(captured: string, provider?: CliAgentType): boolean;
 export interface WaitForPaneReadyOptions {
@@ -228,7 +229,7 @@ export type StartupPaneReadyResult = {
     ok: true;
 } | {
     ok: false;
-    reason: 'attempt_inactive' | 'ownership_mismatch' | 'copy_mode' | 'copy_mode_unknown' | 'capture_failed' | 'selector_unsupported' | 'selector_persistent' | 'pane_busy' | 'readiness_timeout';
+    reason: 'attempt_inactive' | 'ownership_mismatch' | 'copy_mode' | 'copy_mode_unknown' | 'capture_failed' | 'selector_unsupported' | 'selector_persistent' | 'cursor_workspace_untrusted' | 'pane_busy' | 'readiness_timeout';
 };
 export declare function waitForStartupPaneReady(context: StartupPaneContext, opts?: WaitForPaneReadyOptions): Promise<StartupPaneReadyResult>;
 export declare function deliverStartupInbox(context: StartupPaneContext, message: string, options?: {

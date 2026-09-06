@@ -13,9 +13,10 @@ describe('session-start.mjs regression #1386', () => {
         tempDir = mkdtempSync(join(tmpdir(), 'omc-session-start-script-'));
         fakeHome = join(tempDir, 'home');
         fakeProject = join(tempDir, 'project');
+        mkdirSync(fakeProject, { recursive: true });
         mkdirSync(join(fakeProject, '.omc', 'state', 'sessions', 'session-1386'), { recursive: true });
-        // session-start validateCwd requires a real workspace anchor (.git / .omc-workspace)
-        mkdirSync(join(fakeProject, '.git'), { recursive: true });
+        // session-start validateCwd requires a real workspace anchor.
+        execFileSync('git', ['init', '--quiet', fakeProject], { stdio: 'ignore' });
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
@@ -473,6 +474,106 @@ ${'- oversized startup guidance\n'.repeat(700)}
         expect(combined).not.toContain('[OMC VERSION DRIFT DETECTED]');
         expect(combined).not.toContain("Run 'omc update'");
         expect(combined).not.toContain('4.15.5');
+    });
+    it('shows an npm update from unmanaged 4.15.7 local plugin roots (#3867)', () => {
+        const claudeDir = join(fakeHome, '.claude');
+        const pluginRoot = join(tempDir, 'local-plugin-4.15.7');
+        mkdirSync(join(claudeDir, '.omc'), { recursive: true });
+        mkdirSync(join(claudeDir, 'hud'), { recursive: true });
+        mkdirSync(pluginRoot, { recursive: true });
+        writeFileSync(join(pluginRoot, 'package.json'), JSON.stringify({ version: '4.15.7', type: 'module' }));
+        writeFileSync(join(claudeDir, 'hud', 'omc-hud.mjs'), '');
+        writeFileSync(join(claudeDir, 'settings.json'), JSON.stringify({ statusLine: 'node ~/.claude/hud/omc-hud.mjs' }));
+        writeFileSync(join(claudeDir, '.omc', 'update-check.json'), JSON.stringify({
+            timestamp: Date.now(),
+            latestVersion: '5.0.0',
+            currentVersion: '4.15.7',
+            updateAvailable: true,
+            source: 'npm',
+        }));
+        const result = spawnSync(NODE, [SCRIPT_PATH], {
+            input: JSON.stringify({
+                hook_event_name: 'SessionStart',
+                session_id: 'session-3867-unmanaged-4157',
+                cwd: fakeProject,
+            }),
+            encoding: 'utf-8',
+            env: {
+                ...process.env,
+                HOME: fakeHome,
+                USERPROFILE: fakeHome,
+                CLAUDE_PLUGIN_ROOT: pluginRoot,
+                CLAUDE_CONFIG_DIR: join(fakeHome, '.claude'),
+                OMC_NOTIFY: '0',
+            },
+            timeout: 15000,
+        });
+        expect(result.status).toBe(0);
+        expect(result.stderr).toBe('');
+        const output = JSON.parse(result.stdout);
+        expect(output.systemMessage).toContain('[OMC UPDATE AVAILABLE]');
+        expect(output.systemMessage).toContain('v5.0.0');
+        expect(output.systemMessage).toContain('current: v4.15.7');
+        expect(output.systemMessage).not.toContain('4.15.7L');
+    });
+    it('does not advertise npm 5.0.0 when managed marketplace channel is still 4.15.7 (#3867)', () => {
+        const claudeDir = join(fakeHome, '.claude');
+        const pluginRoot = join(claudeDir, 'plugins', 'cache', 'omc', 'oh-my-claudecode', '4.15.7');
+        const marketplaceRoot = join(claudeDir, 'plugins', 'marketplaces', 'omc');
+        mkdirSync(join(claudeDir, '.omc'), { recursive: true });
+        mkdirSync(join(claudeDir, 'hud'), { recursive: true });
+        mkdirSync(pluginRoot, { recursive: true });
+        mkdirSync(join(marketplaceRoot, '.claude-plugin'), { recursive: true });
+        writeFileSync(join(pluginRoot, 'package.json'), JSON.stringify({ version: '4.15.7', type: 'module' }));
+        writeFileSync(join(marketplaceRoot, '.claude-plugin', 'marketplace.json'), JSON.stringify({
+            plugins: [{ name: 'oh-my-claudecode', version: '4.15.7' }],
+            version: '4.15.7',
+        }));
+        writeFileSync(join(claudeDir, 'hud', 'omc-hud.mjs'), '');
+        writeFileSync(join(claudeDir, 'settings.json'), JSON.stringify({ statusLine: 'node ~/.claude/hud/omc-hud.mjs' }));
+        writeFileSync(join(claudeDir, '.omc', 'update-check.json'), JSON.stringify({
+            timestamp: Date.now(),
+            latestVersion: '5.0.0',
+            currentVersion: '4.15.7',
+            updateAvailable: true,
+            source: 'npm',
+        }));
+        // CLAUDE_CONFIG_DIR beats HOME. A leaked host/empty config dir would hide
+        // the fixture marketplace clone and leave the npm 5.0.0 cache in place.
+        const leakedHostConfigDir = join(tempDir, 'host-empty-claude-config');
+        mkdirSync(leakedHostConfigDir, { recursive: true });
+        const leakedHostEnv = {
+            ...process.env,
+            CLAUDE_CONFIG_DIR: leakedHostConfigDir,
+        };
+        const result = spawnSync(NODE, [SCRIPT_PATH], {
+            input: JSON.stringify({
+                hook_event_name: 'SessionStart',
+                session_id: 'session-3867-managed-4157',
+                cwd: fakeProject,
+            }),
+            encoding: 'utf-8',
+            env: {
+                ...leakedHostEnv,
+                HOME: fakeHome,
+                USERPROFILE: fakeHome,
+                CLAUDE_PLUGIN_ROOT: pluginRoot,
+                CLAUDE_CONFIG_DIR: join(fakeHome, '.claude'),
+                OMC_NOTIFY: '0',
+            },
+            timeout: 15000,
+        });
+        expect(result.status).toBe(0);
+        expect(result.stderr).toBe('');
+        const output = JSON.parse(result.stdout);
+        expect(output.systemMessage ?? '').not.toContain('[OMC UPDATE AVAILABLE]');
+        expect(output.systemMessage ?? '').not.toContain('5.0.0');
+        expect(JSON.parse(readFileSync(join(claudeDir, '.omc', 'update-check.json'), 'utf-8'))).toMatchObject({
+            latestVersion: '4.15.7',
+            currentVersion: '4.15.7',
+            updateAvailable: false,
+            source: 'marketplace',
+        });
     });
 });
 //# sourceMappingURL=session-start-script-context.test.js.map

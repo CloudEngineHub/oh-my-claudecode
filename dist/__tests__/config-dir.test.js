@@ -101,6 +101,19 @@ describe('getClaudeConfigDir', () => {
         });
         expect(output.trim()).toBe(join(homeDir, '.claude-alt'));
     });
+    it('shared shell helper expands a backslash-tilde-prefixed CLAUDE_CONFIG_DIR', () => {
+        const homeDir = mkdtempSync(join(tmpdir(), 'omc-uninstall-home-'));
+        const output = execFileSync('bash', ['-lc', `. "${join(process.cwd(), 'scripts', 'lib', 'config-dir.sh')}"; resolve_claude_config_dir`], {
+            cwd: process.cwd(),
+            env: {
+                ...process.env,
+                HOME: homeDir,
+                CLAUDE_CONFIG_DIR: '~\\.claude-alt',
+            },
+            encoding: 'utf-8',
+        });
+        expect(output.trim()).toBe(join(homeDir, '.claude-alt'));
+    });
     it('keeps the CJS helper aligned with the TypeScript helper', () => {
         process.env.CLAUDE_CONFIG_DIR = '~/.claude-alt';
         const cjsPath = join(process.cwd(), 'scripts', 'lib', 'config-dir.cjs');

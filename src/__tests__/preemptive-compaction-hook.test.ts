@@ -12,6 +12,7 @@ const tempDirs: string[] = [];
 
 function makeTempDir(): string {
   const dir = mkdtempSync(join(tmpdir(), 'omc-preemptive-hook-'));
+  execFileSync('git', ['init', '--quiet', dir], { stdio: 'ignore' });
   tempDirs.push(dir);
   return dir;
 }

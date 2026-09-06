@@ -1,12 +1,16 @@
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { readMissionBoardState, recordMissionAgentStart, recordMissionAgentStop, refreshMissionBoardState, } from '../../hud/mission-board.js';
 import { resolveSessionStatePaths } from '../../lib/worktree-paths.js';
 const tempDirs = [];
+const originalHome = process.env.HOME;
+const originalUserProfile = process.env.USERPROFILE;
 function makeTempDir() {
-    const dir = mkdtempSync(join(tmpdir(), 'omc-mission-board-'));
+    const dir = mkdtempSync(join(homedir(), 'omc-mission-board-'));
+    process.env.HOME = dir;
+    process.env.USERPROFILE = dir;
     tempDirs.push(dir);
     mkdirSync(join(dir, '.omc', 'state'), { recursive: true });
     return dir;
@@ -17,6 +21,14 @@ afterEach(() => {
         if (dir)
             rmSync(dir, { recursive: true, force: true });
     }
+    if (originalHome === undefined)
+        delete process.env.HOME;
+    else
+        process.env.HOME = originalHome;
+    if (originalUserProfile === undefined)
+        delete process.env.USERPROFILE;
+    else
+        process.env.USERPROFILE = originalUserProfile;
 });
 describe('mission board state tracking', () => {
     it('records session-scoped agent starts and completions', () => {

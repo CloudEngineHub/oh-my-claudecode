@@ -26,8 +26,14 @@ function resultAmendment() {
 }
 describe('Ralph PRD Criterion Amendment', () => {
     let testDir;
+    let previousHome;
+    let previousUserProfile;
     beforeEach(() => {
         testDir = join(tmpdir(), `ralph-prd-amendment-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        previousHome = process.env.HOME;
+        previousUserProfile = process.env.USERPROFILE;
+        process.env.HOME = testDir;
+        process.env.USERPROFILE = testDir;
         mkdirSync(testDir, { recursive: true });
     });
     afterEach(() => {
@@ -41,6 +47,14 @@ describe('Ralph PRD Criterion Amendment', () => {
         if (existsSync(testDir)) {
             rmSync(testDir, { recursive: true, force: true });
         }
+        if (previousHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = previousHome;
+        if (previousUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = previousUserProfile;
     });
     const samplePrd = {
         project: 'TestProject',

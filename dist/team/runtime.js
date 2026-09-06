@@ -2,19 +2,20 @@ import { mkdir, readFile, rm, rename, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { tmuxExecAsync } from '../cli/tmux-utils.js';
-import { buildWorkerArgv, resolveValidatedBinaryPath, getWorkerEnv as getModelWorkerEnv, isPromptModeAgent, getPromptModeArgs, resolveClaudeWorkerModel, assertHeadlessSupported } from './model-contract.js';
+import { buildWorkerArgv, resolveValidatedBinaryPath, getWorkerEnv as getModelWorkerEnv, isPromptModeAgent, getPromptModeArgs, resolveDefaultWorkerModel, assertHeadlessSupported } from './model-contract.js';
 import { validateTeamName } from './team-name.js';
 import { createTeamSession, spawnWorkerInPane, sendToWorker, isWorkerAlive, killTeamSession, resolveSplitPaneWorkerPaneIds, waitForPaneReady, applyMainVerticalLayout, killTeamPane, splitTeamWorkerPane, } from './tmux-session.js';
 import { composeInitialInbox, ensureWorkerStateDir, writeWorkerOverlay, generateTriggerMessage, } from './worker-bootstrap.js';
 import { cleanupTeamWorktrees } from './git-worktree.js';
 import { atomicWriteJson } from '../lib/atomic-write.js';
 import { withTaskLock, writeTaskFailure, DEFAULT_MAX_TASK_RETRIES, } from './task-file-ops.js';
+import { normalizeTaskFileStem, teamStateRoot } from './state-paths.js';
 function workerName(index) {
     return `worker-${index + 1}`;
 }
 function stateRoot(cwd, teamName) {
     validateTeamName(teamName);
-    return join(cwd, `.omc/state/team/${teamName}`);
+    return teamStateRoot(cwd, teamName);
 }
 async function writeJson(filePath, data) {
     await atomicWriteJson(filePath, data);
@@ -59,7 +60,7 @@ function parseWorkerIndex(workerNameValue) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
 function taskPath(root, taskId) {
-    return join(root, 'tasks', `${taskId}.json`);
+    return join(root, 'tasks', `${normalizeTaskFileStem(taskId)}.json`);
 }
 async function writePanesTrackingFileIfPresent(runtime) {
     const jobId = process.env.OMC_JOB_ID;
@@ -203,8 +204,8 @@ export async function allTasksTerminal(runtime) {
  * Build the initial task instruction written to a worker's inbox.
  * Includes task ID, subject, full description, and done-signal path.
  */
-function buildInitialTaskInstruction(teamName, workerName, task, taskId) {
-    const donePath = `.omc/state/team/${teamName}/workers/${workerName}/done.json`;
+function buildInitialTaskInstruction(teamName, workerName, task, taskId, teamStateRoot) {
+    const donePath = join(teamStateRoot, 'workers', workerName, 'done.json');
     return [
         `## Initial Task Assignment`,
         `Task ID: ${taskId}`,
@@ -243,7 +244,7 @@ export async function startTeam(config) {
     // Create task files
     for (let i = 0; i < tasks.length; i++) {
         const taskId = String(i + 1);
-        await writeJson(join(root, 'tasks', `${taskId}.json`), {
+        await writeJson(taskPath(root, taskId), {
             id: taskId,
             subject: tasks[i].subject,
             description: tasks[i].description,
@@ -265,6 +266,7 @@ export async function startTeam(config) {
             teamName, workerName: wName, agentType,
             tasks: tasks.map((t, idx) => ({ id: String(idx + 1), subject: t.subject, description: t.description })),
             cwd,
+            instructionStateRoot: root,
         });
     }
     // Create tmux session with ZERO worker panes (leader only).
@@ -618,9 +620,13 @@ export async function spawnWorkerForTask(runtime, workerNameValue, taskIndex) {
         // Build the initial task instruction and write inbox before spawn.
         // For prompt-mode agents the instruction is passed via CLI flag;
         // for interactive agents it is sent via tmux send-keys after startup.
-        const instruction = buildInitialTaskInstruction(runtime.teamName, workerNameValue, task, taskId);
+        const instruction = buildInitialTaskInstruction(runtime.teamName, workerNameValue, task, taskId, root);
         await composeInitialInbox(runtime.teamName, workerNameValue, instruction, runtime.cwd);
-        const envVars = getModelWorkerEnv(runtime.teamName, workerNameValue, agentType);
+        const envVars = {
+            ...getModelWorkerEnv(runtime.teamName, workerNameValue, agentType),
+            OMC_TEAM_STATE_ROOT: root,
+            OMC_TEAM_LEADER_CWD: runtime.cwd,
+        };
         const resolvedBinaryPath = runtime.resolvedBinaryPaths?.[agentType] ?? resolveValidatedBinaryPath(agentType);
         if (!runtime.resolvedBinaryPaths) {
             runtime.resolvedBinaryPaths = {};
@@ -629,33 +635,7 @@ export async function spawnWorkerForTask(runtime, workerNameValue, taskIndex) {
         // Resolve model from environment variables based on agent type.
         // For Claude agents on Bedrock/Vertex, resolve the provider-specific model
         // so workers don't fall back to invalid Anthropic API model names. (#1695)
-        const modelForAgent = (() => {
-            if (agentType === 'codex') {
-                return process.env.OMC_EXTERNAL_MODELS_DEFAULT_CODEX_MODEL
-                    || process.env.OMC_CODEX_DEFAULT_MODEL
-                    || undefined;
-            }
-            if (agentType === 'gemini') {
-                return process.env.OMC_EXTERNAL_MODELS_DEFAULT_GEMINI_MODEL
-                    || process.env.OMC_GEMINI_DEFAULT_MODEL
-                    || undefined;
-            }
-            if (agentType === 'antigravity') {
-                return process.env.OMC_EXTERNAL_MODELS_DEFAULT_ANTIGRAVITY_MODEL
-                    || process.env.OMC_ANTIGRAVITY_DEFAULT_MODEL
-                    || undefined;
-            }
-            if (agentType === 'grok') {
-                return process.env.OMC_EXTERNAL_MODELS_DEFAULT_GROK_MODEL
-                    || process.env.OMC_GROK_DEFAULT_MODEL
-                    || undefined;
-            }
-            if (agentType === 'cursor') {
-                return undefined;
-            }
-            // Claude agents: resolve Bedrock/Vertex model when on those providers
-            return resolveClaudeWorkerModel();
-        })();
+        const modelForAgent = resolveDefaultWorkerModel(agentType, process.env);
         const [launchBinary, ...launchArgs] = buildWorkerArgv(agentType, {
             teamName: runtime.teamName,
             workerName: workerNameValue,
@@ -669,7 +649,7 @@ export async function spawnWorkerForTask(runtime, workerNameValue, taskIndex) {
         // Codex and Claude team workers are persistent interactive panes and are
         // nudged through the inbox transport instead of `codex exec`/print modes.
         if (usePromptMode) {
-            const promptArgs = getPromptModeArgs(agentType, generateTriggerMessage(runtime.teamName, workerNameValue));
+            const promptArgs = getPromptModeArgs(agentType, generateTriggerMessage(runtime.teamName, workerNameValue, root));
             launchArgs.push(...promptArgs);
         }
         const paneConfig = {
@@ -712,7 +692,7 @@ export async function spawnWorkerForTask(runtime, workerNameValue, taskIndex) {
                 }
                 await new Promise(r => setTimeout(r, 800));
             }
-            const notified = await notifyPaneWithRetry(runtime.sessionName, paneId, generateTriggerMessage(runtime.teamName, workerNameValue), 1);
+            const notified = await notifyPaneWithRetry(runtime.sessionName, paneId, generateTriggerMessage(runtime.teamName, workerNameValue, root), 1);
             if (!notified) {
                 throw new Error(`worker_notify_failed:${workerNameValue}:initial-inbox`);
             }
@@ -756,7 +736,7 @@ export async function killWorkerPane(runtime, workerNameValue, paneId, options =
  */
 export async function assignTask(teamName, taskId, targetWorkerName, paneId, sessionName, cwd) {
     const root = stateRoot(cwd, teamName);
-    const taskFilePath = join(root, 'tasks', `${taskId}.json`);
+    const taskFilePath = taskPath(root, taskId);
     let previousTaskState = null;
     await withTaskLock(teamName, taskId, async () => {
         const t = await readJsonSafe(taskFilePath);
@@ -775,7 +755,7 @@ export async function assignTask(teamName, taskId, targetWorkerName, paneId, ses
     // Write to worker inbox
     const inboxPath = join(root, 'workers', targetWorkerName, 'inbox.md');
     await mkdir(join(inboxPath, '..'), { recursive: true });
-    const msg = `\n\n---\n## New Task Assignment\nTask ID: ${taskId}\nClaim and execute task from: .omc/state/team/${teamName}/tasks/${taskId}.json\n`;
+    const msg = `\n\n---\n## New Task Assignment\nTask ID: ${taskId}\nClaim and execute task from: ${taskFilePath}\n`;
     const { appendFile } = await import('fs/promises');
     await appendFile(inboxPath, msg, 'utf-8');
     // Send tmux trigger

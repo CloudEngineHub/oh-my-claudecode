@@ -13,7 +13,7 @@ describe('bridge-entry workdir guardrails (source contract)', () => {
         expect(source).toContain("resolved.startsWith(home + '/')");
     });
     it('requires working directory to be inside a git worktree', () => {
-        expect(source).toContain('getWorktreeRoot(workingDirectory)');
+        expect(source).toContain('probeGitTopLevel(workingDirectory)');
         expect(source).toContain('workingDirectory is not inside a git worktree');
     });
 });

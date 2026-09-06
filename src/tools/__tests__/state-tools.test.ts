@@ -12,7 +12,7 @@ import {
 } from '../state-tools.js';
 import { emergencyMutateStateFileIf } from '../../lib/mode-state-io.js';
 
-const TEST_DIR = mkdtempSync(join(homedir(), 'state-tools-test-'));
+let TEST_DIR: string;
 
 // Mock validateWorkingDirectory to allow test directory
 vi.mock('../../lib/worktree-paths.js', async () => {
@@ -106,6 +106,7 @@ describe('state-tools', () => {
   let previousUserProfile: string | undefined;
 
   beforeEach(() => {
+    TEST_DIR = mkdtempSync(join(homedir(), 'state-tools-test-'));
     previousHome = process.env.HOME;
     previousUserProfile = process.env.USERPROFILE;
     process.env.HOME = TEST_DIR;

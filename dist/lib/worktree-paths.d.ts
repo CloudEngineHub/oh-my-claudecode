@@ -54,12 +54,58 @@ export declare function findWorkspaceRoot(startDir?: string): string | null;
  * marker is empty or unparseable — callers should not throw on config errors.
  */
 export declare function readWorkspaceMarkerConfig(workspaceRoot: string): WorkspaceMarkerConfig;
+/** Return true when state must not be anchored at this directory. */
+export declare function isSensitiveStateLocation(dir: string): boolean;
+/**
+ * Resolve the canonical state anchor for a non-git cwd.
+ * Legacy cwd-local `.omc/` trees are never adopted implicitly; callers must
+ * use the explicit migration surface to copy owner-matched session state.
+ */
+export declare function resolveNonGitStateAnchor(startDir?: string): string;
+/**
+ * Get the literal git toplevel for a directory: `git rev-parse --show-toplevel`
+ * with NO submodule→superproject climb. Returns null if not in a git repository.
+ *
+ * SECURITY: this cached helper is not the primitive for path-restriction /
+ * containment checks. Those callers must use probeGitTopLevel() so a fresh,
+ * fail-closed probe guards each boundary decision. A tool operating inside a
+ * submodule must be confined to that submodule working tree, not the parent
+ * superproject. getWorktreeRoot() intentionally climbs for state anchoring;
+ * using it for containment would widen the boundary across submodule borders
+ * (see #3349 and the Codex review on PR #3350).
+ */
+type GitTopLevelProbe = {
+    status: 'ok';
+    root: string;
+} | {
+    status: 'not_a_repository';
+} | {
+    status: 'git_missing';
+} | {
+    status: 'probe_failed';
+    detail: string;
+};
+/**
+ * Run path lookups in an isolated render scope.
+ *
+ * The memo is intentionally opt-in and is discarded when the render settles.
+ * Direct callers that enforce security boundaries continue to receive fresh
+ * probes, while each HUD render gets a new scope that observes PATH and .git
+ * metadata changes made between renders.
+ */
+export declare function withWorktreePathRenderScope<T>(fn: () => T): T;
 /**
  * Injectable `git rev-parse --show-toplevel` runner for tests (#3858).
  * Throw to simulate spawn/exit failures; return stdout to simulate success.
  */
 export type GitShowToplevelProbe = (cwd: string) => string | Buffer;
 export declare function setGitShowToplevelProbeForTests(probe?: GitShowToplevelProbe): void;
+export declare function findGitMetadataDir(start: string): string | null;
+export declare function probeGitTopLevel(cwd: string): GitTopLevelProbe;
+/**
+ * Resolve a literal Git top-level with positive, metadata-validated caching.
+ * Security-sensitive containment decisions must call probeGitTopLevel() instead.
+ */
 export declare function getGitTopLevel(cwd?: string): string | null;
 /**
  * Get the state-anchor "worktree root" for a directory.
@@ -72,7 +118,7 @@ export declare function getGitTopLevel(cwd?: string): string | null;
  *
  * SECURITY: do NOT use this for path-restriction / containment checks — the
  * submodule climb widens the boundary across submodule borders. Use
- * getGitTopLevel() for confinement.
+ * probeGitTopLevel() for confinement.
  */
 export declare function getWorktreeRoot(cwd?: string): string | null;
 /**
@@ -388,6 +434,13 @@ export declare function getCanonicalWorkingDirectoryRoots(target: object): {
  * @throws Error if workingDirectory is outside trusted root
  */
 export declare function validateWorkingDirectory(workingDirectory?: string): string;
+/**
+ * Resolve a state-tool workingDirectory with visible repository-boundary
+ * failures. Git sessions may target the same repository or a linked worktree;
+ * git-less sessions retain an explicit child directory while still rejecting
+ * paths outside the trusted non-git context.
+ */
+export declare function resolveStateWorkingDirectory(workingDirectory?: string): string;
 /**
  * Result of resolving a caller-provided workingDirectory against the trusted
  * startup repository (#3858).

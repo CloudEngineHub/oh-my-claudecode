@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "4e8d9ccd027718bb87b021f232930c09dc07d86f",
-    "sourceSha256": "6047b5d6d4fc95bf3324ed9d37f6c41811ea59a0861ce319aacf56c881efd4bc",
+    "head": "729ede5f45bb80be688977870d11d9f0867f0df4",
+    "sourceSha256": "dc1624dad8c7c0dcfe5149c6cdddb9d5c8ea5cc7dbc324cd95873242321bd405",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "4e8d9ccd027718bb87b021f232930c09dc07d86f",
-  "sourceSha256": "6047b5d6d4fc95bf3324ed9d37f6c41811ea59a0861ce319aacf56c881efd4bc",
+  "head": "729ede5f45bb80be688977870d11d9f0867f0df4",
+  "sourceSha256": "dc1624dad8c7c0dcfe5149c6cdddb9d5c8ea5cc7dbc324cd95873242321bd405",
   "counts": {
     "public": {
       "skills": 37,
@@ -32,9 +32,9 @@
       "total": 1353
     },
     "generated": {
-      "distFiles": 4955,
+      "distFiles": 4986,
       "bridgeFiles": 9,
-      "total": 4964
+      "total": 4995
     },
     "prompt": {
       "promptLikeFiles": 62
@@ -2149,6 +2149,7 @@
       "dist/cli/autoresearch.d.ts.map",
       "dist/cli/autoresearch.js",
       "dist/cli/autoresearch.js.map",
+      "dist/cli/checkpoint.js",
       "dist/cli/claude-md-coordinator.d.ts",
       "dist/cli/claude-md-coordinator.d.ts.map",
       "dist/cli/claude-md-coordinator.js",
@@ -2221,6 +2222,8 @@
       "dist/cli/commands/wait.d.ts.map",
       "dist/cli/commands/wait.js",
       "dist/cli/commands/wait.js.map",
+      "dist/cli/graph.d.ts",
+      "dist/cli/graph.js",
       "dist/cli/hud-watch.d.ts",
       "dist/cli/hud-watch.d.ts.map",
       "dist/cli/hud-watch.js",
@@ -2370,6 +2373,7 @@
       "dist/features/builtin-skills/types.d.ts.map",
       "dist/features/builtin-skills/types.js",
       "dist/features/builtin-skills/types.js.map",
+      "dist/features/checkpoint/index.js",
       "dist/features/context-injector/collector.d.ts",
       "dist/features/context-injector/collector.d.ts.map",
       "dist/features/context-injector/collector.js",
@@ -2586,6 +2590,31 @@
       "dist/graph/index.d.ts.map",
       "dist/graph/index.js",
       "dist/graph/index.js.map",
+      "dist/graph/runtime/approval.d.ts",
+      "dist/graph/runtime/approval.js",
+      "dist/graph/runtime/executors/agent.d.ts",
+      "dist/graph/runtime/executors/agent.js",
+      "dist/graph/runtime/executors/authority.d.ts",
+      "dist/graph/runtime/executors/authority.js",
+      "dist/graph/runtime/executors/command.d.ts",
+      "dist/graph/runtime/executors/command.js",
+      "dist/graph/runtime/fence.d.ts",
+      "dist/graph/runtime/fence.js",
+      "dist/graph/runtime/journal.d.ts",
+      "dist/graph/runtime/journal.js",
+      "dist/graph/runtime/progress.d.ts",
+      "dist/graph/runtime/progress.js",
+      "dist/graph/runtime/remote-approval.js",
+      "dist/graph/runtime/run-dir.d.ts",
+      "dist/graph/runtime/run-dir.js",
+      "dist/graph/runtime/runner.d.ts",
+      "dist/graph/runtime/runner.js",
+      "dist/graph/runtime/safe-fs.d.ts",
+      "dist/graph/runtime/safe-fs.js",
+      "dist/graph/runtime/store.d.ts",
+      "dist/graph/runtime/store.js",
+      "dist/graph/runtime/types.d.ts",
+      "dist/graph/runtime/types.js",
       "dist/graph/scheduler.d.ts",
       "dist/graph/scheduler.d.ts.map",
       "dist/graph/scheduler.js",
@@ -3923,6 +3952,8 @@
       "dist/hud/elements/token-usage.d.ts.map",
       "dist/hud/elements/token-usage.js",
       "dist/hud/elements/token-usage.js.map",
+      "dist/hud/elements/update-hint.d.ts",
+      "dist/hud/elements/update-hint.js",
       "dist/hud/index.d.ts",
       "dist/hud/index.d.ts.map",
       "dist/hud/index.js",
@@ -13853,6 +13884,11 @@
         "path": "dist/cli/autoresearch.js.map"
       },
       {
+        "id": "dist/cli/checkpoint.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/checkpoint.js"
+      },
+      {
         "id": "dist/cli/claude-md-coordinator.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/claude-md-coordinator.d.ts"
@@ -14211,6 +14247,16 @@
         "id": "dist/cli/commands/wait.js.map",
         "kind": "generated-dist",
         "path": "dist/cli/commands/wait.js.map"
+      },
+      {
+        "id": "dist/cli/graph.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/graph.d.ts"
+      },
+      {
+        "id": "dist/cli/graph.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/graph.js"
       },
       {
         "id": "dist/cli/hud-watch.d.ts",
@@ -14956,6 +15002,11 @@
         "id": "dist/features/builtin-skills/types.js.map",
         "kind": "generated-dist",
         "path": "dist/features/builtin-skills/types.js.map"
+      },
+      {
+        "id": "dist/features/checkpoint/index.js",
+        "kind": "generated-dist",
+        "path": "dist/features/checkpoint/index.js"
       },
       {
         "id": "dist/features/context-injector/collector.d.ts",
@@ -16036,6 +16087,131 @@
         "id": "dist/graph/index.js.map",
         "kind": "generated-dist",
         "path": "dist/graph/index.js.map"
+      },
+      {
+        "id": "dist/graph/runtime/approval.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/approval.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/approval.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/approval.js"
+      },
+      {
+        "id": "dist/graph/runtime/executors/agent.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/agent.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/executors/agent.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/agent.js"
+      },
+      {
+        "id": "dist/graph/runtime/executors/authority.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/authority.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/executors/authority.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/authority.js"
+      },
+      {
+        "id": "dist/graph/runtime/executors/command.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/command.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/executors/command.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/command.js"
+      },
+      {
+        "id": "dist/graph/runtime/fence.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/fence.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/fence.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/fence.js"
+      },
+      {
+        "id": "dist/graph/runtime/journal.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/journal.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/journal.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/journal.js"
+      },
+      {
+        "id": "dist/graph/runtime/progress.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/progress.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/progress.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/progress.js"
+      },
+      {
+        "id": "dist/graph/runtime/remote-approval.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/remote-approval.js"
+      },
+      {
+        "id": "dist/graph/runtime/run-dir.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/run-dir.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/run-dir.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/run-dir.js"
+      },
+      {
+        "id": "dist/graph/runtime/runner.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/runner.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/runner.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/runner.js"
+      },
+      {
+        "id": "dist/graph/runtime/safe-fs.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/safe-fs.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/safe-fs.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/safe-fs.js"
+      },
+      {
+        "id": "dist/graph/runtime/store.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/store.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/store.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/store.js"
+      },
+      {
+        "id": "dist/graph/runtime/types.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/types.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/types.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/types.js"
       },
       {
         "id": "dist/graph/scheduler.d.ts",
@@ -22721,6 +22897,16 @@
         "id": "dist/hud/elements/token-usage.js.map",
         "kind": "generated-dist",
         "path": "dist/hud/elements/token-usage.js.map"
+      },
+      {
+        "id": "dist/hud/elements/update-hint.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hud/elements/update-hint.d.ts"
+      },
+      {
+        "id": "dist/hud/elements/update-hint.js",
+        "kind": "generated-dist",
+        "path": "dist/hud/elements/update-hint.js"
       },
       {
         "id": "dist/hud/index.d.ts",
@@ -43790,6 +43976,11 @@
         "kind": "type-imports"
       },
       {
+        "from": "src/__tests__/context-usage.test.ts",
+        "to": "src/lib/worktree-paths.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/__tests__/daemon-module-path.test.ts",
         "to": "external:vitest",
         "kind": "imports"
@@ -53851,6 +54042,11 @@
       },
       {
         "from": "src/graph/__tests__/runtime/journal.test.ts",
+        "to": "src/graph/runtime/fence.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/graph/__tests__/runtime/journal.test.ts",
         "to": "src/graph/runtime/journal.ts",
         "kind": "imports"
       },
@@ -54091,6 +54287,11 @@
       },
       {
         "from": "src/graph/__tests__/runtime/safe-fs.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/graph/__tests__/runtime/safe-fs.test.ts",
         "to": "external:fs",
         "kind": "imports"
       },
@@ -54137,6 +54338,11 @@
       {
         "from": "src/graph/__tests__/runtime/store.test.ts",
         "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/graph/__tests__/runtime/store.test.ts",
+        "to": "src/graph/runtime/fence.ts",
         "kind": "imports"
       },
       {
@@ -54440,11 +54646,6 @@
         "kind": "imports"
       },
       {
-        "from": "src/graph/runtime/run-dir.ts",
-        "to": "src/lib/atomic-write.ts",
-        "kind": "imports"
-      },
-      {
         "from": "src/graph/runtime/runner.ts",
         "to": "external:path",
         "kind": "imports"
@@ -54553,6 +54754,11 @@
         "from": "src/graph/runtime/store.ts",
         "to": "src/lib/atomic-write.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/graph/runtime/store.ts",
+        "to": "src/lib/atomic-write.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/graph/runtime/types.ts",
@@ -77321,12 +77527,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6866,
-      "edgeCount": 7339,
-      "importEdgeCount": 6040,
+      "nodeCount": 6897,
+      "edgeCount": 7343,
+      "importEdgeCount": 6043,
       "registerEdgeCount": 58
     }
   },
   "inventorySha256": "d4529469934f2cbf2fa4897aea788da0e912fad10235f00a88b9afff515417b5",
-  "manifestSha256": "1c994e38c4e90009ed891709b2303f729e3f7384f9d88c98b2528c19a87564a5"
+  "manifestSha256": "2c711b3b46916d3cbe0090151f940c5fa5b65348cd8cffdfb51db04aca799b93"
 }

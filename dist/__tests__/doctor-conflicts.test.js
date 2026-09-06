@@ -830,6 +830,13 @@ describe('doctor-conflicts: config known fields (issue #1499)', () => {
         expect(checkConfigIssues().unknownFields).toEqual(['totallyMadeUpKey', 'anotherUnknown']);
         expect(runConflictCheck().hasConflicts).toBe(true);
     });
+    it('flags the retired defaultExecutionMode key as unknown (5.0.0 removed its last writer/reader)', () => {
+        writeFileSync(join(TEST_CLAUDE_DIR, '.omc-config.json'), JSON.stringify({
+            silentAutoUpdate: false,
+            defaultExecutionMode: 'ultrawork',
+        }, null, 2));
+        expect(checkConfigIssues().unknownFields).toEqual(['defaultExecutionMode']);
+    });
 });
 describe('doctor-conflicts: workspace marker check (Wave F.2)', () => {
     let cwdSpy;

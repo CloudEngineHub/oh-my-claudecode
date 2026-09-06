@@ -309,6 +309,32 @@ describe('scaleUp launch config', () => {
     );
   });
 
+  it('preserves Claude model environment when external defaults are empty', async () => {
+    modelContractMocks.resolveDefaultWorkerModel.mockReturnValue('claude-env-model');
+    modelContractMocks.buildWorkerArgv.mockReturnValue(['/usr/bin/claude', '--model', 'claude-env-model']);
+    config = makeConfig({ external_models_defaults: {} });
+    const env = {
+      OMC_TEAM_SCALING_ENABLED: '1',
+      ANTHROPIC_MODEL: 'claude-env-model',
+    } as NodeJS.ProcessEnv;
+
+    const result = await scaleUp(
+      'demo-team',
+      1,
+      'claude',
+      [{ subject: 'demo', description: 'demo task' }],
+      cwd,
+      env,
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    expect(modelContractMocks.resolveDefaultWorkerModel).toHaveBeenCalledWith('claude', env, {});
+    expect(modelContractMocks.buildWorkerArgv).toHaveBeenCalledWith(
+      'claude',
+      expect.objectContaining({ model: 'claude-env-model' }),
+    );
+  });
+
   it('does not apply the implicit Claude snapshot to an explicitly typed external worker', async () => {
     modelContractMocks.resolveDefaultWorkerModel.mockReturnValue('codex-config-model');
     modelContractMocks.buildWorkerArgv.mockReturnValue(['/usr/bin/codex', '--model', 'codex-config-model']);
@@ -334,6 +360,92 @@ describe('scaleUp launch config', () => {
       expect.anything(),
       undefined,
     );
+    expect(modelContractMocks.buildWorkerArgv).toHaveBeenCalledWith(
+      'codex',
+      expect.objectContaining({ model: 'codex-config-model' }),
+    );
+  });
+
+  it('preserves an external configured route when an older team has no routing-role metadata', async () => {
+    modelContractMocks.resolveDefaultWorkerModel.mockReturnValue('gemini-config-model');
+    modelContractMocks.buildWorkerArgv.mockReturnValue(['/usr/bin/gemini', '--model', 'gemini-snapshot-model']);
+    config = makeConfig({
+      resolved_routing: {
+        executor: {
+          primary: { provider: 'gemini', model: 'gemini-snapshot-model', agent: 'executor' },
+          fallback: { provider: 'claude', model: '', agent: 'executor' },
+        },
+      } as TeamConfig['resolved_routing'],
+      resolved_routing_roles: undefined,
+    });
+
+    const result = await scaleUp(
+      'demo-team',
+      1,
+      'codex',
+      [{ subject: 'demo', description: 'demo task', owner: 'worker-1', role: 'executor' }],
+      cwd,
+      { OMC_TEAM_SCALING_ENABLED: '1' } as NodeJS.ProcessEnv,
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    expect(modelContractMocks.buildWorkerArgv).toHaveBeenCalledWith(
+      'gemini',
+      expect.objectContaining({ model: 'gemini-snapshot-model' }),
+    );
+  });
+
+  it('preserves a Claude configured route when an older team has no routing-role metadata', async () => {
+    modelContractMocks.buildWorkerArgv.mockReturnValue(['/usr/bin/claude', '--model', 'legacy-claude-model']);
+    config = makeConfig({
+      resolved_routing: {
+        executor: {
+          primary: { provider: 'claude', model: 'legacy-claude-model', agent: 'executor' },
+          fallback: { provider: 'claude', model: 'legacy-claude-model', agent: 'executor' },
+        },
+      } as TeamConfig['resolved_routing'],
+      resolved_routing_roles: undefined,
+    });
+
+    const result = await scaleUp(
+      'demo-team',
+      1,
+      'codex',
+      [{ subject: 'demo', description: 'demo task', owner: 'worker-1', role: 'executor' }],
+      cwd,
+      { OMC_TEAM_SCALING_ENABLED: '1' } as NodeJS.ProcessEnv,
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    expect(modelContractMocks.buildWorkerArgv).toHaveBeenCalledWith(
+      'claude',
+      expect.objectContaining({ model: 'legacy-claude-model' }),
+    );
+  });
+
+  it('keeps the caller provider when the owned task has no explicit role', async () => {
+    modelContractMocks.resolveDefaultWorkerModel.mockReturnValue('codex-config-model');
+    modelContractMocks.buildWorkerArgv.mockReturnValue(['/usr/bin/codex', '--model', 'codex-config-model']);
+    config = makeConfig({
+      resolved_routing: {
+        executor: {
+          primary: { provider: 'gemini', model: 'gemini-snapshot-model', agent: 'executor' },
+          fallback: { provider: 'claude', model: '', agent: 'executor' },
+        },
+      } as TeamConfig['resolved_routing'],
+      resolved_routing_roles: ['executor'],
+    });
+
+    const result = await scaleUp(
+      'demo-team',
+      1,
+      'codex',
+      [{ subject: 'implement the executor task', description: 'write code', owner: 'worker-1' }],
+      cwd,
+      { OMC_TEAM_SCALING_ENABLED: '1' } as NodeJS.ProcessEnv,
+    );
+
+    expect(result).toMatchObject({ ok: true });
     expect(modelContractMocks.buildWorkerArgv).toHaveBeenCalledWith(
       'codex',
       expect.objectContaining({ model: 'codex-config-model' }),

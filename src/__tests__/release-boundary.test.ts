@@ -428,6 +428,24 @@ describe('release-boundary.mjs', () => {
     expect(() => assertEvidence(tarballPath, evidencePath)).toThrow();
   });
 
+  it.each([
+    'package/con/config.json',
+    'package/COM1.txt',
+    'package/lpt²/log.txt',
+    'package/CON .txt',
+    'package/cache./value.json',
+    'package/cache /value.json',
+  ])('rejects Windows archive path collisions: %s', path => {
+    const root = makeTempRoot('release-boundary-windows-path-');
+    const tarballPath = writeTarball(
+      root,
+      'unsafe-windows-path.tgz',
+      releaseTarball(SHA, [{ path, content: 'unsafe' }]),
+    );
+    expect(() => assertArchive(tarballPath, { version: VERSION, gitHead: SHA }))
+      .toThrow('tar archive path is unsafe');
+  });
+
   it('decodes exactly one DSSE SLSA statement and requires distinct workflow-v1 build type and GitHub-hosted builder', () => {
 
     const archiveEvidence = buildEvidenceFromBytes(releaseTarball());

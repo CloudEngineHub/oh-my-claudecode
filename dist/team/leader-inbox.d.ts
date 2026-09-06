@@ -24,5 +24,5 @@ export declare function appendToLeaderInbox(teamName: string, message: string, c
  * directive is consumed by the leader process which interprets the path
  * relative to its own working directory).
  */
-export declare function extendLeaderBootstrapPrompt(teamName: string): string;
+export declare function extendLeaderBootstrapPrompt(teamName: string, cwd?: string): string;
 //# sourceMappingURL=leader-inbox.d.ts.map

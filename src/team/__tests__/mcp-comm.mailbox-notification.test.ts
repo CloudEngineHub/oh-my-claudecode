@@ -206,7 +206,7 @@ function harness(input = params(), overrides: Partial<MailboxNotificationAttempt
   };
 }
 
-describe('direct mailbox notification orchestration', () => {
+describe.sequential('direct mailbox notification orchestration', () => {
   it('hashes the per-request lock name so opaque request text cannot traverse dispatch state', () => {
     const lock = TeamPaths.mailboxNotificationLock('dispatch-team', '../foreign/request');
     expect(lock).toMatch(/^\.omc\/state\/team\/dispatch-team\/dispatch\/\.mailbox-notification-[a-f0-9]{64}\.lock$/);
@@ -456,8 +456,7 @@ describe('direct mailbox notification orchestration', () => {
   });
 
   it('uses the broadcast recipient snapshot 1:1 and surfaces a persisted recipient divergence', async () => {
-    const cwd = await mkdtemp(join(tmpdir(), 'omc-mcp-broadcast-'));
-    temporaryDirectories.push(cwd);
+    const cwd = suiteHome;
     await mkdir(join(suiteHome, '.omc', 'state', 'team', 'dispatch-team'), { recursive: true });
 
     let nextMessage = 0;
@@ -496,8 +495,7 @@ describe('direct mailbox notification orchestration', () => {
   });
 
   it('does not notify a broadcast when persisting the second recipient fails', async () => {
-    const cwd = await mkdtemp(join(tmpdir(), 'omc-mcp-broadcast-'));
-    temporaryDirectories.push(cwd);
+    const cwd = suiteHome;
     await mkdir(join(suiteHome, '.omc', 'state', 'team', 'dispatch-team'), { recursive: true });
     const notify = vi.fn(async () => ({ ok: true, transport: 'hook' as const, reason: 'queued_for_hook_dispatch' }));
 

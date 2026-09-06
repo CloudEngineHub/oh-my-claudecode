@@ -9,7 +9,7 @@ import { closeSync, existsSync, fstatSync, fsyncSync, linkSync, mkdirSync, openS
 import { basename, dirname, join } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
-import { getGitTopLevel, getOmcRoot, resolveStatePath, resolveSessionStatePath, ensureSessionStateDir, ensureOmcDir, listSessionIds, } from './worktree-paths.js';
+import { getOmcRoot, probeGitTopLevel, resolveStatePath, resolveSessionStatePath, ensureSessionStateDir, ensureOmcDir, listSessionIds, } from './worktree-paths.js';
 import { atomicWriteJsonSync } from './atomic-write.js';
 function flockPath() { return process.env.NODE_ENV === 'test' && process.env.OMC_TEST_FLOCK_AVAILABLE === '0' ? null : existsSync('/usr/bin/flock') ? '/usr/bin/flock' : existsSync('/bin/flock') ? '/bin/flock' : null; }
 const LOCK_REMOVAL_SCRIPT = String.raw `
@@ -338,6 +338,10 @@ function stateDigest(raw) {
 }
 function emergencyJournalPath(filePath) {
     return `${filePath}.emergency-journal.json`;
+}
+function sessionOwnerFromStatePath(filePath) {
+    const match = filePath.replaceAll('\\', '/').match(/\/state\/sessions\/([^/]+)(?:\/|$)/);
+    return match?.[1];
 }
 function emergencyOwner() {
     const processStart = processStartIdentity(process.pid);
@@ -796,8 +800,16 @@ function emergencyReplaceAtRecoveryBoundary(filePath) {
 }
 /** A dead transaction is recovered under a state-scoped, generation-verified exclusive claim. */
 export function recoverEmergencyStateFile(filePath, options) {
-    const authorizeState = options?.authorizeState;
+    const pathSessionId = sessionOwnerFromStatePath(filePath);
+    const authorizeState = options?.authorizeState ?? (pathSessionId
+        ? (state) => {
+            const owner = getStateSessionOwner(state);
+            return owner === undefined || owner === pathSessionId;
+        }
+        : undefined);
     const journalPath = emergencyJournalPath(filePath);
+    if (!existsSync(filePath) && !existsSync(journalPath))
+        return true;
     // Prefilter before taking a claim so stale shared-home artifacts cannot be
     // reclaimed solely because their process owner is dead. Revalidate while
     // holding our own claim below.
@@ -1127,7 +1139,15 @@ export function canClearStateForSession(state, sessionId) {
 // ---------------------------------------------------------------------------
 function resolveStateRoot(directory) {
     const baseDir = directory || process.cwd();
-    return getGitTopLevel(baseDir) || baseDir;
+    const probe = probeGitTopLevel(baseDir);
+    if (probe.status === 'ok')
+        return probe.root;
+    // Keep the confirmed non-Git directory as the identity input. Converting it
+    // to HOME here is unsafe when HOME itself is a Git checkout: a later
+    // getOmcRoot() call would reclassify HOME as that repository.
+    if (probe.status === 'not_a_repository')
+        return baseDir;
+    throw new Error('Git probe failed while resolving runtime state root');
 }
 /**
  * Resolve the state file path for a given mode.
@@ -1202,13 +1222,26 @@ function discoverStateFile(path, extra = {}) {
         return null;
     }
 }
+function hasAuthenticatedCompletionEvidence(path, sessionId) {
+    try {
+        const evidence = JSON.parse(readFileSync(path, 'utf-8'));
+        return evidence.session_id === sessionId
+            && typeof evidence.ended_at === 'string'
+            && evidence.ended_at.trim().length > 0
+            && Number.isFinite(Date.parse(evidence.ended_at));
+    }
+    catch {
+        return false;
+    }
+}
 export function findSessionOwnedStateCandidates(mode, sessionId, directory) {
     const matches = new Map();
     const baseDir = resolveStateRoot(directory);
     const expectedPath = resolveSessionStatePath(mode, sessionId, baseDir);
     const expected = discoverStateFile(expectedPath);
-    if (expected)
+    if (expected && canClearStateForSession(expected.state, sessionId)) {
         matches.set(expectedPath, expected);
+    }
     for (const sid of listSessionIds(baseDir)) {
         const candidatePath = resolveSessionStatePath(mode, sid, baseDir);
         const candidate = discoverStateFile(candidatePath);
@@ -1237,11 +1270,11 @@ export function findCompletedSessionStateCandidates(mode, directory, requesterSe
         if (requesterSessionId && sid === requesterSessionId)
             continue;
         const completionEvidencePath = join(getOmcRoot(baseDir), 'sessions', `${sid}.json`);
-        if (!existsSync(completionEvidencePath))
+        if (!hasAuthenticatedCompletionEvidence(completionEvidencePath, sid))
             continue;
         const candidatePath = resolveSessionStatePath(mode, sid, baseDir);
         const candidate = discoverStateFile(candidatePath, { completedSessionId: sid, completionEvidencePath });
-        if (candidate?.state.active === true)
+        if (candidate?.state.active === true && candidate.ownerSessionId === sid)
             matches.push(candidate);
     }
     return matches;
@@ -1286,6 +1319,9 @@ export function writeModeState(mode, state, directory, sessionId) {
                 ...(ownerPid !== undefined ? { ownerPid } : {}),
             },
         };
+        if (sessionId) {
+            return writeStateFileLockedCreateIf(filePath, current => current === null || canClearStateForSession(current, sessionId), () => envelope) === 'written';
+        }
         return writeStateFileLocked(filePath, envelope);
     }
     catch {
@@ -1326,10 +1362,29 @@ export function readModeState(mode, directory, sessionId) {
     try {
         const content = readFileSync(filePath, 'utf-8');
         const parsed = JSON.parse(content);
+        if (sessionId && parsed && typeof parsed === 'object' && !canClearStateForSession(parsed, sessionId)) {
+            return null;
+        }
         // Strip _meta envelope if present
         if (parsed && typeof parsed === 'object' && '_meta' in parsed) {
             const { _meta: _, ...rest } = parsed;
             return rest;
+        }
+        return parsed;
+    }
+    catch {
+        return null;
+    }
+}
+/** Read the persisted state envelope, retaining `_meta` for authorization checks. */
+export function readModeStateWithMeta(mode, directory, sessionId) {
+    const filePath = resolveFile(mode, directory, sessionId);
+    if (!existsSync(filePath))
+        return null;
+    try {
+        const parsed = JSON.parse(readFileSync(filePath, 'utf-8'));
+        if (sessionId && parsed && typeof parsed === 'object' && !canClearStateForSession(parsed, sessionId)) {
+            return null;
         }
         return parsed;
     }
@@ -1373,7 +1428,8 @@ export function clearModeStateFile(mode, directory, sessionId, expectedState, cl
             if (!captured?.direct)
                 return false;
             const expectedSnapshot = JSON.stringify(Object.fromEntries(Object.entries(expectedState).filter(([key]) => key !== '_meta')));
-            const result = clearStateFileLockedIf(directPath, (current) => JSON.stringify(Object.fromEntries(Object.entries(current).filter(([key]) => key !== '_meta'))) === expectedSnapshot, undefined, captured.direct.generation);
+            const result = clearStateFileLockedIf(directPath, (current) => canClearStateForSession(current, sessionId)
+                && JSON.stringify(Object.fromEntries(Object.entries(current).filter(([key]) => key !== '_meta'))) === expectedSnapshot, undefined, captured.direct.generation);
             if (result === 'failed' || (result === 'skipped' && existsSync(directPath)))
                 return false;
             const artifactPaths = getRuntimeArtifactCandidates(mode, baseDir, sessionId);
@@ -1423,7 +1479,9 @@ export function clearModeStateFile(mode, directory, sessionId, expectedState, cl
             }
         }
         else {
-            unlinkIfPresent(directPath);
+            const directResult = clearStateFileLockedIf(directPath, current => canClearStateForSession(current, sessionId));
+            if (directResult === 'failed' || (directResult === 'skipped' && existsSync(directPath)))
+                success = false;
             for (const artifactPath of getRuntimeArtifactCandidates(mode, baseDir, sessionId)) {
                 unlinkIfPresent(artifactPath);
             }

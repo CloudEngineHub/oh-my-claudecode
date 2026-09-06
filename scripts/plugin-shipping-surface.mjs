@@ -645,6 +645,7 @@ export function inspectPullRequestShippingSurface(root, base) {
     ? new Set(requiredGeneratedPaths(collectRuntimeClosureAtCommit(root, verifiedBase)))
     : new Set();
   const outOfClosurePaths = changedGeneratedPaths.filter(path => !required.has(path)
+    && !deletedGeneratedPaths.includes(path)
     && !(previousGenerated.has(path) && !trackedPathsAtHead(root, [path]).has(path)));
   if (outOfClosurePaths.length > 0) {
     fail(`pull request changes generated artifacts outside the runtime closure: ${formatPaths(outOfClosurePaths)}`);

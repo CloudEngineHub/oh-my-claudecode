@@ -108,6 +108,8 @@ export declare function writeModeStateIfAbsent(mode: string, state: Record<strin
  * @returns The parsed state (without _meta) or null if not found / unreadable.
  */
 export declare function readModeState<T = Record<string, unknown>>(mode: string, directory?: string, sessionId?: string): T | null;
+/** Read the persisted state envelope, retaining `_meta` for authorization checks. */
+export declare function readModeStateWithMeta<T = Record<string, unknown>>(mode: string, directory?: string, sessionId?: string): T | null;
 /**
  * Clear (delete) a mode state file from disk.
  *

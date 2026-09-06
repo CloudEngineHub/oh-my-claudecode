@@ -7,23 +7,43 @@ const SCRIPT_PATH = join(process.cwd(), 'scripts', 'keyword-detector.mjs');
 const TEMPLATE_PATH = join(process.cwd(), 'templates', 'hooks', 'keyword-detector.mjs');
 const NODE = process.execPath;
 function runKeywordDetector(prompt, cwd = process.cwd(), sessionId = 'session-2053', env = {}, detectorPath = SCRIPT_PATH) {
-    const raw = execFileSync(NODE, [detectorPath], {
-        input: JSON.stringify({
-            hook_event_name: 'UserPromptSubmit',
+    const homeDir = mkdtempSync(join(tmpdir(), 'keyword-detector-home-'));
+    const isFixtureCwd = cwd !== process.cwd();
+    if (isFixtureCwd && !existsSync(join(cwd, '.git'))) {
+        execFileSync('git', ['init', '--quiet'], { cwd, stdio: 'pipe' });
+    }
+    const effectiveHome = env.HOME || homeDir;
+    const childEnv = {
+        ...process.env,
+        NODE_ENV: 'test',
+        DISABLE_OMC: '',
+        OMC_SKIP_HOOKS: '',
+        OMC_TEAM_WORKER: '',
+        OMC_STATE_DIR: cwd === process.cwd() ? join(homeDir, 'omc-state') : '',
+        CLAUDE_PLUGIN_ROOT: '',
+        HOME: effectiveHome,
+        USERPROFILE: env.USERPROFILE || effectiveHome,
+        CLAUDE_CONFIG_DIR: env.CLAUDE_CONFIG_DIR || join(effectiveHome, '.claude'),
+        ...env,
+    };
+    try {
+        const raw = execFileSync(NODE, [detectorPath], {
             cwd,
-            session_id: sessionId,
-            prompt,
-        }),
-        encoding: 'utf-8',
-        env: {
-            ...process.env,
-            NODE_ENV: 'test',
-            OMC_SKIP_HOOKS: '',
-            ...env,
-        },
-        timeout: 15000,
-    }).trim();
-    return JSON.parse(raw);
+            input: JSON.stringify({
+                hook_event_name: 'UserPromptSubmit',
+                cwd,
+                session_id: sessionId,
+                prompt,
+            }),
+            encoding: 'utf-8',
+            env: childEnv,
+            timeout: 15000,
+        }).trim();
+        return JSON.parse(raw);
+    }
+    finally {
+        rmSync(homeDir, { recursive: true, force: true });
+    }
 }
 function getRalplanStatePath(cwd, sessionId) {
     return join(cwd, '.omc', 'state', 'sessions', sessionId, 'ralplan-state.json');

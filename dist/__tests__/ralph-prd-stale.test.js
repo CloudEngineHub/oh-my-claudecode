@@ -53,14 +53,28 @@ function readAuditEntries(directory, sessionId) {
 }
 describe('Ralph PRD Stale-State Detection & Reconciliation (#3669)', () => {
     let testDir;
+    let previousHome;
+    let previousUserProfile;
     beforeEach(() => {
         testDir = join(tmpdir(), `ralph-prd-stale-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        previousHome = process.env.HOME;
+        previousUserProfile = process.env.USERPROFILE;
+        process.env.HOME = testDir;
+        process.env.USERPROFILE = testDir;
         mkdirSync(testDir, { recursive: true });
     });
     afterEach(() => {
         if (existsSync(testDir)) {
             rmSync(testDir, { recursive: true, force: true });
         }
+        if (previousHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = previousHome;
+        if (previousUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = previousUserProfile;
     });
     // ==========================================================================
     // Reproduction: all-false-but-landed PRD stays silent today

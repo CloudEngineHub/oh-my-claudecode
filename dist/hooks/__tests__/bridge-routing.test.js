@@ -13,6 +13,7 @@ import { execFileSync } from 'child_process';
 import { processHook, resetSkipHooksCache, requiredKeysForHook, } from '../bridge.js';
 import { flushPendingWrites } from '../subagent-tracker/index.js';
 import { readDispatchTelemetryTail } from '../registry/cutover.js';
+import { getOmcRoot } from '../../lib/worktree-paths.js';
 function writeCanonicalTeamState(tempDir, sessionId, teamName, phase) {
     const canonicalTeamDir = join(tempDir, '.omc', 'state', 'team', teamName);
     mkdirSync(canonicalTeamDir, { recursive: true });
@@ -1185,6 +1186,116 @@ $ ultrawork search the codebase`,
                 rmSync(tempDir, { recursive: true, force: true });
             }
         });
+        it('does not remove foreign metadata-owned state during abandoned-session reconciliation', async () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-session-start-foreign-state-'));
+            const previousTestBootId = process.env.OMC_TEST_BOOT_ID;
+            try {
+                execFileSync('git', ['init'], { cwd: tempDir, stdio: 'pipe' });
+                const staleSessionId = 'stale-foreign-state-session';
+                const currentSessionId = 'current-foreign-state-session';
+                const staleSessionDir = join(tempDir, '.omc', 'state', 'sessions', staleSessionId);
+                mkdirSync(staleSessionDir, { recursive: true });
+                const statePath = join(staleSessionDir, 'ralph-state.json');
+                const stateBytes = JSON.stringify({
+                    active: true,
+                    session_id: staleSessionId,
+                    awaiting_confirmation: true,
+                    _meta: { sessionId: 'different-owner-session' },
+                });
+                writeFileSync(statePath, stateBytes);
+                writeFileSync(join(staleSessionDir, 'session-started.json'), JSON.stringify({
+                    session_id: staleSessionId,
+                    started_at: '2026-04-20T00:00:00.000Z',
+                    boot_id: 'previous-test-boot-id',
+                }));
+                process.env.OMC_TEST_BOOT_ID = 'current-test-boot-id';
+                await processHook('session-start', {
+                    sessionId: currentSessionId,
+                    directory: tempDir,
+                });
+                expect(existsSync(statePath)).toBe(true);
+                expect(readFileSync(statePath, 'utf-8')).toBe(stateBytes);
+            }
+            finally {
+                if (previousTestBootId === undefined)
+                    delete process.env.OMC_TEST_BOOT_ID;
+                else
+                    process.env.OMC_TEST_BOOT_ID = previousTestBootId;
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        });
+        it('does not clear confirmation on a foreign metadata-owned legacy state', async () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-confirm-foreign-state-'));
+            try {
+                execFileSync('git', ['init'], { cwd: tempDir, stdio: 'pipe' });
+                const sessionId = 'confirm-foreign-state-session';
+                const stateDir = join(tempDir, '.omc', 'state');
+                mkdirSync(stateDir, { recursive: true });
+                const statePath = join(stateDir, 'ralph-state.json');
+                const stateBytes = JSON.stringify({
+                    active: true,
+                    awaiting_confirmation: true,
+                    _meta: { sessionId: 'different-owner-session' },
+                });
+                writeFileSync(statePath, stateBytes);
+                await processHook('pre-tool-use', {
+                    sessionId,
+                    toolName: 'Skill',
+                    toolInput: { skill: 'oh-my-claudecode:ralph' },
+                    directory: tempDir,
+                });
+                expect(readFileSync(statePath, 'utf-8')).toBe(stateBytes);
+            }
+            finally {
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        });
+        it('does not overwrite a foreign metadata-owned session-start marker', async () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-marker-foreign-state-'));
+            try {
+                execFileSync('git', ['init'], { cwd: tempDir, stdio: 'pipe' });
+                const sessionId = 'marker-foreign-state-session';
+                const sessionDir = join(tempDir, '.omc', 'state', 'sessions', sessionId);
+                mkdirSync(sessionDir, { recursive: true });
+                const markerPath = join(sessionDir, 'session-started.json');
+                const markerBytes = JSON.stringify({
+                    session_id: sessionId,
+                    started_at: '2026-04-20T00:00:00.000Z',
+                    boot_id: 'same-test-boot-id',
+                    _meta: { sessionId: 'different-owner-session' },
+                });
+                writeFileSync(markerPath, markerBytes);
+                await processHook('session-start', {
+                    sessionId,
+                    directory: tempDir,
+                });
+                expect(readFileSync(markerPath, 'utf-8')).toBe(markerBytes);
+            }
+            finally {
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        });
+        it('does not restore a foreign metadata-owned legacy team state', async () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'bridge-routing-team-foreign-state-'));
+            try {
+                execFileSync('git', ['init'], { cwd: tempDir, stdio: 'pipe' });
+                const stateDir = join(tempDir, '.omc', 'state');
+                mkdirSync(stateDir, { recursive: true });
+                writeFileSync(join(stateDir, 'team-state.json'), JSON.stringify({
+                    active: true,
+                    stage: 'team-exec',
+                    _meta: { sessionId: 'different-owner-session' },
+                }));
+                const result = await processHook('session-start', {
+                    sessionId: 'team-foreign-state-session',
+                    directory: tempDir,
+                });
+                expect(result.message ?? '').not.toContain('[TEAM MODE RESTORED]');
+            }
+            finally {
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        });
         it('should restore canonical team context when coarse team-state drifts away', async () => {
             const tempDir = process.cwd();
             const sessionId = 'canonical-team-session';
@@ -1854,6 +1965,12 @@ $ ultrawork search the codebase`,
         });
         it('subagent start/stop: normalized optional fields survive routing lifecycle', async () => {
             const tempDir = mkdtempSync(join(tmpdir(), 'bridge-858-subagent-'));
+            const previousHome = process.env.HOME;
+            const previousUserProfile = process.env.USERPROFILE;
+            const previousStateDir = process.env.OMC_STATE_DIR;
+            process.env.HOME = tempDir;
+            process.env.USERPROFILE = tempDir;
+            delete process.env.OMC_STATE_DIR;
             const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
             try {
                 const startInput = {
@@ -1877,7 +1994,7 @@ $ ultrawork search the codebase`,
                 const stop = await processHook('subagent-stop', stopInput);
                 expect(stop.continue).toBe(true);
                 flushPendingWrites();
-                const trackingPath = join(tempDir, '.omc', 'state', 'sessions', 'test-session-858-subagent', 'subagent-tracking-state.json');
+                const trackingPath = join(getOmcRoot(tempDir), 'state', 'sessions', 'test-session-858-subagent', 'subagent-tracking-state.json');
                 expect(existsSync(trackingPath)).toBe(true);
                 const tracking = JSON.parse(readFileSync(trackingPath, 'utf-8'));
                 const agent = tracking.agents.find((a) => a.agent_id === 'agent-858');
@@ -1892,6 +2009,18 @@ $ ultrawork search the codebase`,
             finally {
                 flushPendingWrites();
                 errorSpy.mockRestore();
+                if (previousHome === undefined)
+                    delete process.env.HOME;
+                else
+                    process.env.HOME = previousHome;
+                if (previousUserProfile === undefined)
+                    delete process.env.USERPROFILE;
+                else
+                    process.env.USERPROFILE = previousUserProfile;
+                if (previousStateDir === undefined)
+                    delete process.env.OMC_STATE_DIR;
+                else
+                    process.env.OMC_STATE_DIR = previousStateDir;
                 rmSync(tempDir, { recursive: true, force: true });
             }
         });

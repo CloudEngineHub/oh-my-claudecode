@@ -264,17 +264,18 @@ export interface CliWorkerVerdictResult {
     reason?: string;
 }
 /**
- * Post-exit handler for CLI workers that emitted a structured verdict
- * (AC-7). Scans workers whose panes have exited and whose WorkerInfo
+ * Completion handler for CLI workers that emitted a structured verdict
+ * (AC-7). Scans workers whose panes have exited, plus live Cursor panes whose
+ * persistent reviewer session has published a verdict, and whose WorkerInfo
  * carries `output_file`. For each:
  *   - Reads + validates the JSON payload via `parseCliWorkerVerdict`.
  *   - Locates the worker's in_progress task and writes a terminal status
  *     (completed for `approve`, failed for `revise`/`reject`) plus verdict
- *     metadata directly to the task file — the worker process is gone and
- *     cannot re-enter `transitionTaskStatus` with its claim token.
- *   - Renames `verdict.json` to `verdict.processed.json` so a subsequent
- *     monitor cycle does not reprocess it.
- *   - Emits a team event describing the outcome.
+ *     metadata through the canonical `transitionTaskStatus` path so lease,
+ *     delegation, event, and monitor-snapshot invariants remain authoritative.
+ *   - Renames the assignment-scoped verdict artifact to `.processed` so a
+ *     subsequent monitor cycle does not reprocess it.
+ *   - Quarantines stale `.processing` artifacts when replacement output exists.
  * On parse failure, emits a warning event and leaves the task untouched
  * for human review (per plan AC-7).
  */

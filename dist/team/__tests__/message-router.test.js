@@ -8,18 +8,48 @@ import { writeHeartbeat } from '../heartbeat.js';
 import { getClaudeConfigDir } from '../../utils/config-dir.js';
 describe('message-router', () => {
     let testDir;
+    let fixtureClaudeConfigDir;
+    let previousHome;
+    let previousUserProfile;
+    let previousStateDir;
+    let previousClaudeConfigDir;
     const teamName = 'test-router';
     beforeEach(() => {
         testDir = mkdtempSync(join(tmpdir(), 'message-router-test-'));
+        fixtureClaudeConfigDir = join(testDir, '.claude');
+        previousHome = process.env.HOME;
+        previousUserProfile = process.env.USERPROFILE;
+        previousStateDir = process.env.OMC_STATE_DIR;
+        previousClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+        process.env.HOME = testDir;
+        process.env.USERPROFILE = testDir;
+        delete process.env.OMC_STATE_DIR;
+        process.env.CLAUDE_CONFIG_DIR = fixtureClaudeConfigDir;
     });
     afterEach(() => {
-        rmSync(testDir, { recursive: true, force: true });
         // Clean up inbox files that may have been created
         try {
-            const inboxDir = join(getClaudeConfigDir(), 'teams', teamName, 'inbox');
+            const inboxDir = join(fixtureClaudeConfigDir, 'teams', teamName, 'inbox');
             rmSync(inboxDir, { recursive: true, force: true });
         }
         catch { /* ignore */ }
+        if (previousHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = previousHome;
+        if (previousUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = previousUserProfile;
+        if (previousStateDir === undefined)
+            delete process.env.OMC_STATE_DIR;
+        else
+            process.env.OMC_STATE_DIR = previousStateDir;
+        if (previousClaudeConfigDir === undefined)
+            delete process.env.CLAUDE_CONFIG_DIR;
+        else
+            process.env.CLAUDE_CONFIG_DIR = previousClaudeConfigDir;
+        rmSync(testDir, { recursive: true, force: true });
     });
     function registerWorker(name, agentType = 'mcp-codex') {
         const provider = agentType === 'mcp-gemini' ? 'gemini' : 'codex';

@@ -131,6 +131,9 @@ export async function transitionTaskStatus(taskId, from, to, claimToken, termina
             delegation_compliance: to === 'completed' ? delegationCompliance ?? v.delegation_compliance : v.delegation_compliance,
             claim: undefined,
             version: v.version + 1,
+            ...(terminalData && 'metadata' in terminalData && terminalData.metadata
+                ? { metadata: { ...(v.metadata ?? {}), ...terminalData.metadata } }
+                : {}),
         };
         await deps.writeAtomic(deps.taskFilePath(deps.teamName, taskId, deps.cwd), JSON.stringify(updated, null, 2));
         if (to === 'completed') {
@@ -282,7 +285,18 @@ export async function adoptRecoveryReservations(taskIds, workerName, proof, deps
             if (!reservation) {
                 if (task.status === 'in_progress' && task.owner === workerName && task.claim && task.recovery_adoption?.recovery_id === proof.recoveryId && task.recovery_adoption.request_id === proof.requestId && task.recovery_adoption.replacement_generation === proof.replacementGeneration) {
                     const checkpoint = await deps.readRecoveryCheckpoint(task.recovery_adoption.checkpoint_path);
-                    return checkpoint.ok ? { ok: true, task, claimToken: task.claim.token, checkpoint: checkpoint.checkpoint, replayed: true } : { ok: false, error: checkpointError(checkpoint.error) };
+                    if (!checkpoint.ok)
+                        return { ok: false, error: checkpointError(checkpoint.error) };
+                    if (deps.launchAttemptId && task.claim.launch_attempt_id !== deps.launchAttemptId) {
+                        const rebound = {
+                            ...task,
+                            claim: { ...task.claim, launch_attempt_id: deps.launchAttemptId },
+                            version: task.version + 1,
+                        };
+                        await deps.writeAtomic(deps.taskFilePath(deps.teamName, taskId, deps.cwd), JSON.stringify(rebound, null, 2));
+                        return { ok: true, task: rebound, claimToken: rebound.claim.token, checkpoint: checkpoint.checkpoint, replayed: true };
+                    }
+                    return { ok: true, task, claimToken: task.claim.token, checkpoint: checkpoint.checkpoint, replayed: true };
                 }
                 return { ok: false, error: 'claim_conflict' };
             }
@@ -293,7 +307,12 @@ export async function adoptRecoveryReservations(taskIds, workerName, proof, deps
                 return { ok: false, error: checkpointError(checkpoint.ok ? 'stale' : checkpoint.error) };
             const claimToken = randomUUID();
             const adoptedAt = new Date().toISOString();
-            const updated = { ...task, status: 'in_progress', owner: workerName, claim: { owner: workerName, token: claimToken, leased_until: new Date(Date.now() + 15 * 60 * 1000).toISOString() }, version: task.version + 1, recovery_reservation: undefined, recovery_adoption: { recovery_id: reservation.recovery_id, request_id: reservation.request_id, continuation_sequence: reservation.continuation_sequence, checkpoint_path: reservation.checkpoint_path, checkpoint_hash: reservation.checkpoint_hash, replacement_worker: workerName, replacement_generation: reservation.replacement_generation, adopted_at: adoptedAt } };
+            const updated = { ...task, status: 'in_progress', owner: workerName, claim: {
+                    owner: workerName,
+                    token: claimToken,
+                    leased_until: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+                    ...(deps.launchAttemptId ? { launch_attempt_id: deps.launchAttemptId } : {}),
+                }, version: task.version + 1, recovery_reservation: undefined, recovery_adoption: { recovery_id: reservation.recovery_id, request_id: reservation.request_id, continuation_sequence: reservation.continuation_sequence, checkpoint_path: reservation.checkpoint_path, checkpoint_hash: reservation.checkpoint_hash, replacement_worker: workerName, replacement_generation: reservation.replacement_generation, adopted_at: adoptedAt } };
             await deps.writeAtomic(deps.taskFilePath(deps.teamName, taskId, deps.cwd), JSON.stringify(updated, null, 2));
             return { ok: true, task: updated, claimToken, checkpoint: checkpoint.checkpoint, replayed: false };
         });

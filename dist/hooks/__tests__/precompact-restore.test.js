@@ -13,9 +13,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, mkdirSync, existsSync, linkSync, rmSync, readdirSync, renameSync, symlinkSync, statSync, unlinkSync, utimesSync, writeFileSync, readFileSync, realpathSync, } from 'fs';
 import * as nodeFs from 'fs';
 import { basename, dirname, join, sep } from 'path';
-import { tmpdir } from 'os';
+import { homedir } from 'os';
 import { pathToFileURL } from 'url';
 import { createHash } from 'crypto';
+import { execFileSync } from 'child_process';
 vi.mock('fs', async () => {
     const actual = await vi.importActual('fs');
     return { ...actual };
@@ -49,7 +50,8 @@ function withPublisherPreload(preloadPath, env, callback) {
 // Helpers
 // ============================================================================
 function createTempDir() {
-    const dir = mkdtempSync(join(tmpdir(), 'precompact-restore-test-'));
+    const dir = mkdtempSync(join(homedir(), 'precompact-restore-test-'));
+    execFileSync('git', ['init', '--quiet'], { cwd: dir, stdio: 'ignore' });
     mkdirSync(join(dir, '.omc', 'state'), { recursive: true });
     return dir;
 }

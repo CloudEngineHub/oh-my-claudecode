@@ -461,11 +461,13 @@ function approvedTempRoots() {
 function isTempOrScratchpadPath(filePath, directory) {
   const target = portablePath(filePath);
   if (!filePath || !isAbsolutePath(target)) return false;
+  const hostIsWindows = process.platform === 'win32';
+  if (isWindowsPath(target) !== hostIsWindows) return false;
   const canonical = canonicalPath(filePath), roots = projectRoots(directory);
   if (roots.some(root => withinPath(target, root) || withinPath(canonical, canonicalPath(root))) || hasGitAncestor(canonical)) return false;
   const temps = approvedTempRoots(), canonicalTemps = temps.map(canonicalPath);
-  const lexical = temps.some(root => withinPath(target, root)) || WINDOWS_TEMP.some(pattern => pattern.test(target));
-  const resolved = canonicalTemps.some(root => withinPath(canonical, root)) || WINDOWS_TEMP.some(pattern => pattern.test(canonical));
+  const lexical = temps.some(root => withinPath(target, root)) || (hostIsWindows && WINDOWS_TEMP.some(pattern => pattern.test(target)));
+  const resolved = canonicalTemps.some(root => withinPath(canonical, root)) || (hostIsWindows && WINDOWS_TEMP.some(pattern => pattern.test(canonical)));
   return lexical && resolved;
 }
 
@@ -524,73 +526,388 @@ function summarizeCommand(command) {
     ? `${text.slice(0, NOTICE_COMMAND_MAX)}… (${text.length} chars)`
     : text;
 }
+function advanceQuote(quote, ch, next) {
+  if (quote === "$'") {
+    if (ch === '\\' && next !== undefined) return { quote, consume: 2 };
+    if (ch === "'") return { quote: null, consume: 1 };
+    return { quote, consume: 1 };
+  }
+  if (quote === "'") {
+    if (ch === "'") return { quote: null, consume: 1 };
+    return { quote, consume: 1 };
+  }
+  if (quote === '"') {
+    if (ch === '\\' && next !== undefined) return { quote, consume: 2 };
+    if (ch === '"') return { quote: null, consume: 1 };
+    return { quote, consume: 1 };
+  }
+  if (ch === '$' && next === "'") return { quote: "$'", consume: 2 };
+  if (ch === "'" || ch === '"') return { quote: ch, consume: 1 };
+  return null;
+}
 
 function shellGroup(text, openIndex) {
-  let depth = 0; let quote = null;
+  let depth = 0; let quote = null; let brace = 0;
   for (let i = openIndex; i < text.length; i += 1) {
     const ch = text[i];
-    if (quote) { if (ch === '\\') i += 1; else if (ch === quote) quote = null; continue; }
-    if (ch === "'" || ch === '"') { quote = ch; continue; }
+    const q = advanceQuote(quote, ch, text[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
     if (ch === '\\') { i += 1; continue; }
+    if (ch === '$' && text[i + 1] === '{') { brace += 1; i += 1; continue; }
+    if (brace > 0) {
+      if (ch === '}') brace -= 1;
+      else if (ch === '(') depth += 1;
+      else if (ch === ')' && depth > 1) depth -= 1;
+      continue;
+    }
     if (ch === '(') depth += 1;
     else if (ch === ')' && --depth === 0) return { end: i, inner: text.slice(openIndex + 1, i) };
   }
   return { end: text.length - 1, inner: text.slice(openIndex + 1) };
 }
-
-function heredocDelimiter(line) {
+function findClosingBacktick(text, open) {
   let quote = null;
-  for (let i = 0; i < line.length - 1; i += 1) {
-    const ch = line[i];
-    if (quote) { if (ch === '\\') i += 1; else if (ch === quote) quote = null; continue; }
-    if (ch === "'" || ch === '"') { quote = ch; continue; }
-    if (ch === '\\') { i += 1; continue; }
-    if (ch === '#' && (i === 0 || /[\s;|&()]/.test(line[i - 1]))) return null;
-    if (ch !== '<' || line[i + 1] !== '<') continue;
-    const match = line.slice(i + 2).match(/^(-)?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\2/);
-    if (match) return { delimiter: match[3], stripTabs: Boolean(match[1]) };
+  for (let i = open + 1; i < text.length; i += 1) {
+    const ch = text[i];
+    const q = advanceQuote(quote, ch, text[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
+    if (quote) continue;
+    if (ch === '\\' && i + 1 < text.length) { i += 1; continue; }
+    if (ch === '`') return i;
   }
-  return null;
+  return -1;
 }
 
-function stripHeredocBodies(command) {
-  const lines = String(command || '').split('\n'); const kept = [];
+function hasUnquotedTrailingBackslash(line) {
+  let quote = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const q = advanceQuote(quote, line[i], line[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
+    if (line[i] === '\\') {
+      if (i + 1 >= line.length) return quote === null;
+      i += 1;
+    }
+  }
+  return false;
+}
+function quotedHeredocBodyLines(lines) {
+  const skip = new Set();
   for (let i = 0; i < lines.length; i += 1) {
-    const marker = heredocDelimiter(lines[i]); kept.push(lines[i]);
-    if (!marker) continue;
+    const markers = heredocMarkers(lines[i]);
+    if (!markers.length) continue;
+    let lineIndex = i;
+    for (const marker of markers) {
+      while (++lineIndex < lines.length) {
+        const candidate = marker.stripTabs ? lines[lineIndex].replace(/^\t+/, '') : lines[lineIndex];
+        if (candidate === marker.delimiter) break;
+        if (marker.quoted) skip.add(lineIndex);
+      }
+    }
+    i = lineIndex;
+  }
+  return skip;
+}
+function joinContinuedLines(text) {
+  const lines = String(text || '').split('\n');
+  const quotedBody = quotedHeredocBodyLines(lines);
+  const out = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    let line = lines[i];
+    if (!quotedBody.has(i)) {
+      while (hasUnquotedTrailingBackslash(line) && i + 1 < lines.length && !quotedBody.has(i + 1)) {
+        line = `${line.slice(0, -1)}${lines[i + 1]}`;
+        i += 1;
+      }
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+function heredocFd(prefix) {
+  const fdMatch = prefix.match(/(\d+)$/);
+  if (!fdMatch) return 0;
+  const boundary = prefix.length - fdMatch[1].length - 1;
+  if (boundary < 0) return Number(fdMatch[1]);
+  if (!/[\s;|&()]/.test(prefix[boundary])) return 0;
+  let escapes = 0;
+  for (let j = boundary - 1; j >= 0 && prefix[j] === '\\'; j -= 1) escapes += 1;
+  return escapes % 2 === 0 ? Number(fdMatch[1]) : 0;
+}
+function heredocMarkers(line) {
+  const markers = [];
+  let quote = null;
+  let arith = 0;
+  for (let i = 0; i < line.length - 1; i += 1) {
+    const ch = line[i];
+    const q = advanceQuote(quote, ch, line[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
+    if (ch === '\\') { i += 1; continue; }
+    if (ch === '#' && (i === 0 || /[\s;|&()]/.test(line[i - 1]))) break;
+    if (ch === '(' && line[i + 1] === '(') { arith += 1; i += 1; continue; }
+    if (arith > 0 && ch === ')' && line[i + 1] === ')') { arith -= 1; i += 1; continue; }
+    if (arith > 0) continue;
+    if (ch !== '<' || line[i + 1] !== '<') continue;
+    if (line[i + 2] === '<') { i += 2; continue; }
+    let j = i + 2;
+    const stripTabs = line[j] === '-';
+    if (stripTabs) j += 1;
+    while (j < line.length && /[ \t]/.test(line[j])) j += 1;
+    if (j >= line.length) continue;
+    let delimiter = ''; let quoted = false;
+    const start = j;
+    while (j < line.length && !/[\s;&|<>()]/.test(line[j])) {
+      const q = line[j];
+      if (q === "'") {
+        quoted = true;
+        const end = line.indexOf("'", j + 1);
+        if (end < 0) { delimiter = ''; break; }
+        delimiter += line.slice(j + 1, end);
+        j = end + 1;
+        continue;
+      }
+      if (q === '"') {
+        quoted = true;
+        let inner = '';
+        let k = j + 1;
+        let closed = false;
+        while (k < line.length) {
+          if (line[k] === '\\' && k + 1 < line.length) {
+            const n = line[k + 1];
+            inner += '$`"\\\n'.includes(n) ? n : `\\${n}`;
+            k += 2; continue;
+          }
+          if (line[k] === '"') { closed = true; k += 1; break; }
+          inner += line[k]; k += 1;
+        }
+        if (!closed) { delimiter = ''; break; }
+        delimiter += inner;
+        j = k;
+        continue;
+      }
+      if (line[j] === '\\' && j + 1 < line.length) { delimiter += line[j + 1]; j += 2; continue; }
+      if (q === '$' && line[j + 1] === '"') {
+        quoted = true;
+        let inner = '';
+        let k = j + 2;
+        let closed = false;
+        while (k < line.length) {
+          if (line[k] === '\\' && k + 1 < line.length) {
+            const n = line[k + 1];
+            inner += '$`"\\\n'.includes(n) ? n : `\\${n}`;
+            k += 2; continue;
+          }
+          if (line[k] === '"') { closed = true; k += 1; break; }
+          inner += line[k]; k += 1;
+        }
+        if (!closed) { delimiter = ''; break; }
+        delimiter += inner;
+        j = k;
+        continue;
+      }
+      if (q === '$' && line[j + 1] === "'") {
+        quoted = true;
+        let inner = '';
+        let k = j + 2;
+        let closed = false;
+        while (k < line.length) {
+          if (line[k] === '\\' && k + 1 < line.length) {
+            const got = decodeAnsiCEscape(line, k);
+            inner += got.value;
+            k = got.end;
+            continue;
+          }
+          if (line[k] === "'") { closed = true; k += 1; break; }
+          inner += line[k]; k += 1;
+        }
+        if (!closed) { delimiter = ''; break; }
+        delimiter += truncateAtNul(inner);
+        j = k;
+        continue;
+      }
+      if (q === '$' && line[j + 1] === '(') {
+        const g = shellGroup(line, j + 1);
+        delimiter += line.slice(j, g.end + 1);
+        j = g.end + 1;
+        continue;
+      }
+      if (q === '`') {
+        const end = findClosingBacktick(line, j);
+        if (end < 0) { delimiter = ''; break; }
+        delimiter += line.slice(j, end + 1);
+        j = end + 1;
+        continue;
+      }
+      delimiter += line[j];
+      j += 1;
+    }
+    if (!delimiter && j === start) continue;
+    markers.push({ delimiter, stripTabs, fd: heredocFd(line.slice(0, i)), pos: i, quoted });
+    i = Math.max(j, i + 1) - 1;
+  }
+  return markers;
+}
+function consumeHeredocBodies(lines, start, markers) {
+  let i = start;
+  const bodies = [];
+  for (const marker of markers) {
+    const body = [];
     while (++i < lines.length) {
       const candidate = marker.stripTabs ? lines[i].replace(/^\t+/, '') : lines[i];
-      if (candidate === marker.delimiter) { kept.push(lines[i]); break; }
+      if (candidate === marker.delimiter) break;
+      body.push(lines[i]);
     }
+    bodies.push({ ...marker, body: body.join('\n'), delimiterLine: i < lines.length ? i : i - 1 });
+  }
+  return { bodies, end: i };
+}
+function stripHeredocBodies(command) {
+  const lines = joinContinuedLines(command).split('\n'); const kept = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const markers = heredocMarkers(lines[i]); kept.push(lines[i]);
+    if (!markers.length) continue;
+    const consumed = consumeHeredocBodies(lines, i, markers);
+    i = consumed.end;
   }
   return kept.join('\n');
 }
+function splitSimpleCommands(line) {
+  const parts = []; let start = 0; let quote = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    const q = advanceQuote(quote, ch, line[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
+    if (ch === '\\') { i += 1; continue; }
+    const two = line.slice(i, i + 2);
+    if (two === '&&' || two === '||' || two === '|&') {
+      parts.push({ start, end: i, text: line.slice(start, i) });
+      i += 1; start = i + 1; continue;
+    }
+    if (ch === '&' && i > 0 && '<>'.includes(line[i - 1])) continue;
+    if (';|&'.includes(ch)) { parts.push({ start, end: i, text: line.slice(start, i) }); start = i + 1; }
+  }
+  parts.push({ start, end: line.length, text: line.slice(start) });
+  return parts;
+}
+function owningPart(line, pos) {
+  return splitSimpleCommands(line).find(part => pos >= part.start && pos < part.end)
+    ?? { start: 0, end: line.length, text: line };
+}
+function dupRedirects(line) {
+  const dups = [];
+  let quote = null;
+  for (let i = 0; i < line.length - 1; i += 1) {
+    const ch = line[i];
+    const q = advanceQuote(quote, ch, line[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
+    if (ch === '\\') { i += 1; continue; }
+    if (ch !== '<' || line[i + 1] !== '&') continue;
+    const prefix = line.slice(0, i);
+    const dest = heredocFd(prefix);
+    const srcMatch = line.slice(i + 2).match(/^[ \t]*(\d+)/);
+    if (!srcMatch) continue;
+    dups.push({ pos: i, dest, src: Number(srcMatch[1]) });
+  }
+  return dups;
+}
+function stdinOverrideRedirects(line) {
+  const events = [];
+  let quote = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    const q = advanceQuote(quote, ch, line[i + 1]);
+    if (q) { quote = q.quote; i += q.consume - 1; continue; }
+    if (ch === '\\') { i += 1; continue; }
+    const three = line.slice(i, i + 3);
+    const two = line.slice(i, i + 2);
+    if (three === '<<<') {
+      events.push({ pos: i, type: 'override', dest: heredocFd(line.slice(0, i)) });
+      i += 2; continue;
+    }
+    if (two === '<<' || two === '<&') { i += 1; continue; }
+    if (ch === '<') events.push({ pos: i, type: 'override', dest: heredocFd(line.slice(0, i)) });
+  }
+  return events;
+}
+function applyStdin(commandLine, bodies) {
+  const events = [
+    ...bodies.map(item => ({ pos: item.pos, type: 'heredoc', item })),
+    ...dupRedirects(commandLine).map(dup => ({ ...dup, type: 'dup' })),
+    ...stdinOverrideRedirects(commandLine),
+  ].sort((a, b) => a.pos - b.pos);
+  const fds = new Map();
+  for (const event of events) {
+    if (event.type === 'heredoc') fds.set(event.item.fd, event.item);
+    else if (event.type === 'dup' && fds.has(event.src)) fds.set(event.dest, fds.get(event.src));
+    else if (event.type === 'override') fds.set(event.dest, null);
+  }
+  return fds.get(0) || null;
+}
+function heredocSections(command) {
+  const lines = joinContinuedLines(command).split('\n'); const sections = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const commandLine = lines[i]; const markers = heredocMarkers(commandLine);
+    if (!markers.length) continue;
+    const consumed = consumeHeredocBodies(lines, i, markers);
+    const byOwner = new Map();
+    for (const item of consumed.bodies) {
+      const owner = owningPart(commandLine, item.pos);
+      if (!byOwner.has(owner.start)) byOwner.set(owner.start, { text: owner.text, start: owner.start, bodies: [] });
+      byOwner.get(owner.start).bodies.push(item);
+    }
+    for (const { text, start, bodies } of byOwner.values()) {
+      const stdin = applyStdin(text, bodies.map(item => ({ ...item, pos: item.pos - start })));
+      if (stdin) sections.push({ commandLine: text, body: stdin.body, fd: 0 });
+      for (const item of bodies) {
+        if (item === stdin) continue;
+        sections.push({ commandLine: text, body: item.body, fd: item.fd === 0 ? -1 : item.fd });
+      }
+    }
+    i = consumed.end;
+  }
+  return sections;
+}
 
 function tokenizeShell(command) {
-  const tokens = []; let value = ''; let dynamic = false; let ambiguous = false; let nested = []; let quote = null;
-  const flush = () => { if (value || dynamic || quote) tokens.push({ type: 'word', value, dynamic, ambiguous, nested }); value = ''; dynamic = false; ambiguous = false; nested = []; };
-  const op = (value, kind) => { flush(); tokens.push({ type: 'op', value, kind }); };
+  const tokens = []; let value = ''; let dynamic = false; let ambiguous = false; let nested = []; let quote = null; let adjacent = false; let quoted = false; let escaped = false;
+  const flush = () => {
+    if (value || dynamic || quote || quoted) {
+      tokens.push({ type: 'word', value, dynamic, ambiguous, nested, glued: adjacent, quoted, escaped });
+      adjacent = true;
+    }
+    value = ''; dynamic = false; ambiguous = false; nested = []; quoted = false; escaped = false;
+  };
+  const op = (value, kind) => { flush(); tokens.push({ type: 'op', value, kind, glued: adjacent }); adjacent = true; };
   const text = stripHeredocBodies(command);
   for (let i = 0; i < text.length;) {
     const ch = text[i];
+    if (quote === "$'") {
+      if (ch === '\\' && i + 1 < text.length) { const got = decodeAnsiCEscape(text, i); value += got.value; i = got.end; continue; }
+      if (ch === "'") { quote = null; value = truncateAtNul(value); i += 1; continue; }
+      value += ch; i += 1; continue;
+    }
     if (quote === "'") { if (ch === "'") quote = null; else value += ch; i += 1; continue; }
     if (quote === '"') {
       if (ch === '"') { quote = null; i += 1; continue; }
-      if (ch === '\\') { if (i + 1 < text.length) value += text[i + 1]; i += 2; continue; }
+      if (ch === '\\' && i + 1 < text.length) {
+        const n = text[i + 1];
+        if ('$`"\\\n'.includes(n)) { value += n; i += 2; continue; }
+        value += ch; i += 1; continue;
+      }
       if (ch === '$' && text[i + 1] === '(') { const g = shellGroup(text, i + 1); value += text.slice(i, g.end + 1); dynamic = true; nested.push(g.inner); i = g.end + 1; continue; }
-      if (ch === '`') { const end = text.indexOf('`', i + 1); value += text.slice(i, end < 0 ? text.length : end + 1); dynamic = true; if (end >= 0) nested.push(text.slice(i + 1, end)); i = end < 0 ? text.length : end + 1; continue; }
+      if (ch === '`') { const end = findClosingBacktick(text, i); value += text.slice(i, end < 0 ? text.length : end + 1); dynamic = true; if (end >= 0) nested.push(text.slice(i + 1, end)); i = end < 0 ? text.length : end + 1; continue; }
       if (ch === '$') { value += ch; dynamic = true; i += 1; continue; }
       value += ch; i += 1; continue;
     }
-    if (ch === "'") { quote = "'"; i += 1; continue; }
-    if (ch === '"') { quote = '"'; i += 1; continue; }
-    if (ch === '\\') { if (i + 1 < text.length) value += text[i + 1]; i += 2; continue; }
+    if (ch === '$' && text[i + 1] === "'") { quote = "$'"; quoted = true; i += 2; continue; }
+    if (ch === "'") { quote = "'"; quoted = true; i += 1; continue; }
+    if (ch === '"') { quote = '"'; quoted = true; i += 1; continue; }
+    if (ch === '\\') { if (i + 1 < text.length) { value += text[i + 1]; escaped = true; } i += 2; continue; }
     if (ch === '#' && value === '') { while (i < text.length && text[i] !== '\n') i += 1; continue; }
-    if (ch === '\n') { op(';', 'sep'); i += 1; continue; }
-    if (/\s/.test(ch)) { flush(); i += 1; continue; }
+    if (ch === '\n') { op(';', 'sep'); adjacent = false; i += 1; continue; }
+    if (/\s/.test(ch)) { flush(); adjacent = false; i += 1; continue; }
     if (ch === '$' && text[i + 1] === '(') { const g = shellGroup(text, i + 1); value += text.slice(i, g.end + 1); dynamic = true; nested.push(g.inner); i = g.end + 1; continue; }
     if ((ch === '<' || ch === '>') && text[i + 1] === '(') { const g = shellGroup(text, i + 1); value += text.slice(i, g.end + 1); dynamic = true; nested.push(g.inner); i = g.end + 1; continue; }
-    if (ch === '`') { const end = text.indexOf('`', i + 1); value += text.slice(i, end < 0 ? text.length : end + 1); dynamic = true; if (end >= 0) nested.push(text.slice(i + 1, end)); i = end < 0 ? text.length : end + 1; continue; }
+    if (ch === '`') { const end = findClosingBacktick(text, i); value += text.slice(i, end < 0 ? text.length : end + 1); dynamic = true; if (end >= 0) nested.push(text.slice(i + 1, end)); i = end < 0 ? text.length : end + 1; continue; }
     if (ch === '$') { value += ch; dynamic = true; i += 1; continue; }
     if ('*?[]{}'.includes(ch)) ambiguous = true;
     const two = text.slice(i, i + 2), three = text.slice(i, i + 3);
@@ -606,20 +923,52 @@ function tokenizeShell(command) {
   flush(); return tokens;
 }
 
-const COMMAND_WRAPPERS = new Set(['command', 'env', 'exec', 'nohup', 'nice', 'time', 'timeout', 'sudo']);
+const COMMAND_WRAPPERS = new Set(['command', 'env', 'exec', 'nohup', 'nice', 'time', 'timeout', 'sudo', 'builtin']);
 const SHELL_COMMANDS = new Set(['sh', 'bash', 'dash', 'zsh', 'ksh', 'fish', 'ash']);
 const SHELL_RESERVED_WORDS = new Set(['if', 'then', 'elif', 'else', 'fi', 'while', 'until', 'for', 'do', 'done', 'case', 'esac', 'in', 'select', 'function', 'coproc', '{', '}', '!']);
 function shellBase(value) { const clean = String(value || '').replace(/\\/g, '/'); return clean.slice(clean.lastIndexOf('/') + 1).toLowerCase(); }
-function splitSegments(tokens) { const out = []; let segment = []; for (const token of tokens) { if (token.type === 'op' && token.kind === 'sep') { if (segment.length) out.push(segment); segment = []; } else segment.push(token); } if (segment.length) out.push(segment); return out; }
+function splitPipelineGroups(tokens) {
+  const groups = []; let stages = []; let stage = [];
+  const flushStage = () => { if (stage.length) stages.push(stage); stage = []; };
+  const flushGroup = () => { flushStage(); if (stages.length) groups.push(stages); stages = []; };
+  for (const token of tokens) {
+    if (token.type === 'op' && token.kind === 'sep') {
+      if (token.value === '|' || token.value === '|&') flushStage();
+      else flushGroup();
+    } else stage.push(token);
+  }
+  flushGroup();
+  return groups;
+}
+function sourceMutationNotice(command) {
+  return `[DELEGATION NOTICE] Bash command may modify source files: ${summarizeCommand(command)}\n\nRecommended: Delegate to executor agent instead:\n  Task(subagent_type="oh-my-claudecode:executor", model="sonnet", prompt="...")\n\nThis is a soft warning. Operation will proceed.`;
+}
 function targetIndices(segment) { const out = new Set(); for (let i = 0; i < segment.length; i += 1) if (segment[i].type === 'op' && (segment[i].kind === 'in' || segment[i].kind === 'out') && segment[i + 1]?.type === 'word') out.add(i + 1); return out; }
-function writeTarget(token, directory) { return !token || token.type !== 'word' || token.dynamic || token.ambiguous || !token.value || (isSourceFile(token.value) && !isAllowedPath(token.value, directory)); }
+function writeTarget(token, directory) { return !token || token.type !== 'word' || token.dynamic || token.ambiguous || Boolean(token.value) && isSourceFile(token.value) && !isAllowedPath(token.value, directory); }
 function wordsFor(segment, targets) { return segment.map((token, index) => ({ token, index })).filter(entry => entry.token.type === 'word' && !targets.has(entry.index)); }
+function redirectIoIndices(segment) {
+  const out = new Set();
+  for (let i = 1; i < segment.length; i += 1) {
+    if (segment[i].type === 'op' && (segment[i].kind === 'in' || segment[i].kind === 'out') && segment[i].value !== '&>' && segment[i].glued && segment[i - 1].type === 'word' && !segment[i - 1].quoted && !segment[i - 1].escaped && /^\d+$/.test(segment[i - 1].value)) out.add(i - 1);
+  }
+  return out;
+}
+function commandWords(segment) {
+  return wordsFor(segment, targetIndices(segment)).filter(entry => !redirectIoIndices(segment).has(entry.index));
+}
 function consumeWrapper(words, index, base) {
   let i = index + 1;
   const takeOptionValue = () => { if (!words[i + 1] || words[i + 1].token.dynamic) return false; i += 2; return true; };
   while (i < words.length) {
     const token = words[i].token; if (token.dynamic) return null;
     const value = token.value;
+    if (base === 'builtin') {
+      if (value === '--') i += 1;
+      if (!words[i]) return { index: words.length, base: ':' };
+      const name = words[i].token.value;
+      if (name === 'printf' || name === 'echo' || name === 'command') return { index: i };
+      return { index: words.length, base: ':' };
+    }
     if (value === '--') { i += 1; break; }
     if (base === 'env' && value.includes('=') && !value.startsWith('-')) { i += 1; continue; }
     if (!value.startsWith('-') || value === '-') break;
@@ -629,6 +978,7 @@ function consumeWrapper(words, index, base) {
     if (base === 'sudo' && /^(?:-u|-g|-h|-p|-C|-T|-r|-t)$/.test(value)) { if (!takeOptionValue()) return null; continue; }
     if (base === 'sudo' && /^(?:--user|--group|--host|--prompt|--close-from|--command-timeout|--role|--type)$/.test(value)) { if (!takeOptionValue()) return null; continue; }
     if (base === 'sudo' && /^(?:--user|--group|--host|--prompt|--close-from|--command-timeout|--role|--type)=/.test(value)) { i += 1; continue; }
+    if (base === 'sudo' && /^--preserve-env=/.test(value)) { i += 1; continue; }
     if (base === 'sudo' && /^(?:-A|-b|-E|-e|-H|-K|-k|-n|-P|-S|-V|-v|--askpass|--background|--preserve-env|--edit|--set-home|--remove-timestamp|--reset-timestamp|--non-interactive|--stdin|--validate)$/.test(value)) { i += 1; continue; }
     if (base === 'env' && /^(?:-u|--unset|-C|--chdir)$/.test(value)) { if (!takeOptionValue()) return null; continue; }
     if (base === 'env' && /^(?:--unset|--chdir)=/.test(value)) { i += 1; continue; }
@@ -637,13 +987,32 @@ function consumeWrapper(words, index, base) {
     if (base === 'exec' && /^(?:-c|-l)$/.test(value)) { i += 1; continue; }
     if (base === 'nice' && /^(?:-n|--adjustment)$/.test(value)) { if (!takeOptionValue()) return null; continue; }
     if (base === 'nice' && /^--adjustment=/.test(value)) { i += 1; continue; }
-    if (base === 'command' && /^(?:-p|-v|-V)$/.test(value)) { i += 1; continue; }
+    if (base === 'command' && /^(?:-v|-V)$/.test(value)) return { index: words.length, base: ':' };
+    if (base === 'command' && value === '-p') { i += 1; continue; }
     if (base === 'nohup' && /^(?:--help|--version)$/.test(value)) return { index: words.length, base: null };
     if (base === 'time' && /^(?:-p|--portability)$/.test(value)) { i += 1; continue; }
     return null;
   }
   if (base === 'timeout') { if (!words[i] || words[i].token.dynamic) return null; i += 1; }
   return { index: i };
+}
+function headTailOperands(tokens) {
+  const operands = []; let optionsEnded = false;
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i]; if (token.dynamic) return null;
+    if (!optionsEnded) {
+      if (token.value === '--') { optionsEnded = true; continue; }
+      if (/^(?:--lines|--bytes)=/.test(token.value)) continue;
+      if (/^(?:-n|--lines|-c|--bytes)$/.test(token.value)) {
+        if (!tokens[i + 1] || tokens[i + 1].dynamic) return null;
+        i += 1; continue;
+      }
+      if (/^-[nc][0-9]+/.test(token.value)) continue;
+      if (token.value.startsWith('-') && token.value !== '-') continue;
+    }
+    operands.push(token);
+  }
+  return operands;
 }
 function executable(words) {
   let i = 0;
@@ -681,6 +1050,492 @@ function teeOperands(tokens) {
   }
   return operands;
 }
+function touchOperands(tokens) {
+  const operands = []; let optionsEnded = false;
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i]; if (token.dynamic) return null;
+    if (!optionsEnded) {
+      if (token.value === '--') { optionsEnded = true; continue; }
+      if (/^(?:-r|--reference|-d|--date|-t)$/.test(token.value)) {
+        if (!tokens[i + 1] || tokens[i + 1].dynamic) return null;
+        i += 1; continue;
+      }
+      if (/^(?:--reference|--date|--time)=/.test(token.value)) continue;
+      if (token.value.startsWith('-') && token.value !== '-') continue;
+    }
+    operands.push(token);
+  }
+  return operands;
+}
+function truncateOperands(tokens) {
+  const operands = []; let optionsEnded = false;
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i]; if (token.dynamic) return null;
+    if (!optionsEnded) {
+      if (token.value === '--') { optionsEnded = true; continue; }
+      if (/^(?:-r|--reference|-s|--size)$/.test(token.value)) {
+        if (!tokens[i + 1] || tokens[i + 1].dynamic) return null;
+        i += 1; continue;
+      }
+      if (/^(?:--reference|--size)=/.test(token.value)) continue;
+      if (token.value.startsWith('-') && token.value !== '-') continue;
+    }
+    operands.push(token);
+  }
+  return operands;
+}
+function mvOperands(tokens) {
+  const operands = []; let optionsEnded = false;
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i]; if (token.dynamic) return null;
+    if (!optionsEnded) {
+      if (token.value === '--') { optionsEnded = true; continue; }
+      if (/^(?:-S|--suffix|-t|--target-directory)$/.test(token.value)) {
+        if (!tokens[i + 1] || tokens[i + 1].dynamic) return null;
+        i += 1; continue;
+      }
+      if (/^(?:--suffix|--target-directory|--backup)=/.test(token.value)) continue;
+      if (token.value.startsWith('-') && token.value !== '-') continue;
+    }
+    operands.push(token);
+  }
+  return operands;
+}
+function stdoutRedirected(stage) {
+  for (let i = 0; i < stage.length; i += 1) {
+    const token = stage[i];
+    if (token.type !== 'op' || token.kind !== 'out') continue;
+    if (token.value === '&>') return true;
+    const prev = stage[i - 1];
+    const io = token.glued && prev?.type === 'word' && !prev.quoted && !prev.escaped && /^\d+$/.test(prev.value) ? Number(prev.value) : 1;
+    if (token.value === '>&' && io !== 1) continue;
+    if (io === 1) return true;
+  }
+  return false;
+}
+function stdinRedirected(stage) {
+  for (let i = 0; i < stage.length; i += 1) {
+    const token = stage[i];
+    if (token.type !== 'op' || token.kind !== 'in') continue;
+    const prev = stage[i - 1];
+    const io = token.glued && prev?.type === 'word' && !prev.quoted && !prev.escaped && /^\d+$/.test(prev.value) ? Number(prev.value) : 0;
+    if (io !== 0) continue;
+    const target = stage[i + 1];
+    if (token.value === '<&' && target?.type === 'word' && target.value === '0') continue;
+    return true;
+  }
+  return false;
+}
+function isPassthroughStage(stage) {
+  const words = commandWords(stage);
+  const cmd = executable(words);
+  if (cmd?.base !== 'cat') return false;
+  if (stdoutRedirected(stage) || effectiveFd0HereString(stage).kind !== 'pipeline') return false;
+  let optionsEnded = false;
+  for (const entry of words.slice(cmd.index + 1)) {
+    if (entry.token.dynamic) return false;
+    const value = entry.token.value;
+    if (!optionsEnded) {
+      if (value === '--') { optionsEnded = true; continue; }
+      if (/^-[u]+$/.test(value) || value === '-' || value === '/dev/null') continue;
+      if (value.startsWith('-') && value !== '-') return false;
+      return false;
+    }
+    if (value === '-' || value === '/dev/null') continue;
+    return false;
+  }
+  return true;
+}
+function parseShellInvocation(shellArgs) {
+  let noexec = false;
+  let forceStdin = false;
+  const applySet = (value) => {
+    const plus = value.startsWith('+');
+    const letters = value.slice(1);
+    if (letters.includes('n')) noexec = !plus;
+    if (!plus && letters.includes('s')) forceStdin = true;
+  };
+  let i = 0;
+  const skipValueOpt = (value, next, filenameOk) => {
+    if (!next) return 'missing';
+    if (!filenameOk && (next.startsWith('-') || next.startsWith('+'))) return 'invalid';
+    if (value === '-o' && next === 'noexec') noexec = true;
+    if (value === '+o' && next === 'noexec') noexec = false;
+    return 'ok';
+  };
+  const skipPostC = () => {
+    if (shellArgs[i]?.token.value === '--') { i += 1; return 'ok'; }
+    while (i < shellArgs.length) {
+      const value = shellArgs[i].token.value;
+      const next = shellArgs[i + 1]?.token.value;
+      if (value === '--') { i += 1; break; }
+      if (value === '-' || value === '+') break;
+      if (value === '--rcfile' || value === '--init-file') {
+        const got = skipValueOpt(value, next, true); if (got !== 'ok') return got; i += 2; continue;
+      }
+      if (value === '-O' || value === '+O' || value === '-o' || value === '+o') {
+        const got = skipValueOpt(value, next, false); if (got !== 'ok') return got; i += 2; continue;
+      }
+      if (/^[+-]D$/.test(value) || /^(?:--dump-strings|--dump-po-strings)$/.test(value)) return 'invalid';
+      if (/^[+-][abefhkmnptuvxBCEHPTcils]+$/.test(value)) { applySet(value); i += 1; continue; }
+      if (/^(?:--norc|--noprofile|--posix|--restricted|--verbose|--debugger|--debug|--stdin|--noediting|--login|--pretty-print)$/.test(value)) {
+        if (value === '--stdin') forceStdin = true;
+        i += 1; continue;
+      }
+      if (value.startsWith('-') || value.startsWith('+')) return 'invalid';
+      break;
+    }
+    return 'ok';
+  };
+  while (i < shellArgs.length) {
+    const value = shellArgs[i].token.value;
+    const next = shellArgs[i + 1]?.token.value;
+    if (value === '--' || value === '-') return { invalid: false, noexec, codeIndex: -1, readsStdin: forceStdin || i + 1 >= shellArgs.length };
+    if (value === '--rcfile' || value === '--init-file') {
+      const got = skipValueOpt(value, next, true); if (got !== 'ok') return { invalid: true, noexec, codeIndex: -1, readsStdin: false };
+      i += 2; continue;
+    }
+    if (value === '-O' || value === '+O' || value === '-o' || value === '+o') {
+      const got = skipValueOpt(value, next, false); if (got !== 'ok') return { invalid: true, noexec, codeIndex: -1, readsStdin: false };
+      i += 2; continue;
+    }
+    if (value === '--command' || /^-[abefhkmnptuvxBCEHPTcils]*c[abefhkmnptuvxBCEHPTcils]*$/.test(value)) {
+      if (value !== '--command') applySet(value);
+      i += 1;
+      const got = skipPostC();
+      if (got !== 'ok') return { invalid: true, noexec, codeIndex: -1, readsStdin: false };
+      return { invalid: false, noexec, codeIndex: i, readsStdin: false };
+    }
+    if (/^[+-][abefhkmnptuvxBCEHPTcils]+$/.test(value)) { applySet(value); i += 1; continue; }
+    if (/^[+-]D$/.test(value) || /^(?:--dump-strings|--dump-po-strings|--help|--version)$/.test(value)) return { invalid: true, noexec, codeIndex: -1, readsStdin: false };
+    if (/^(?:--norc|--noprofile|--posix|--restricted|--verbose|--debugger|--debug|--stdin|--noediting|--login|--pretty-print)$/.test(value)) {
+      if (value === '--stdin') forceStdin = true;
+      i += 1; continue;
+    }
+    if (value.startsWith('-') && value !== '-') return { invalid: true, noexec, codeIndex: -1, readsStdin: false };
+    return { invalid: false, noexec, codeIndex: -1, readsStdin: forceStdin };
+  }
+  return { invalid: false, noexec, codeIndex: -1, readsStdin: true };
+}
+function shellArgsHaveNoexec(shellArgs) {
+  const invocation = parseShellInvocation(shellArgs);
+  return invocation.invalid || invocation.noexec;
+}
+function shellReadsStdinProgram(segment) {
+  const words = commandWords(segment);
+  const cmd = executable(words);
+  if (!cmd?.base || !SHELL_COMMANDS.has(cmd.base)) return false;
+  const shellArgs = words.slice(cmd.index + 1);
+  if (shellArgs.some(entry => entry.token.dynamic)) return true;
+  const invocation = parseShellInvocation(shellArgs);
+  if (invocation.invalid || invocation.noexec || invocation.codeIndex >= 0) return false;
+  return invocation.readsStdin;
+}
+function truncateAtNul(text) {
+  const nul = text.indexOf('\0');
+  return nul < 0 ? text : text.slice(0, nul);
+}
+function decodeAnsiCEscape(text, p) {
+  if (text[p] !== '\\' || p + 1 >= text.length) return { value: text[p], end: p + 1 };
+  const n = text[p + 1];
+  if (n === 'n') return { value: '\n', end: p + 2 };
+  if (n === 't') return { value: '\t', end: p + 2 };
+  if (n === 'r') return { value: '\r', end: p + 2 };
+  if (n === 'a') return { value: '\x07', end: p + 2 };
+  if (n === 'b') return { value: '\b', end: p + 2 };
+  if (n === 'f') return { value: '\f', end: p + 2 };
+  if (n === 'v') return { value: '\v', end: p + 2 };
+  if (n === 'e' || n === 'E') return { value: '\x1b', end: p + 2 };
+  if (n === 'c') {
+    if (p + 2 >= text.length) return { value: '\\c', end: p + 2 };
+    const x = text[p + 2];
+    return { value: x === '?' ? '\x7f' : String.fromCharCode(x.charCodeAt(0) & 0x1f), end: p + 3 };
+  }
+  if (n === 'x') {
+    let hex = '';
+    let q = p + 2;
+    while (q < text.length && hex.length < 2 && /[0-9a-fA-F]/.test(text[q])) hex += text[q++];
+    if (!hex) return { value: 'x', end: p + 2 };
+    return { value: String.fromCharCode(parseInt(hex, 16)), end: q };
+  }
+  if (/[0-7]/.test(n)) {
+    let oct = n;
+    let q = p + 2;
+    while (q < text.length && oct.length < 3 && /[0-7]/.test(text[q])) oct += text[q++];
+    return { value: String.fromCharCode(parseInt(oct, 8)), end: q };
+  }
+  if (n === 'u' || n === 'U') {
+    const max = n === 'u' ? 4 : 8;
+    let hex = '';
+    let q = p + 2;
+    while (q < text.length && hex.length < max && /[0-9a-fA-F]/.test(text[q])) hex += text[q++];
+    if (!hex) return { value: `\\${n}`, end: p + 2 };
+    const cp = parseInt(hex, 16);
+    if (!Number.isFinite(cp) || cp > 0x10FFFF) return { value: '', end: q };
+    return { value: String.fromCodePoint(cp), end: q };
+  }
+  return { value: `\\${n}`, end: p + 2 };
+}
+function decodeAnsiC(text) {
+  let out = '';
+  for (let p = 0; p < text.length; ) {
+    if (text[p] !== '\\') { out += text[p]; p += 1; continue; }
+    const got = decodeAnsiCEscape(text, p);
+    out += got.value;
+    p = got.end;
+  }
+  return out;
+}
+function expandPrintfEscapes(text, { stop = false, echo = false } = {}) {
+  let out = '';
+  for (let p = 0; p < text.length; p += 1) {
+    if (text[p] !== '\\' || p + 1 >= text.length) { out += text[p]; continue; }
+    const n = text[p + 1];
+    if (n === '\\') { out += '\\'; p += 1; continue; }
+    if (n === 'c') {
+      if (stop) return { text: out, stop: true };
+      out += '\\c'; p += 1; continue;
+    }
+    if (n === 'n') { out += '\n'; p += 1; continue; }
+    if (n === 't') { out += '\t'; p += 1; continue; }
+    if (n === 'x') {
+      let hex = '';
+      let q = p + 2;
+      while (q < text.length && hex.length < 2 && /[0-9a-fA-F]/.test(text[q])) hex += text[q++];
+      if (!hex) { out += 'x'; p += 1; continue; }
+      out += String.fromCharCode(parseInt(hex, 16));
+      p = q - 1; continue;
+    }
+    if (n === '0') {
+      let oct = '';
+      let q = p + 2;
+      while (q < text.length && oct.length < 3 && /[0-7]/.test(text[q])) oct += text[q++];
+      out += String.fromCharCode(parseInt(oct || '0', 8));
+      p = q - 1; continue;
+    }
+    if (echo && (n === 'u' || n === 'U')) {
+      const max = n === 'u' ? 4 : 8;
+      let hex = '';
+      let q = p + 2;
+      while (q < text.length && hex.length < max && /[0-9a-fA-F]/.test(text[q])) hex += text[q++];
+      if (!hex) { out += `\\${n}`; p += 1; continue; }
+      const cp = parseInt(hex, 16);
+      if (Number.isFinite(cp) && cp <= 0x10FFFF) out += String.fromCodePoint(cp);
+      else out += text.slice(p, q);
+      p = q - 1; continue;
+    }
+    if (n === 'u' && /^[0-9a-fA-F]{4}/.test(text.slice(p + 2))) {
+      out += String.fromCharCode(parseInt(text.slice(p + 2, p + 6), 16));
+      p += 5; continue;
+    }
+    if (n === 'U' && /^[0-9a-fA-F]{8}/.test(text.slice(p + 2))) {
+      const raw = text.slice(p, p + 10);
+      const cp = parseInt(text.slice(p + 2, p + 10), 16);
+      out += Number.isFinite(cp) && cp <= 0x10FFFF ? String.fromCodePoint(cp) : raw;
+      p += 9; continue;
+    }
+    out += `\\${n}`; p += 1;
+  }
+  return { text: out, stop: false };
+}
+function parsePrintfConversion(format, p) {
+  if (format[p + 1] === '%') return { end: p + 2, kind: '%', stars: 0, precision: null };
+  let q = p + 1;
+  while (q < format.length && /[-+ #0']/.test(format[q])) q += 1;
+  let stars = 0;
+  let precision = null;
+  if (format[q] === '*') { stars += 1; q += 1; }
+  else while (q < format.length && /\d/.test(format[q])) q += 1;
+  if (format[q] === '.') {
+    q += 1;
+    if (format[q] === '*') { stars += 1; precision = '*'; q += 1; }
+    else {
+      const start = q;
+      while (q < format.length && /\d/.test(format[q])) q += 1;
+      precision = q === start ? 0 : Number(format.slice(start, q));
+    }
+  }
+  const spec = format[q];
+  if (spec === 's' || spec === 'b') return { end: q + 1, kind: spec, stars, precision };
+  return { end: q, kind: null, stars: 0, precision: null };
+}
+function renderPrintf(args, { gnu = false } = {}) {
+  if (args.length === 0) return null;
+  let i = 0;
+  if (args[i] === '--') i += 1;
+  else if (args[i]?.startsWith('-') && args[i] !== '-') return null;
+  if (i >= args.length) return '';
+  const formatExp = expandPrintfEscapes(args[i++], { stop: gnu });
+  if (formatExp.stop) return formatExp.text;
+  const format = formatExp.text;
+  const rest = args.slice(i);
+  let out = '';
+  let ai = 0;
+  let passes = 0;
+  while ((ai < rest.length || passes === 0) && passes < 256) {
+    passes += 1;
+    const start = ai;
+    let consumed = false;
+    for (let p = 0; p < format.length; p += 1) {
+      if (format[p] !== '%') { out += format[p]; continue; }
+      const conv = parsePrintfConversion(format, p);
+      if (conv.kind === null) return null;
+      if (conv.kind === '%') { out += '%'; p = conv.end - 1; continue; }
+      const starArgs = [];
+      for (let s = 0; s < conv.stars; s += 1) starArgs.push(ai < rest.length ? rest[ai++] : '0');
+      let value = ai < rest.length ? rest[ai++] : '';
+      consumed = true;
+      if (conv.kind === 'b') {
+        const expanded = expandPrintfEscapes(value, { stop: true });
+        value = expanded.text;
+        if (conv.precision !== null) {
+          const prec = conv.precision === '*' ? Number(starArgs.shift()) : conv.precision;
+          if (Number.isFinite(prec) && prec >= 0) value = value.slice(0, prec);
+        }
+        out += value;
+        if (expanded.stop) return out;
+        p = conv.end - 1;
+        continue;
+      }
+      if (conv.precision !== null) {
+        const prec = conv.precision === '*' ? Number(starArgs.shift()) : conv.precision;
+        if (Number.isFinite(prec) && prec >= 0) value = value.slice(0, prec);
+      }
+      out += value;
+      p = conv.end - 1;
+    }
+    if (!consumed || ai === start) break;
+  }
+  return out;
+}
+function effectiveFd0HereString(stage) {
+  const pipeline = { kind: 'pipeline' };
+  const unknown = { kind: 'unknown' };
+  const fds = new Map([[0, pipeline]]);
+  for (let k = 0; k < stage.length; k += 1) {
+    const token = stage[k];
+    if (token.type !== 'op' || token.kind !== 'in') continue;
+    const prev = stage[k - 1];
+    const io = token.glued && prev?.type === 'word' && !prev.quoted && !prev.escaped && /^\d+$/.test(prev.value) ? Number(prev.value) : 0;
+    if (token.value === '<<<') {
+      fds.set(io, { kind: 'here', word: stage[k + 1] || null });
+      continue;
+    }
+    if (token.value === '<&') {
+      const target = stage[k + 1];
+      if (target?.dynamic) {
+        fds.set(io, unknown);
+        continue;
+      }
+      if (target?.type === 'word') {
+        const match = target.value.match(/^(\d+)-?$/);
+        if (match) {
+          const src = Number(match[1]);
+          fds.set(io, fds.get(src) || unknown);
+          if (target.value.endsWith('-') && src !== io) fds.delete(src);
+          continue;
+        }
+      }
+      fds.set(io, { kind: 'file' });
+      continue;
+    }
+    fds.set(io, { kind: 'file' });
+  }
+  return fds.get(0) || pipeline;
+}
+function checkPipelineProducer(stage, directory, command) {
+  const targets = targetIndices(stage);
+  const words = wordsFor(stage, targets);
+  const cmd = executable(words);
+  if (!cmd?.base) return false;
+  if (cmd.base === 'printf' || cmd.base === 'echo') {
+    const args = [];
+    const entries = words.slice(cmd.index + 1);
+    let optionsEnded = false;
+    let echoExpand = false;
+    for (let i = 0; i < entries.length; i += 1) {
+      const entry = entries[i];
+      if (entry.token.dynamic) return true;
+      const value = entry.token.value;
+      if (!optionsEnded) {
+        if (cmd.base === 'printf' && value === '--') { optionsEnded = true; continue; }
+        if (cmd.base === 'printf' && value.startsWith('-v')) {
+          return false;
+        }
+        if (cmd.base === 'echo' && /^-[neE]+$/.test(value)) {
+          for (const flag of value.slice(1)) {
+            if (flag === 'e') echoExpand = true;
+            if (flag === 'E') echoExpand = false;
+          }
+          continue;
+        }
+        if (cmd.base === 'printf' && value.startsWith('-') && value !== '-' && value !== '--') return false;
+        optionsEnded = true;
+      }
+      args.push(value);
+    }
+    const gnu = words[cmd.index].token.value.includes('/')
+      || words.slice(0, cmd.index).some(entry => new Set(['env', 'exec', 'nohup', 'nice', 'timeout', 'sudo']).has(shellBase(entry.token.value)));
+    const program = cmd.base === 'printf'
+      ? renderPrintf(args, { gnu })
+      : echoExpand
+        ? (() => {
+            const parts = [];
+            for (const arg of args) {
+              const expanded = expandPrintfEscapes(arg, { stop: true, echo: true });
+              parts.push(expanded.text);
+              if (expanded.stop) break;
+            }
+            return parts.join(' ');
+          })()
+        : args.join(' ');
+    if (program === null) return true;
+    const scanned = program.replace(/\0/g, '');
+    return scanned.length > 0 && Boolean(checkBashCommand(scanned, directory));
+  }
+  if (!new Set(['cat', 'head', 'tail', 'tac']).has(cmd.base)) return false;
+  const raw = words.slice(cmd.index + 1).map(entry => entry.token);
+  const operands = cmd.base === 'cat' || cmd.base === 'tac' ? argsAfter(words, cmd.index) : headTailOperands(raw);
+  const here = effectiveFd0HereString(stage);
+  if (here.kind === 'unknown') return true;
+  if (here.kind === 'here') {
+    if (here.word?.dynamic) return true;
+    if (here.word?.type === 'word' && checkBashCommand(here.word.value, directory)) return true;
+  }
+  if (!operands || operands.some(token => token.dynamic) || operands.length > 0) return !operands;
+  if ((cmd.base === 'head' || cmd.base === 'tail') && raw.some(token => /^(?:-n|--lines|-c|--bytes)$/.test(token.value) || /^-[nc][+-]?[0-9]+/.test(token.value) || /^(?:--lines|--bytes)=/.test(token.value))) return true;
+  return heredocSections(command).some(section => (
+    section.fd === 0 && Boolean(checkBashCommand(section.body, directory))
+  ));
+}
+function copyInvocation(tokens, command) {
+  const operands = []; let optionsEnded = false; let target = null;
+  const valueOptions = command === 'cp'
+    ? new Set(['-S', '--suffix'])
+    : new Set(['-m', '--mode', '-o', '--owner', '-g', '--group', '--strip-program', '-S', '--suffix']);
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i]; if (token.dynamic) return null;
+    if (!optionsEnded) {
+      if (token.value === '--') { optionsEnded = true; continue; }
+      if (token.value === '-t' || token.value === '--target-directory') {
+        if (!tokens[i + 1] || tokens[i + 1].dynamic) return null;
+        target = tokens[++i]; continue;
+      }
+      if (token.value.startsWith('--target-directory=')) {
+        target = { ...token, value: token.value.slice('--target-directory='.length) };
+        continue;
+      }
+      if (valueOptions.has(token.value)) {
+        if (!tokens[i + 1] || tokens[i + 1].dynamic) return null;
+        i += 1; continue;
+      }
+      if (/^(?:--suffix|--mode|--owner|--group|--strip-program|--backup)=/.test(token.value)) continue;
+      if (token.value.startsWith('-') && token.value !== '-') continue;
+    }
+    operands.push(token);
+  }
+  return { operands, target };
+}
 function checkSegment(segment, directory) {
   const targets = targetIndices(segment);
   for (let i = 0; i < segment.length; i += 1) {
@@ -693,7 +1548,7 @@ function checkSegment(segment, directory) {
       for (const code of token.nested || []) if (checkBashCommand(code, directory)) return true;
     }
   }
-  const words = wordsFor(segment, targets);
+  const words = commandWords(segment);
   if (words[0]?.token.value === 'coproc') {
     const unnamed = segment.filter((_, index) => index !== words[0].index);
     if (checkSegment(unnamed, directory)) return true;
@@ -707,56 +1562,78 @@ function checkSegment(segment, directory) {
   if (SHELL_COMMANDS.has(cmd.base)) {
     const shellArgs = words.slice(cmd.index + 1);
     if (shellArgs.some(entry => entry.token.dynamic)) return true;
-    const flag = shellArgs.findIndex(entry => entry.token.value === '--command' || /^-[^-]*c/.test(entry.token.value));
-    if (flag >= 0) {
-      const codeIndex = shellArgs[flag + 1]?.token.value === '--' ? flag + 2 : flag + 1;
-      const code = shellArgs[codeIndex]?.token;
+    const invocation = parseShellInvocation(shellArgs);
+    if (invocation.invalid || invocation.noexec) return false;
+    if (invocation.codeIndex >= 0) {
+      const code = shellArgs[invocation.codeIndex]?.token;
       return !code || checkBashCommand(code.value, directory);
     }
   }
   if (cmd.base === 'eval') { const code = words.slice(cmd.index + 1); return code.some(entry => entry.token.dynamic) || (code.length > 0 && checkBashCommand(code.map(entry => entry.token.value).join(' '), directory)); }
   const args = argsAfter(words, cmd.index);
   if (cmd.base === 'tee') { const operands = teeOperands(words.slice(cmd.index + 1).map(entry => entry.token)); return !operands || operands.some(token => writeTarget(token, directory)); }
-  if (new Set(['rm', 'mv', 'touch', 'truncate']).has(cmd.base)) return args.some(token => writeTarget(token, directory));
+  if (cmd.base === 'rm') return args.some(token => writeTarget(token, directory));
+  if (cmd.base === 'mv') { const operands = mvOperands(words.slice(cmd.index + 1).map(entry => entry.token)); return !operands || operands.some(token => writeTarget(token, directory)); }
+  if (cmd.base === 'truncate') { const operands = truncateOperands(words.slice(cmd.index + 1).map(entry => entry.token)); return !operands || operands.some(token => writeTarget(token, directory)); }
+  if (cmd.base === 'touch') { const operands = touchOperands(words.slice(cmd.index + 1).map(entry => entry.token)); return !operands || operands.some(token => writeTarget(token, directory)); }
   if (cmd.base === 'cp' || cmd.base === 'install') {
     const rawArgs = words.slice(cmd.index + 1).map(entry => entry.token);
-    const targetDir = rawArgs.findIndex(token => token.value === '-t' || token.value === '--target-directory');
-    if (targetDir >= 0) return !rawArgs[targetDir + 1] || writeTarget(rawArgs[targetDir + 1], directory) || args.some(token => writeTarget(token, directory));
-    const joinedTargetDir = rawArgs.find(token => token.value.startsWith('--target-directory='));
-    if (joinedTargetDir) {
-      const target = { ...joinedTargetDir, value: joinedTargetDir.value.slice('--target-directory='.length) };
-      return writeTarget(target, directory) || args.some(token => writeTarget(token, directory));
+    const invocation = copyInvocation(rawArgs, cmd.base); if (!invocation) return true;
+    if (invocation.target) {
+      if (writeTarget(invocation.target, directory)) return true;
+      return invocation.operands.some(source => writeTarget({ ...source, value: path.join(invocation.target.value, path.basename(source.value)) }, directory));
     }
-    const destination = args.at(-1);
+    const destination = invocation.operands.at(-1);
     if (destination && !destination.dynamic && !destination.ambiguous) {
       const absoluteDestination = path.resolve(directory || process.cwd(), destination.value);
       let directoryDestination = destination.value.endsWith('/') || destination.value.endsWith('\\');
       try { directoryDestination ||= statSync(absoluteDestination).isDirectory(); } catch { /* missing destinations are handled as files */ }
       if (directoryDestination) {
-        return args.slice(0, -1).some(source => writeTarget({ ...source, value: path.join(destination.value, path.basename(source.value)) }, directory));
+        return invocation.operands.slice(0, -1).some(source => writeTarget({ ...source, value: path.join(destination.value, path.basename(source.value)) }, directory));
       }
     }
-    return writeTarget(args.at(-1), directory);
+    return writeTarget(destination, directory);
   }
   if (cmd.base === 'sed' || cmd.base === 'perl') {
     const commandArgs = words.slice(cmd.index + 1);
     if (commandArgs.some(entry => entry.token.dynamic)) return true;
-    const inPlace = commandArgs.some(entry => entry.token.value === '--in-place' || entry.token.value.startsWith('--in-place=') || /^-[^-]*[iI]/.test(entry.token.value));
+    const inPlace = commandArgs.some(entry => {
+      const value = entry.token.value;
+      if (value === '--in-place' || value.startsWith('--in-place=')) return true;
+      return cmd.base === 'perl' ? !value.startsWith('-I') && /^-[^-]*i/.test(value) : /^-[^-]*[iI]/.test(value);
+    });
     if (inPlace) return args.filter(token => !/^(?:s|y|tr)[/#]/.test(token.value)).some(token => writeTarget(token, directory));
   }
   return false;
 }
 
 function checkBashCommand(command, directory) {
-  const offending = splitSegments(tokenizeShell(command)).find(segment => checkSegment(segment, directory));
-
-  if (offending) {
-    return `[DELEGATION NOTICE] Bash command may modify source files: ${summarizeCommand(command)}
-
-Recommended: Delegate to executor agent instead:
-  Task(subagent_type="oh-my-claudecode:executor", model="sonnet", prompt="...")
-
-This is a soft warning. Operation will proceed.`;
+  for (const section of heredocSections(command)) {
+    const shellConsumer = splitPipelineGroups(tokenizeShell(section.commandLine)).some(stages => (
+      stages.some(segment => section.fd === 0
+        && segment.some(token => token.type === 'op' && token.value.startsWith('<<'))
+        && shellReadsStdinProgram(segment))
+    ));
+    if (shellConsumer && checkBashCommand(section.body, directory)) return sourceMutationNotice(command);
+  }
+  for (const stages of splitPipelineGroups(tokenizeShell(command))) {
+    for (let i = 0; i < stages.length; i += 1) {
+      if (checkSegment(stages[i], directory)) return sourceMutationNotice(command);
+      if (shellReadsStdinProgram(stages[i])) {
+        const here = effectiveFd0HereString(stages[i]);
+        if (here.kind === 'unknown') return sourceMutationNotice(command);
+        if (here.kind === 'here') {
+          if (here.word?.dynamic) return sourceMutationNotice(command);
+          if (here.word?.type === 'word' && checkBashCommand(here.word.value, directory)) return sourceMutationNotice(command);
+        }
+      }
+      if (i > 0 && shellReadsStdinProgram(stages[i])) {
+        for (let j = i - 1; j >= 0; j -= 1) {
+          if (checkPipelineProducer(stages[j], directory, command)) return sourceMutationNotice(command);
+          if (!isPassthroughStage(stages[j])) break;
+        }
+      }
+    }
   }
   return null;
 }

@@ -13,8 +13,14 @@ describe('Wiki Session Hooks', () => {
     let tempDir;
     let configDir;
     let originalClaudeConfigDir;
+    let originalHome;
+    let originalUserProfile;
     beforeEach(async () => {
-        tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'wiki-session-hooks-'));
+        tempDir = await fsp.mkdtemp(path.join(os.homedir(), 'wiki-session-hooks-'));
+        originalHome = process.env.HOME;
+        originalUserProfile = process.env.USERPROFILE;
+        process.env.HOME = tempDir;
+        process.env.USERPROFILE = tempDir;
         configDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'wiki-session-config-'));
         originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
         process.env.CLAUDE_CONFIG_DIR = configDir;
@@ -28,6 +34,14 @@ describe('Wiki Session Hooks', () => {
         }
         await fsp.rm(tempDir, { recursive: true, force: true });
         await fsp.rm(configDir, { recursive: true, force: true });
+        if (originalHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = originalHome;
+        if (originalUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = originalUserProfile;
     });
     it('respects autoCapture=false from the active CLAUDE_CONFIG_DIR', () => {
         fs.writeFileSync(path.join(configDir, '.omc-config.json'), JSON.stringify({ wiki: { autoCapture: false } }));
@@ -42,8 +56,14 @@ describe('feedProjectMemory (environment.md)', () => {
     let tempDir;
     let configDir;
     let originalClaudeConfigDir;
+    let originalHome;
+    let originalUserProfile;
     beforeEach(async () => {
-        tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'wiki-pm-'));
+        tempDir = await fsp.mkdtemp(path.join(os.homedir(), 'wiki-pm-'));
+        originalHome = process.env.HOME;
+        originalUserProfile = process.env.USERPROFILE;
+        process.env.HOME = tempDir;
+        process.env.USERPROFILE = tempDir;
         configDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'wiki-pm-config-'));
         originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
         process.env.CLAUDE_CONFIG_DIR = configDir;
@@ -57,6 +77,14 @@ describe('feedProjectMemory (environment.md)', () => {
         }
         await fsp.rm(tempDir, { recursive: true, force: true });
         await fsp.rm(configDir, { recursive: true, force: true });
+        if (originalHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = originalHome;
+        if (originalUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = originalUserProfile;
     });
     function writeProjectMemory(memory) {
         const omcRoot = path.dirname(getWikiDir(tempDir));

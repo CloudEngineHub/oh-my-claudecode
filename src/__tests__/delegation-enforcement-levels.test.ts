@@ -638,8 +638,8 @@ describe('delegation-enforcement-levels', () => {
       ['/tmp/project2/src/app.ts', '/tmp/project', true],
       ['/tmpfoo/src/app.ts', '/home/project', false],
       ['scratchpad/src/app.ts', '/home/project', false],
-      ['C:\\Windows\\Temp\\fixture.ts', '/home/project', true],
-      ['C:\\Users\\alice\\AppData\\Local\\Temp\\fixture.ts', '/home/project', true],
+      ['C:\\Windows\\Temp\\fixture.ts', '/home/project', process.platform === 'win32'],
+      ['C:\\Users\\alice\\AppData\\Local\\Temp\\fixture.ts', '/home/project', process.platform === 'win32'],
       ['\\\\server\\share\\fixture.ts', '/home/project', false],
       ['.omc\\..\\src\\app.ts', '/home/project', false],
     ] as const)('uses bounded cross-platform temp paths: %s from %s', (filePath, directory, expected) => {

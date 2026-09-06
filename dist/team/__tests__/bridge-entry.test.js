@@ -25,7 +25,7 @@ describe('bridge-entry security', () => {
         expect(source).toContain("home + '/'");
     });
     it('verifies git worktree', () => {
-        expect(source).toContain('getWorktreeRoot');
+        expect(source).toContain('probeGitTopLevel');
     });
     it('validates working directory exists and is a directory', () => {
         expect(source).toContain('statSync(workingDirectory)');

@@ -10,12 +10,28 @@ import {
   mkdtempSync,
   readdirSync,
   realpathSync,
+  renameSync,
   rmSync,
   symlinkSync,
 } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const mkdirInterlock = vi.hoisted(() => ({
+  before: undefined as ((path: unknown) => void) | undefined,
+}));
+
+vi.mock("fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("fs")>();
+  return {
+    ...actual,
+    mkdirSync: (...args: unknown[]) => {
+      mkdirInterlock.before?.(args[0]);
+      return Reflect.apply(actual.mkdirSync, actual, args);
+    },
+  };
+});
 import { resolveRunDir } from "../../runtime/run-dir.js";
 import { FileOwnershipFence } from "../../runtime/fence.js";
 import {
@@ -138,6 +154,74 @@ describe("resolveRunDir containment [P1-3]", () => {
     expect(existsSync(join(outside, "escape-target", "projection.json"))).toBe(
       false,
     );
+  });
+
+  it("anchors target creation to the original root when its pathname is replaced", () => {
+    // Arrange: replace the root pathname immediately before the target mkdir.
+    const runsRoot = makeRunsRoot();
+    const outside = makeRunsRoot();
+    const runId = "run-root-replaced";
+    const target = join(runsRoot, runId);
+    const originalRoot = `${runsRoot}-original`;
+    let swapped = false;
+    mkdirInterlock.before = (path) => {
+      if (
+        !swapped &&
+        typeof path === "string" &&
+        (path === target || /\/proc\/self\/fd\/\d+\/run-root-replaced$/.test(path))
+      ) {
+        swapped = true;
+        renameSync(runsRoot, originalRoot);
+        symlinkSync(outside, runsRoot, "dir");
+      }
+    };
+
+    try {
+      // Act: the FD-anchored implementation keeps creating in originalRoot,
+      // then fails closed because the validated root pathname was replaced.
+      expect(() => resolveRunDir(runsRoot, runId)).toThrow("escapes");
+    } finally {
+      mkdirInterlock.before = undefined;
+      rmSync(runsRoot, { recursive: true, force: true });
+      renameSync(originalRoot, runsRoot);
+    }
+
+    // Assert: no directory was created below the replacement target.
+    expect(swapped).toBe(true);
+    expect(existsSync(join(outside, runId))).toBe(false);
+    expect(existsSync(target)).toBe(true);
+  });
+
+  it("does not follow a target symlink installed during creation", () => {
+    // Arrange: install a symlink between the absent check and mkdir attempt.
+    const runsRoot = makeRunsRoot();
+    const outside = makeRunsRoot();
+    const runId = "run-target-replaced";
+    const target = join(runsRoot, runId);
+    const escaped = join(outside, "created-outside");
+    let swapped = false;
+    mkdirInterlock.before = (path) => {
+      if (
+        !swapped &&
+        typeof path === "string" &&
+        (path === target || /\/proc\/self\/fd\/\d+\/run-target-replaced$/.test(path))
+      ) {
+        swapped = true;
+        symlinkSync(escaped, target, "dir");
+      }
+    };
+
+    try {
+      // Act / Assert: the replacement is rejected before any outside mkdir.
+      expect(() => resolveRunDir(runsRoot, runId)).toThrow(
+        "run directory must not be a symbolic link",
+      );
+    } finally {
+      mkdirInterlock.before = undefined;
+    }
+
+    expect(swapped).toBe(true);
+    expect(existsSync(escaped)).toBe(false);
   });
 
   it("keeps component writes inside the runs root for a legitimate run id", async () => {

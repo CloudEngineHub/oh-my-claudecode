@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'path';
-import { processOrchestratorPreTool, isAllowedPath, isSourceFile, isWriteEditTool, clearEnforcementCache, } from '../hooks/omc-orchestrator/index.js';
+import { processOrchestratorPreTool, isAllowedPath, isTempOrScratchpadPath, isSourceFile, isWriteEditTool, clearEnforcementCache, } from '../hooks/omc-orchestrator/index.js';
 // Mock fs module
 vi.mock('fs', async () => {
     const actual = await vi.importActual('fs');
@@ -36,6 +36,28 @@ vi.mock('../features/boulder-state/index.js', () => ({
 vi.mock('../hooks/notepad/index.js', () => ({
     addWorkingMemoryEntry: vi.fn(),
     setPriorityContext: vi.fn(),
+}));
+// Keep bridge integration focused on delegation and task tracking. The bridge's
+// prompt-prerequisite reader resolves runtime state roots through git, which is
+// intentionally unavailable in this suite's mocked filesystem. Stub that
+// unrelated stateful surface so each integration case observes only its own
+// enforcement/task inputs.
+vi.mock('../hooks/prompt-prerequisites/index.js', () => ({
+    activatePromptPrerequisiteState: vi.fn(),
+    buildPromptPrerequisiteDenyReason: vi.fn(() => ''),
+    buildPromptPrerequisiteReminder: vi.fn(() => ''),
+    clearPromptPrerequisiteState: vi.fn(),
+    getPromptPrerequisiteConfig: vi.fn(() => ({
+        enabled: false,
+        blockingTools: [],
+        executionKeywords: [],
+        sectionNames: {},
+    })),
+    isPromptPrerequisiteBlockingTool: vi.fn(() => false),
+    parsePromptPrerequisiteSections: vi.fn(),
+    readPromptPrerequisiteState: vi.fn(() => null),
+    recordPromptPrerequisiteProgress: vi.fn(() => null),
+    shouldEnforcePromptPrerequisites: vi.fn(() => false),
 }));
 import { existsSync, readFileSync } from 'fs';
 const mockExistsSync = vi.mocked(existsSync);
@@ -112,7 +134,7 @@ describe('delegation-enforcement-levels', () => {
         const sourceFileInput = {
             toolName: 'Write',
             toolInput: { filePath: 'src/app.ts' },
-            directory: '/tmp/test-project',
+            directory: '/home/test-project',
         };
         it('defaults to warn when no config file exists', () => {
             mockExistsSync.mockReturnValue(false);
@@ -126,7 +148,7 @@ describe('delegation-enforcement-levels', () => {
             // Local config exists with 'off', global has 'strict'
             mockExistsSync.mockImplementation((p) => {
                 const s = String(p);
-                if (/[\\/]tmp[\\/]test-project[\\/]\.omc[\\/]config\.json$/.test(s))
+                if (s.endsWith('/.omc/config.json'))
                     return true;
                 if (/[\\/]mock[\\/]home[\\/]\.claude[\\/]\.omc-config\.json$/.test(s))
                     return true;
@@ -134,7 +156,7 @@ describe('delegation-enforcement-levels', () => {
             });
             mockReadFileSync.mockImplementation((p) => {
                 const s = String(p);
-                if (/[\\/]tmp[\\/]test-project[\\/]\.omc[\\/]config\.json$/.test(s)) {
+                if (s.endsWith('/.omc/config.json')) {
                     return JSON.stringify({ delegationEnforcementLevel: 'off' });
                 }
                 if (/[\\/]mock[\\/]home[\\/]\.claude[\\/]\.omc-config\.json$/.test(s)) {
@@ -199,7 +221,7 @@ describe('delegation-enforcement-levels', () => {
         it('supports enforcementLevel key as alternative', () => {
             mockExistsSync.mockImplementation((p) => {
                 const s = String(p);
-                if (/[\\/]tmp[\\/]test-project[\\/]\.omc[\\/]config\.json$/.test(s))
+                if (s.endsWith('/.omc/config.json'))
                     return true;
                 return false;
             });
@@ -517,6 +539,33 @@ describe('delegation-enforcement-levels', () => {
         });
         it('returns true for .claude/ paths', () => {
             expect(isAllowedPath('.claude/settings.json')).toBe(true);
+        });
+        it('returns true for temporary and scratchpad paths', () => {
+            expect(isAllowedPath('/tmp/test.py')).toBe(true);
+            expect(isAllowedPath('/private/tmp/claude-501/project/session/scratchpad/test.py')).toBe(true);
+            expect(isAllowedPath('/var/tmp/script.sh')).toBe(true);
+        });
+        it.each([
+            ['/tmp/test.py', '/home/project', true],
+            ['/private/tmp/test.py', '/home/project', true],
+            ['/var/tmp/test.py', '/home/project', true],
+            ['/private/var/tmp/test.py', '/home/project', true],
+            ['/tmp/project/src/app.ts', '/tmp/project', false],
+            ['/tmp/project2/src/app.ts', '/tmp/project', true],
+            ['/tmpfoo/src/app.ts', '/home/project', false],
+            ['scratchpad/src/app.ts', '/home/project', false],
+            ['C:\\Windows\\Temp\\fixture.ts', '/home/project', process.platform === 'win32'],
+            ['C:\\Users\\alice\\AppData\\Local\\Temp\\fixture.ts', '/home/project', process.platform === 'win32'],
+            ['\\\\server\\share\\fixture.ts', '/home/project', false],
+            ['.omc\\..\\src\\app.ts', '/home/project', false],
+        ])('uses bounded cross-platform temp paths: %s from %s', (filePath, directory, expected) => {
+            expect(isTempOrScratchpadPath(filePath, directory)).toBe(expected);
+            expect(isAllowedPath(filePath, directory)).toBe(expected);
+        });
+        it('does not allow an absolute temp path that resolves inside the project', () => {
+            const directory = '/tmp/project';
+            expect(isTempOrScratchpadPath('/tmp/project/../project/src/app.ts', directory)).toBe(false);
+            expect(isAllowedPath('/tmp/project/../project/src/app.ts', directory)).toBe(false);
         });
         it('returns true for absolute paths under CLAUDE_CONFIG_DIR', () => {
             const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;

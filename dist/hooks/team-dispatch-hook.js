@@ -19,6 +19,7 @@ import { createSwallowedErrorLogger } from '../lib/swallowed-error.js';
 import { tmuxExecAsync } from '../cli/tmux-utils.js';
 import { getOmcRoot } from '../lib/worktree-paths.js';
 import { isCliAgentType, paneLineLooksLikeIdlePrompt } from '../team/pane-readiness.js';
+import { paneHasCursorWorkspaceTrustPrompt } from '../team/tmux-session.js';
 // ── Helpers ────────────────────────────────────────────────────────────────
 function safeString(value, fallback = '') {
     if (typeof value === 'string')
@@ -347,14 +348,20 @@ async function defaultInjector(request, config, _cwd) {
     const submitKeyPresses = 2;
     const attemptCountAtStart = Number.isFinite(request.attempt_count) ? Math.max(0, Math.floor(request.attempt_count)) : 0;
     let preCaptureHasTrigger = false;
-    if (attemptCountAtStart >= 1) {
-        try {
-            const preCapture = await tmuxExecAsync(['capture-pane', '-t', paneTarget, '-p', '-S', '-8'], { timeout: 2000 });
-            preCaptureHasTrigger = capturedPaneContainsTrigger(preCapture.stdout, request.trigger_message);
+    let preCapture = '';
+    try {
+        const captured = await tmuxExecAsync(['capture-pane', '-t', paneTarget, '-p', '-S', '-8'], { timeout: 2000 });
+        preCapture = safeString(captured.stdout);
+        if (targetProvider === 'cursor' && paneHasCursorWorkspaceTrustPrompt(preCapture)) {
+            return { ok: false, reason: 'cursor_workspace_untrusted' };
         }
-        catch {
-            preCaptureHasTrigger = false;
+        if (attemptCountAtStart >= 1) {
+            preCaptureHasTrigger = capturedPaneContainsTrigger(preCapture, request.trigger_message);
         }
+    }
+    catch {
+        preCapture = '';
+        preCaptureHasTrigger = false;
     }
     const shouldTypePrompt = attemptCountAtStart === 0 || !preCaptureHasTrigger;
     if (shouldTypePrompt) {

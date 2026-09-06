@@ -35,7 +35,10 @@ import {
   listReadyJoinActivations,
 } from "../../scheduler.js";
 import { runGraph } from "../../runtime/runner.js";
-import { FileJournal } from "../../runtime/journal.js";
+import {
+  computeJournalFingerprint,
+  FileJournal,
+} from "../../runtime/journal.js";
 import { FileProjectionStore } from "../../runtime/store.js";
 import { EXIT_CODES } from "../../runtime/types.js";
 import type {
@@ -315,6 +318,68 @@ describe("regression matrix (AC-9/10/11/11b)", () => {
     expect(result.terminal).toBe("failed");
     expect(result.exit_code).toBe(EXIT_CODES.DESCRIPTOR_MISMATCH);
   });
+
+  it.each([
+    {
+      label: "transition descriptor hash",
+      mutate: (transition: Record<string, unknown>) => {
+        transition.descriptor_hash = "0".repeat(64);
+      },
+      exitCode: EXIT_CODES.DESCRIPTOR_MISMATCH,
+    },
+    {
+      label: "fingerprint version",
+      mutate: (transition: Record<string, unknown>) => {
+        transition.fingerprint_version = 2;
+      },
+      exitCode: EXIT_CODES.CORRUPT_JOURNAL,
+    },
+    {
+      label: "request fingerprint metadata",
+      mutate: (transition: Record<string, unknown>) => {
+        transition.request_fingerprint = "not-a-fingerprint";
+      },
+      exitCode: EXIT_CODES.CORRUPT_JOURNAL,
+    },
+  ])(
+    "fails closed before executing work when replay metadata has a forged $label",
+    async ({ mutate, exitCode }) => {
+      const sealed = sealGraphDescriptor(loadFixture("simple-linear.json"));
+      const runsRoot = makeRunsRoot();
+      await runGraph(
+        sealed,
+        runOptions(
+          runsRoot,
+          new ScriptedExecutor((context) => okOutput(context.node.id)),
+        ),
+      );
+
+      const journalPath = join(runsRoot, sealed.run_id, "journal.jsonl");
+      const lines = readFileSync(journalPath, "utf8")
+        .split("\n")
+        .filter(Boolean);
+      const tampered = JSON.parse(lines[0] as string) as JournalRecord;
+      mutate(tampered.transition as unknown as Record<string, unknown>);
+      const { journal_fingerprint: _journalFingerprint, ...unsigned } = tampered;
+      lines[0] = canonicalJson({
+        ...unsigned,
+        journal_fingerprint: computeJournalFingerprint(unsigned),
+      });
+      writeFileSync(journalPath, `${lines.join("\n")}\n`, "utf8");
+
+      const resumeExecutor = new ScriptedExecutor((context) =>
+        okOutput(context.node.id),
+      );
+      const result = await runGraph(
+        sealed,
+        runOptions(runsRoot, resumeExecutor),
+      );
+
+      expect(result.terminal).toBe("failed");
+      expect(result.exit_code).toBe(exitCode);
+      expect(resumeExecutor.calls).toEqual([]);
+    },
+  );
 
   it("refuses to start while a live owner holds the lock and writes nothing (AC-7)", async () => {
     // Arrange: seed owner.lock with OUR live pid — a healthy holder yields

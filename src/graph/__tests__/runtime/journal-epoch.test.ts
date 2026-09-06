@@ -9,6 +9,8 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -107,6 +109,28 @@ async function completeRunWithEpochs(
 }
 
 describe("journal epoch provenance (P1-4)", () => {
+  it.each(["missing", "empty"])(
+    "fails closed before executing work when an existing descriptor has a %s journal",
+    async (journalState) => {
+      const runsRoot = makeRunsRoot();
+      const sealed = sealGraphDescriptor(loadFixture("simple-linear.json"));
+      const runDir = join(runsRoot, sealed.run_id);
+      mkdirSync(runDir, { recursive: true });
+      writeFileSync(join(runDir, "descriptor.json"), canonicalJson(sealed));
+      if (journalState === "empty") {
+        writeFileSync(join(runDir, "journal.jsonl"), "");
+      }
+
+      const executor = new OkExecutor();
+      const result = await runGraph(sealed, runOptions(runsRoot, executor));
+
+      expect(result.terminal).toBe("failed");
+      expect(result.exit_code).toBe(EXIT_CODES.CORRUPT_JOURNAL);
+      expect(executor.calls).toEqual([]);
+      expect(existsSync(join(runDir, "projection.json"))).toBe(false);
+    },
+  );
+
   it("fails closed CORRUPT_JOURNAL when a record carries a forged future epoch", async () => {
     // Arrange: complete a clean epoch-1 run, then bump one record's epoch to
     // currentEpoch + 998 (envelope-valid, semantically forged).

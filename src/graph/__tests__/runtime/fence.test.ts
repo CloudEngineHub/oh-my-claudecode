@@ -309,6 +309,55 @@ describe("FileOwnershipFence", () => {
     expect(() => fence.assertEpoch(1)).toThrow(FenceError);
   });
 
+  it("restores a replacement lock when release races after identity check", async () => {
+    const dir = makeRunDir();
+    const lockPath = join(dir, LOCK_NAME);
+    let raced = false;
+    const fence = new FileOwnershipFence(dirname(dir), basename(dir), {
+      beforeReleaseRename: () => {
+        if (raced) return;
+        raced = true;
+        renameSync(lockPath, join(dir, `${LOCK_NAME}.stolen`));
+        craftJsonLock(dir, {
+          pid: process.pid,
+          epoch: 2,
+          timestamp: Date.now(),
+        });
+      },
+    });
+    await expect(fence.acquire()).resolves.toEqual({
+      outcome: "acquired",
+      epoch: 1,
+    });
+
+    // The hook replaces owner.lock after the pre-mutation identity check.
+    // Release must not delete or overwrite the replacement owner.
+    await expect(fence.release(1)).resolves.toBe(false);
+    expect(readLockPayload(dir)).toMatchObject({ pid: process.pid, epoch: 2 });
+    expect(existsSync(join(dir, `${LOCK_NAME}.stolen`))).toBe(true);
+    expect(() => fence.assertEpoch(1)).toThrow(FenceError);
+  });
+
+  it("preserves a foreign lock when failed-create cleanup races with replacement", async () => {
+    const dir = makeRunDir();
+    const lockPath = join(dir, LOCK_NAME);
+    const fence = new FileOwnershipFence(dirname(dir), basename(dir), {
+      beforeEpochPersist: () => {
+        renameSync(lockPath, join(dir, `${LOCK_NAME}.stolen`));
+        craftJsonLock(dir, {
+          pid: process.pid,
+          epoch: 9,
+          timestamp: Date.now(),
+        });
+        throw new Error("injected sidecar failure");
+      },
+    });
+
+    await expect(fence.acquire()).rejects.toThrow("injected sidecar failure");
+    expect(readLockPayload(dir)).toMatchObject({ pid: process.pid, epoch: 9 });
+    expect(existsSync(join(dir, `${LOCK_NAME}.stolen`))).toBe(true);
+  });
+
   it("interleave probe: exactly one winner per dir per round (AC-5)", async () => {
     const ROUNDS = 6;
     const dirs = [makeRunDir(), makeRunDir(), makeRunDir()];

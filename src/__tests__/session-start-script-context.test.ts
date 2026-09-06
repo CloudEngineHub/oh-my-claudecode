@@ -16,9 +16,10 @@ describe('session-start.mjs regression #1386', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'omc-session-start-script-'));
     fakeHome = join(tempDir, 'home');
     fakeProject = join(tempDir, 'project');
+    mkdirSync(fakeProject, { recursive: true });
     mkdirSync(join(fakeProject, '.omc', 'state', 'sessions', 'session-1386'), { recursive: true });
-    // session-start validateCwd requires a real workspace anchor (.git / .omc-workspace)
-    mkdirSync(join(fakeProject, '.git'), { recursive: true });
+    // session-start validateCwd requires a real workspace anchor.
+    execFileSync('git', ['init', '--quiet', fakeProject], { stdio: 'ignore' });
   });
 
   afterEach(() => {

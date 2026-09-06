@@ -1,22 +1,52 @@
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
-import { describe, expect, it } from 'vitest';
 const persistentModeScript = join(process.cwd(), 'scripts', 'persistent-mode.mjs');
 const preToolScript = join(process.cwd(), 'scripts', 'pre-tool-enforcer.mjs');
 const keywordScript = join(process.cwd(), 'scripts', 'keyword-detector.mjs');
+const ISOLATED_ENV_KEYS = [
+    'HOME',
+    'USERPROFILE',
+    'OMC_STATE_DIR',
+    'CLAUDE_CONFIG_DIR',
+    'XDG_CONFIG_HOME',
+    'CLAUDE_PLUGIN_ROOT',
+    'OMC_SESSION_ID',
+    'OMC_DISABLE_MULTIREPO',
+    'NODE_ENV',
+];
+const created = [];
+let fixtureEnv;
+function restoreFixtureEnv() {
+    for (const key of ISOLATED_ENV_KEYS) {
+        const value = fixtureEnv[key];
+        if (value === undefined)
+            delete process.env[key];
+        else
+            process.env[key] = value;
+    }
+}
 function runHook(script, payload, env = {}) {
     const stdout = execFileSync(process.execPath, [script], {
         input: JSON.stringify(payload),
         encoding: 'utf-8',
-        cwd: process.cwd(),
-        env: { ...process.env, CLAUDE_PLUGIN_ROOT: '', ...env },
+        cwd: typeof payload.cwd === 'string' && payload.cwd.length > 0 ? payload.cwd : process.cwd(),
+        env: {
+            ...process.env,
+            NODE_ENV: 'test',
+            OMC_STATE_DIR: '',
+            CLAUDE_PLUGIN_ROOT: '',
+            ...env,
+        },
     });
     return JSON.parse(stdout);
 }
 function makeTempProject(prefix) {
     const cwd = mkdtempSync(join(tmpdir(), prefix));
+    created.push(cwd);
+    execFileSync('git', ['init', '--quiet'], { cwd, stdio: 'pipe' });
     mkdirSync(join(cwd, '.omc', 'state', 'sessions', 'session-a'), { recursive: true });
     return cwd;
 }
@@ -53,6 +83,29 @@ function expectAwaitingConfirmationRelease(cwd) {
     expect(preTool.hookSpecificOutput?.permissionDecision).not.toBe('deny');
     expect(stop.decision).toBeUndefined();
 }
+beforeEach(() => {
+    fixtureEnv = Object.fromEntries(ISOLATED_ENV_KEYS.map((key) => [key, process.env[key]]));
+    const environmentRoot = mkdtempSync(join(tmpdir(), 'omc-ultragoal-env-'));
+    created.push(environmentRoot);
+    const home = join(environmentRoot, 'home');
+    const claudeConfigDir = join(home, '.claude');
+    mkdirSync(claudeConfigDir, { recursive: true });
+    mkdirSync(join(home, '.config'), { recursive: true });
+    process.env.HOME = home;
+    process.env.USERPROFILE = home;
+    process.env.OMC_STATE_DIR = '';
+    process.env.CLAUDE_CONFIG_DIR = claudeConfigDir;
+    process.env.XDG_CONFIG_HOME = join(home, '.config');
+    process.env.CLAUDE_PLUGIN_ROOT = '';
+    process.env.OMC_SESSION_ID = '';
+    process.env.OMC_DISABLE_MULTIREPO = '';
+    process.env.NODE_ENV = 'test';
+});
+afterEach(() => {
+    restoreFixtureEnv();
+    while (created.length)
+        rmSync(created.pop(), { recursive: true, force: true });
+});
 describe('ultragoal persistence and Claude /goal enforcement', () => {
     it('allows PreToolUse when active ultragoal has a matching active Claude /goal', () => {
         const cwd = makeTempProject('omc-ultragoal-pass-');

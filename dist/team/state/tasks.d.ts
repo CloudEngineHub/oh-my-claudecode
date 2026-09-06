@@ -40,6 +40,7 @@ interface TransitionDeps extends ClaimTaskDeps {
 export declare function transitionTaskStatus(taskId: string, from: TeamTaskStatus, to: TeamTaskStatus, claimToken: string, terminalData: {
     result?: string;
     error?: string;
+    metadata?: Record<string, unknown>;
 } | undefined, deps: TransitionDeps): Promise<TransitionTaskResult>;
 type ReleaseDeps = ClaimTaskDeps;
 export declare function releaseTaskClaim(taskId: string, claimToken: string, _workerName: string, deps: ReleaseDeps): Promise<ReleaseTaskClaimResult>;

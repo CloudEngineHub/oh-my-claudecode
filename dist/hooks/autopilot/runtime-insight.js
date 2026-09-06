@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { getOmcRoot, resolveSessionStatePath } from '../../lib/worktree-paths.js';
-import { readHudState } from '../../hud/state.js';
+import { getOmcRoot } from '../../lib/worktree-paths.js';
+import { readModeState } from '../../lib/mode-state-io.js';
 const RUNTIME_INSIGHT_MAX_FIELD_LENGTH = 160;
 const RUNTIME_INSIGHT_MAX_LENGTH = 2_000;
 function redactRuntimeInsightText(value) {
@@ -36,7 +36,7 @@ function getTeamNamesForRuntimeInsight(directory, sessionId) {
         return teamNames;
     }
     const scopedTeamNames = new Set();
-    const teamState = readJsonSafe(resolveSessionStatePath('team', sessionId, directory));
+    const teamState = readModeState('team', directory, sessionId);
     const activeTeamName = teamState?.team_name ?? teamState?.teamName;
     if (typeof activeTeamName === 'string' && activeTeamName.trim().length > 0) {
         scopedTeamNames.add(activeTeamName.trim());
@@ -50,10 +50,7 @@ function getTeamNamesForRuntimeInsight(directory, sessionId) {
     return teamNames.filter((teamName) => scopedTeamNames.has(teamName));
 }
 function getWorkflowProgress(directory, sessionId) {
-    const statePath = sessionId
-        ? resolveSessionStatePath('autopilot', sessionId, directory)
-        : join(getOmcRoot(directory), 'state', 'autopilot-state.json');
-    const state = readJsonSafe(statePath);
+    const state = readModeState('autopilot', directory, sessionId);
     const workflow = state?.workflow;
     const tracking = state?.pipelineTracking;
     const stages = Array.isArray(workflow?.stages) ? workflow.stages : null;
@@ -113,8 +110,13 @@ function collectRuntimeInsight(directory, sessionId) {
             }
         }
     }
-    const hudState = readHudState(directory, sessionId);
-    const backgroundTasks = hudState?.backgroundTasks ?? [];
+    const hudState = readModeState('hud', directory, sessionId);
+    const ownedHudState = sessionId
+        && typeof hudState?.sessionId === 'string'
+        && hudState.sessionId !== sessionId
+        ? null
+        : hudState;
+    const backgroundTasks = ownedHudState?.backgroundTasks ?? [];
     const failedBackgroundTasks = backgroundTasks
         .filter((task) => task.status === 'failed')
         .sort((left, right) => {

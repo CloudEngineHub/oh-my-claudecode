@@ -530,10 +530,12 @@ export async function scaleUpOwned(
       // from an explicit `task.role` (user opt-in). Pre-patch semantics: callers
       // passing `--agent-type codex` stay on codex regardless of task text.
       const hasExplicitOwnedRole = ownedRoles.length === 1;
-      const hasConfiguredRoute = canonical !== null && config.resolved_routing_roles?.includes(canonical) === true;
-      const scaleEnv = config.external_models_defaults === undefined ? env : {};
-      const routedPair = canonical && (hasConfiguredRoute || (hasExplicitOwnedRole && workerAgentType === 'claude'))
-        ? config.resolved_routing?.[canonical]
+      const resolvedRoute = canonical === null ? undefined : config.resolved_routing?.[canonical];
+      const hasLegacyConfiguredRoute = config.resolved_routing_roles === undefined && resolvedRoute !== undefined;
+      const hasConfiguredRoute = canonical !== null
+        && (config.resolved_routing_roles?.includes(canonical) === true || hasLegacyConfiguredRoute);
+      const routedPair = canonical && hasExplicitOwnedRole && (hasConfiguredRoute || workerAgentType === 'claude')
+        ? resolvedRoute
         : undefined;
       if (routedPair) {
         const { primary } = routedPair;
@@ -543,11 +545,13 @@ export async function scaleUpOwned(
           workerModel = primary.model;
         }
         if (!workerModel) {
-          workerModel = resolveDefaultWorkerModel(workerAgentType, scaleEnv, config.external_models_defaults);
+          const modelEnv = workerAgentType === 'claude' || config.external_models_defaults === undefined ? env : {};
+          workerModel = resolveDefaultWorkerModel(workerAgentType, modelEnv, config.external_models_defaults);
         }
       } else {
         // Honor provider-specific default-model resolution for non-routed workers.
-        workerModel = resolveDefaultWorkerModel(workerAgentType, scaleEnv, config.external_models_defaults);
+        const modelEnv = workerAgentType === 'claude' || config.external_models_defaults === undefined ? env : {};
+        workerModel = resolveDefaultWorkerModel(workerAgentType, modelEnv, config.external_models_defaults);
       }
 
       let launchBinary: string;

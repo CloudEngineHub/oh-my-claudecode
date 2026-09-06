@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { spawnSync } from 'child_process';
-import { getContract, buildLaunchArgs, buildWorkerArgv, getWorkerEnv, parseCliOutput, isPromptModeAgent, getPromptModeArgs, isHeadlessSupportedOnPlatform, validateCliAvailable, isCliAvailable, shouldLoadShellRc, resolveCliBinaryPath, clearResolvedPathCache, validateCliBinaryPath, resolveClaudeWorkerModel, shouldUseClaudeBareMode, _testInternals, buildValidatedWorkerLaunchDescriptor, validateWorkerLaunchDescriptor, } from '../model-contract.js';
+import { getContract, buildLaunchArgs, buildWorkerArgv, getWorkerEnv, parseCliOutput, isPromptModeAgent, getPromptModeArgs, isHeadlessSupportedOnPlatform, validateCliAvailable, isCliAvailable, shouldLoadShellRc, resolveCliBinaryPath, clearResolvedPathCache, validateCliBinaryPath, resolveClaudeWorkerModel, resolveDefaultWorkerModel, shouldUseClaudeBareMode, _testInternals, buildValidatedWorkerLaunchDescriptor, validateWorkerLaunchDescriptor, } from '../model-contract.js';
 vi.mock('child_process', async (importOriginal) => {
     const actual = await importOriginal();
     return {
@@ -346,6 +346,64 @@ describe('model-contract', () => {
             const withModel = buildLaunchArgs('grok', { teamName: 't', workerName: 'w', cwd: '/tmp', model: 'grok-4-fast' });
             expect(withModel).toEqual(['--always-approve', '--model', 'grok-4-fast']);
         });
+        it('cursor leads with --force --trust and appends --model <m> when given (issue #3880)', () => {
+            const noModel = buildLaunchArgs('cursor', { teamName: 't', workerName: 'w', cwd: '/tmp' });
+            expect(noModel).toEqual(['--force', '--trust']);
+            expect(noModel).not.toContain('--model');
+            const emptyModel = buildLaunchArgs('cursor', { teamName: 't', workerName: 'w', cwd: '/tmp', model: '' });
+            expect(emptyModel).toEqual(['--force', '--trust']);
+            expect(emptyModel).not.toContain('--model');
+            const withModel = buildLaunchArgs('cursor', { teamName: 't', workerName: 'w', cwd: '/tmp', model: 'cursor-grok-4.6-high' });
+            expect(withModel).toEqual(['--force', '--trust', '--model', 'cursor-grok-4.6-high']);
+        });
+        it('cursor appends extraFlags after the model flag (issue #3880)', () => {
+            const args = buildLaunchArgs('cursor', { teamName: 't', workerName: 'w', cwd: '/tmp', model: 'composer-2.5', extraFlags: ['--foo'] });
+            expect(args).toEqual(['--force', '--trust', '--model', 'composer-2.5', '--foo']);
+            const noModel = buildLaunchArgs('cursor', { teamName: 't', workerName: 'w', cwd: '/tmp', extraFlags: ['--foo'] });
+            expect(noModel).toEqual(['--force', '--trust', '--foo']);
+        });
+        it('cursor keeps required trust flags singular when extra flags repeat them', () => {
+            const args = buildLaunchArgs('cursor', {
+                teamName: 't', workerName: 'w', cwd: '/tmp',
+                extraFlags: ['--trust', '--force', '--trust', '--foo'],
+            });
+            expect(args).toEqual(['--force', '--trust', '--foo']);
+            expect(countArg(args, '--force')).toBe(1);
+            expect(countArg(args, '--trust')).toBe(1);
+        });
+        it('cursor removes documented force aliases from extra flags', () => {
+            const args = buildLaunchArgs('cursor', {
+                teamName: 't', workerName: 'w', cwd: '/tmp',
+                extraFlags: ['-f', '--yolo', '--force', '--trust'],
+            });
+            expect(args).toEqual(['--force', '--trust']);
+        });
+        it('cursor worker argv leads with the cursor-agent binary then approval flags', () => {
+            const argv = buildWorkerArgv('cursor', {
+                teamName: 'cursor-team', workerName: 'w', cwd: '/tmp',
+                model: 'cursor-grok-4.6-high', resolvedBinaryPath: '/usr/local/bin/cursor-agent',
+            });
+            expect(argv).toEqual([
+                '/usr/local/bin/cursor-agent', '--force', '--trust', '--model', 'cursor-grok-4.6-high',
+            ]);
+        });
+        it('every CLI provider carries an approval-bypass flag so no worker pane can block on a prompt', () => {
+            // A team worker pane has nobody to answer an approval or trust question.
+            // cursor was the sole provider launched bare, which stranded it on
+            // "Workspace Trust Required" in any directory cursor had not seen before.
+            const approvalFlags = {
+                claude: '--dangerously-skip-permissions',
+                codex: '--dangerously-bypass-approvals-and-sandbox',
+                gemini: '--approval-mode',
+                grok: '--always-approve',
+                antigravity: '--dangerously-skip-permissions',
+                cursor: '--trust',
+            };
+            for (const [agent, flag] of Object.entries(approvalFlags)) {
+                const args = buildLaunchArgs(agent, { teamName: 't', workerName: 'w', cwd: '/tmp' });
+                expect(args, `${agent} must bypass approval prompts`).toContain(flag);
+            }
+        });
         it('passes model flag when specified', () => {
             const args = buildLaunchArgs('codex', { teamName: 't', workerName: 'w', cwd: '/tmp', model: 'gpt-4' });
             expect(args).toContain('--model');
@@ -653,6 +711,50 @@ describe('model-contract', () => {
             vi.unstubAllEnvs();
         });
     });
+    describe('resolveDefaultWorkerModel', () => {
+        it.each([
+            ['codex', 'OMC_EXTERNAL_MODELS_DEFAULT_CODEX_MODEL', 'OMC_CODEX_DEFAULT_MODEL'],
+            ['gemini', 'OMC_EXTERNAL_MODELS_DEFAULT_GEMINI_MODEL', 'OMC_GEMINI_DEFAULT_MODEL'],
+            ['antigravity', 'OMC_EXTERNAL_MODELS_DEFAULT_ANTIGRAVITY_MODEL', 'OMC_ANTIGRAVITY_DEFAULT_MODEL'],
+            ['grok', 'OMC_EXTERNAL_MODELS_DEFAULT_GROK_MODEL', 'OMC_GROK_DEFAULT_MODEL'],
+            ['cursor', 'OMC_EXTERNAL_MODELS_DEFAULT_CURSOR_MODEL', 'OMC_CURSOR_DEFAULT_MODEL'],
+        ])('%s prefers canonical env over legacy fallback', (provider, canonical, legacy) => {
+            expect(resolveDefaultWorkerModel(provider, { [canonical]: 'canonical-model', [legacy]: 'legacy-model' })).toBe('canonical-model');
+        });
+        it.each([
+            ['codex', 'OMC_EXTERNAL_MODELS_DEFAULT_CODEX_MODEL', 'OMC_CODEX_DEFAULT_MODEL'],
+            ['gemini', 'OMC_EXTERNAL_MODELS_DEFAULT_GEMINI_MODEL', 'OMC_GEMINI_DEFAULT_MODEL'],
+            ['antigravity', 'OMC_EXTERNAL_MODELS_DEFAULT_ANTIGRAVITY_MODEL', 'OMC_ANTIGRAVITY_DEFAULT_MODEL'],
+            ['grok', 'OMC_EXTERNAL_MODELS_DEFAULT_GROK_MODEL', 'OMC_GROK_DEFAULT_MODEL'],
+            ['cursor', 'OMC_EXTERNAL_MODELS_DEFAULT_CURSOR_MODEL', 'OMC_CURSOR_DEFAULT_MODEL'],
+        ])('%s falls back to legacy env', (provider, canonical, legacy) => {
+            expect(resolveDefaultWorkerModel(provider, { [canonical]: '', [legacy]: 'legacy-model' })).toBe('legacy-model');
+        });
+        it('returns undefined when external provider config is absent', () => {
+            expect(resolveDefaultWorkerModel('cursor', {})).toBeUndefined();
+        });
+        it('ignores whitespace-only environment defaults and uses captured config', () => {
+            expect(resolveDefaultWorkerModel('cursor', {
+                OMC_EXTERNAL_MODELS_DEFAULT_CURSOR_MODEL: '   ',
+                OMC_CURSOR_DEFAULT_MODEL: '\t',
+            }, { cursorModel: 'captured-cursor-model' })).toBe('captured-cursor-model');
+        });
+        it.each([
+            ['codex', 'codexModel', 'OMC_EXTERNAL_MODELS_DEFAULT_CODEX_MODEL', 'OMC_CODEX_DEFAULT_MODEL'],
+            ['gemini', 'geminiModel', 'OMC_EXTERNAL_MODELS_DEFAULT_GEMINI_MODEL', 'OMC_GEMINI_DEFAULT_MODEL'],
+            ['antigravity', 'antigravityModel', 'OMC_EXTERNAL_MODELS_DEFAULT_ANTIGRAVITY_MODEL', 'OMC_ANTIGRAVITY_DEFAULT_MODEL'],
+            ['grok', 'grokModel', 'OMC_EXTERNAL_MODELS_DEFAULT_GROK_MODEL', 'OMC_GROK_DEFAULT_MODEL'],
+            ['cursor', 'cursorModel', 'OMC_EXTERNAL_MODELS_DEFAULT_CURSOR_MODEL', 'OMC_CURSOR_DEFAULT_MODEL'],
+        ])('%s prefers captured config over both environment fallbacks', (provider, key, canonical, legacy) => {
+            expect(resolveDefaultWorkerModel(provider, {
+                [canonical]: 'canonical-model',
+                [legacy]: 'legacy-model',
+            }, { [key]: 'captured-model' })).toBe('captured-model');
+        });
+        it('keeps Claude on its own resolver because external snapshots have no Claude field', () => {
+            expect(resolveDefaultWorkerModel('claude', { OMC_MODEL_MEDIUM: 'claude-env' }, { cursorModel: 'captured-model' })).toBeUndefined();
+        });
+    });
     describe('worker launch descriptors', () => {
         it('captures exact binary model and appended prompt argv', () => {
             const descriptor = buildValidatedWorkerLaunchDescriptor('gemini', {
@@ -678,6 +780,16 @@ describe('model-contract', () => {
             const validated = validateWorkerLaunchDescriptor(source);
             validated.args.push('--changed');
             expect(source.args).toEqual(['--flag']);
+        });
+        it('normalizes persisted Cursor descriptors to the required trust flags', () => {
+            const validated = validateWorkerLaunchDescriptor({
+                schema_version: 1,
+                provider: 'cursor',
+                model: null,
+                binary: '/usr/local/bin/cursor-agent',
+                args: ['--yolo', '--model', 'composer-2.5', '--trust', '--force'],
+            });
+            expect(validated.args).toEqual(['--force', '--trust', '--model', 'composer-2.5']);
         });
     });
 });

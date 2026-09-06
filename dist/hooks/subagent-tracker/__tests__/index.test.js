@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
-import { tmpdir } from "os";
+import { homedir } from "os";
 import { recordToolUsage, getAgentDashboard, getStaleAgents, getTrackingStats, processSubagentStart, processSubagentStop, readTrackingState, readDiskState, writeTrackingState, getStateFilePath, recordToolUsageWithTiming, getAgentPerformance, updateTokenUsage, recordFileOwnership, detectFileConflicts, suggestInterventions, calculateParallelEfficiency, getAgentObservatory, flushPendingWrites, } from "../index.js";
 import { collectWorktreeDirtyEvidence } from "../worktree-evidence.js";
 import { acquireFileLockSync, releaseFileLockSync, lockPathFor, } from "../../../lib/file-lock.js";
@@ -10,13 +10,27 @@ import { readMissionBoardState } from "../../../hud/mission-board.js";
 import { readReplayEvents, getReplaySummary } from "../session-replay.js";
 describe("subagent-tracker", () => {
     let testDir;
+    let previousHome;
+    let previousUserProfile;
     beforeEach(() => {
-        testDir = join(tmpdir(), `subagent-test-${Date.now()}`);
+        testDir = mkdtempSync(join(homedir(), "subagent-test-"));
+        previousHome = process.env.HOME;
+        previousUserProfile = process.env.USERPROFILE;
+        process.env.HOME = testDir;
+        process.env.USERPROFILE = testDir;
         mkdirSync(join(testDir, ".omc", "state"), { recursive: true });
     });
     afterEach(() => {
         flushPendingWrites();
         rmSync(testDir, { recursive: true, force: true });
+        if (previousHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = previousHome;
+        if (previousUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = previousUserProfile;
     });
     describe("recordToolUsage", () => {
         it("should record tool usage for a running agent", () => {

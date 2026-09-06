@@ -1,20 +1,48 @@
 import { createHash, randomUUID } from 'crypto';
-import { execSync, spawn } from 'child_process';
+import { execFileSync, execSync, spawn } from 'child_process';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync, writeFileSync, mkdtempSync, unlinkSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import { tmpdir } from 'os';
-import { emergencyMutateStateFileIf, recoverEmergencyStateFile, captureModeStateCleanup, writeModeState, readModeState, clearModeStateFile, withStateFileMutationLock } from '../mode-state-io.js';
+import { emergencyMutateStateFileIf, recoverEmergencyStateFile, captureModeStateCleanup, findSessionOwnedStateCandidates, writeModeState, readModeState, readModeStateWithMeta, clearModeStateFile, withStateFileMutationLock } from '../mode-state-io.js';
 import { atomicWriteJsonSync } from '../atomic-write.js';
-import { clearWorktreeCache, getProjectIdentifier } from '../worktree-paths.js';
+import { clearWorktreeCache, getOmcRoot, getProjectIdentifier } from '../worktree-paths.js';
 let tempDir;
+const previousHome = process.env.HOME;
+const previousUserProfile = process.env.USERPROFILE;
 describe('mode-state-io', () => {
     beforeEach(() => {
         tempDir = mkdtempSync(join(tmpdir(), 'mode-state-io-test-'));
+        process.env.HOME = tempDir;
+        process.env.USERPROFILE = tempDir;
         clearWorktreeCache();
+    });
+    it('keeps a non-Git cwd in the non-git centralized namespace when HOME is Git-backed', () => {
+        const homeRepo = join(tempDir, 'home-repo');
+        const nonGitCwd = join(tempDir, 'non-git-cwd');
+        const centralized = join(tempDir, 'centralized-state');
+        mkdirSync(homeRepo, { recursive: true });
+        mkdirSync(nonGitCwd, { recursive: true });
+        execFileSync('git', ['init'], { cwd: homeRepo, stdio: 'pipe' });
+        process.env.HOME = homeRepo;
+        process.env.USERPROFILE = homeRepo;
+        process.env.OMC_STATE_DIR = centralized;
+        clearWorktreeCache();
+        expect(writeModeState('ralph', { active: true }, nonGitCwd, 'home-git-session')).toBe(true);
+        expect(readModeState('ralph', nonGitCwd, 'home-git-session')).toMatchObject({ active: true });
+        expect(getOmcRoot(nonGitCwd)).toBe(join(centralized, 'non-git'));
+        expect(existsSync(join(centralized, 'non-git', 'state', 'sessions', 'home-git-session', 'ralph-state.json'))).toBe(true);
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
+        if (previousHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = previousHome;
+        if (previousUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = previousUserProfile;
         clearWorktreeCache();
         delete process.env.OMC_STATE_DIR;
         delete process.env.OMC_TEST_CONDITIONAL_CLEAR_REPLACEMENT_PATH;
@@ -256,6 +284,33 @@ describe('mode-state-io', () => {
             writeFileSync(join(stateDir, 'ralph-state.json'), 'not-json{{{');
             const result = readModeState('ralph', tempDir);
             expect(result).toBeNull();
+        });
+        it.each([
+            ['metadata owner', { _meta: { sessionId: 'session-other' } }],
+            ['top-level owner', { session_id: 'session-other' }],
+        ])('should reject a session-scoped state owned by another session (%s)', (_label, state) => {
+            const sessionDir = join(tempDir, '.omc', 'state', 'sessions', 'session-requester');
+            mkdirSync(sessionDir, { recursive: true });
+            writeFileSync(join(sessionDir, 'ralph-state.json'), JSON.stringify({ active: true, ...state }));
+            expect(readModeState('ralph', tempDir, 'session-requester')).toBeNull();
+            expect(readModeStateWithMeta('ralph', tempDir, 'session-requester')).toBeNull();
+        });
+        it.each([
+            ['same owner', { _meta: { sessionId: 'session-requester' } }],
+            ['unowned legacy', {}],
+        ])('should preserve session-scoped reads for %s state', (_label, state) => {
+            const sessionDir = join(tempDir, '.omc', 'state', 'sessions', 'session-requester');
+            mkdirSync(sessionDir, { recursive: true });
+            const persisted = { active: true, ...state };
+            writeFileSync(join(sessionDir, 'ralph-state.json'), JSON.stringify(persisted));
+            expect(readModeState('ralph', tempDir, 'session-requester')).toMatchObject({ active: true });
+            expect(readModeStateWithMeta('ralph', tempDir, 'session-requester')).toEqual(persisted);
+        });
+        it('should exclude a foreign owner from the expected session path discovery', () => {
+            const sessionDir = join(tempDir, '.omc', 'state', 'sessions', 'session-requester');
+            mkdirSync(sessionDir, { recursive: true });
+            writeFileSync(join(sessionDir, 'ralph-state.json'), JSON.stringify({ active: true, _meta: { sessionId: 'session-other' } }));
+            expect(findSessionOwnedStateCandidates('ralph', 'session-requester', tempDir)).toEqual([]);
         });
     });
     // -----------------------------------------------------------------------

@@ -183,6 +183,32 @@ export declare function getSubscriptionInfo(): {
     rateLimitTier: string | null;
 };
 /**
+ * Build the User-Agent for the OAuth usage request.
+ *
+ * The endpoint buckets its rate limit by User-Agent, and a request that does not
+ * name a Claude Code *version* lands in a bucket that allows roughly one request
+ * per hour. Measured against api.anthropic.com with a single OAuth token,
+ * requests seconds apart, recording status and `retry-after` only:
+ *
+ *   User-Agent           | HTTP | retry-after
+ *   ---------------------|------|--------------------------------------------
+ *   (header omitted)     | 429  | 348s
+ *   claude-code          | 429  | 349s / 348s - same absolute deadline
+ *   claude-code/2.1.232  | 403  | none - the endpoint's real answer
+ *   claude-code/9.9.9    | 403  | none - the endpoint's real answer
+ *
+ * Node sends no User-Agent of its own, so this call has been landing in the
+ * throttled bucket and only the first request of each hour ever reached the API.
+ *
+ * The version is never invented. It comes from the Claude Code statusline
+ * payload's `version` field. When we do not have one we send no header at all:
+ * the bare product token was measured to share the throttled bucket, so it would
+ * buy nothing while looking like a fix, and a made-up version would put a false
+ * claim on the wire. The pattern is anchored because the value arrives as JSON
+ * and an unanchored match would let stray characters into an outgoing header.
+ */
+export declare function buildUserAgent(clientVersion?: string): string | undefined;
+/**
  * Parse API response into RateLimits
  */
 export declare function parseUsageResponse(response: UsageApiResponse, options?: ParseUsageResponseOptions): RateLimits | null;
@@ -222,7 +248,13 @@ export declare function parseKimiResponse(response: KimiUsageResponse): RateLimi
  *   - 'auth': credentials expired and refresh failed
  *   - 'no_credentials': no OAuth credentials available (expected for API key users)
  *   - 'rate_limited': API returned 429; stale data served if available, with exponential backoff
+ *
+ * @param opts.clientVersion Claude Code version for the usage API User-Agent
+ *   (see buildUserAgent). Optional: callers without a statusline payload omit it
+ *   and the header is left off rather than guessed.
  */
-export declare function getUsage(): Promise<UsageResult>;
+export declare function getUsage(opts?: {
+    clientVersion?: string;
+}): Promise<UsageResult>;
 export {};
 //# sourceMappingURL=usage-api.d.ts.map

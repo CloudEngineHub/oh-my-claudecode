@@ -2,10 +2,8 @@ import {
   closeSync,
   constants as fsConstants,
   fstatSync,
-  lstatSync,
   openSync,
   readFileSync,
-  statSync,
 } from "fs";
 import { isAbsolute, join, normalize, win32 } from "path";
 import type { RunDirHandle } from "./run-dir.js";
@@ -15,11 +13,11 @@ const NO_FOLLOW = process.platform === "win32" ? 0 : fsConstants.O_NOFOLLOW;
 const UNSAFE_CONTROL = /[\u0000-\u001f\u007f]/;
 const WINDOWS_DEVICE_NAME = /^(?:con|prn|aux|nul|clock\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\..*)?$/i;
 
-/** Fail closed before acquiring any run-scoped locks on unsupported POSIX. */
+/** Fail closed before acquiring any run-scoped locks on unsupported platforms. */
 export function assertContainedFsSupported(
   platform: NodeJS.Platform = process.platform,
 ): void {
-  if (platform !== "linux" && platform !== "win32") {
+  if (platform !== "linux") {
     throw new Error(
       `contained directory-FD traversal is unavailable on ${platform}; refusing pathname fallback`,
     );
@@ -68,26 +66,32 @@ export function openNoFollow(
   mode = 0o600,
 ): number {
   if (process.platform === "win32") {
-    try {
-      if (lstatSync(filePath).isSymbolicLink()) {
-        const error = new Error(
-          `symbolic link refused: ${filePath}`,
-        ) as NodeJS.ErrnoException;
-        error.code = "ELOOP";
-        throw error;
-      }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ELOOP") throw error;
-      // Let openSync report ordinary permission and path errors.
-    }
+    throw new Error(
+      "atomic no-follow file opens are unavailable on win32; refusing pathname fallback",
+    );
   }
   return openSync(filePath, flags | NO_FOLLOW, mode);
 }
 
+/** Reject special files and hardlinks that escape the run-directory inode. */
+export function assertPrivateRegularFile(
+  fileDescriptor: number,
+  filePath: string,
+): void {
+  const stats = fstatSync(fileDescriptor);
+  if (!stats.isFile() || stats.nlink !== 1) {
+    throw new Error(`contained artifact is not a private regular file: ${filePath}`);
+  }
+}
+
 /** Read a runtime artifact without following a symlink at the final path. */
 export function readFileNoFollow(filePath: string): string {
-  const fd = openNoFollow(filePath, fsConstants.O_RDONLY);
+  const fd = openNoFollow(
+    filePath,
+    fsConstants.O_RDONLY | (fsConstants.O_NONBLOCK ?? 0),
+  );
   try {
+    assertPrivateRegularFile(fd, filePath);
     return readFileSync(fd, "utf8");
   } finally {
     closeSync(fd);
@@ -97,9 +101,8 @@ export function readFileNoFollow(filePath: string): string {
 /**
  * Resolve a path for an already-open run directory without changing the
  * process-wide platform state. Linux exposes directory FDs as traversable
- * procfs directories. macOS (and other non-Linux POSIX platforms) does not,
- * so use the validated run-directory path and retain the final-component
- * no-follow guard in openNoFollow.
+ * procfs directories. Platforms without that primitive fail closed instead of
+ * falling back to a raceable pathname.
  */
 export function containedPathForPlatform(
   directoryFd: number,
@@ -112,14 +115,14 @@ export function containedPathForPlatform(
     return join(`/proc/self/fd/${directoryFd}`, fileName);
   }
   assertContainedFsSupported(platform);
-  return join(runDirPath, fileName);
+  throw new Error("unreachable");
 }
 
 /**
- * Run a synchronous operation against a directory FD on POSIX. If the
+ * Run a synchronous operation against a directory FD on Linux. If the
  * directory is renamed or its parent path is replaced while the operation is
  * in flight, the FD still refers to the originally validated directory.
- * Windows falls back to the final-component no-follow guard.
+ * Platforms without a traversable directory FD fail closed.
  */
 export function withContainedPath<T>(
   runDir: RunDirHandle,
@@ -141,13 +144,6 @@ export function withContainedDirectory<T>(
   platform: NodeJS.Platform = process.platform,
 ): T {
   assertContainedFsSupported(platform);
-  if (platform === "win32") {
-    const stats = statSync(runDir.path);
-    if (stats.dev !== runDir.device || stats.ino !== runDir.inode) {
-      throw new Error("run directory identity changed");
-    }
-    return operation(runDir.path);
-  }
   const directoryFd = openNoFollow(
     runDir.path,
     fsConstants.O_RDONLY | (fsConstants.O_DIRECTORY ?? 0),
@@ -170,16 +166,7 @@ export function withContainedPathForPlatform<T>(
   platform: NodeJS.Platform,
 ): T {
   assertSafeContainedFileName(fileName, platform);
-  if (platform !== "linux") {
-    assertContainedFsSupported(platform);
-    // Windows has no POSIX dirfd primitive. Keep its existing identity guard
-    // and final-component no-follow behavior unchanged.
-    const stats = statSync(runDir.path);
-    if (stats.dev !== runDir.device || stats.ino !== runDir.inode) {
-      throw new Error("run directory identity changed");
-    }
-    return operation(join(runDir.path, fileName));
-  }
+  assertContainedFsSupported(platform);
   const directoryFd = openNoFollow(
     runDir.path,
     fsConstants.O_RDONLY | (fsConstants.O_DIRECTORY ?? 0),

@@ -21,7 +21,7 @@ import { getClaudeConfigDir } from '../utils/config-dir.js';
 import { sanitizeName } from './tmux-session.js';
 import { atomicWriteJson, validateResolvedPath, ensureDirWithMode } from './fs-utils.js';
 import { isProcessAlive } from '../platform/index.js';
-import { getTaskStoragePath, getLegacyTaskStoragePath } from './state-paths.js';
+import { getTaskStoragePath, getLegacyTaskStoragePath, normalizeTaskFileStem } from './state-paths.js';
 /** Default age (ms) after which a lock file is considered stale. */
 const DEFAULT_STALE_LOCK_MS = 30_000;
 /**
@@ -39,7 +39,7 @@ export function acquireTaskLock(teamName, taskId, opts) {
     const staleLockMs = opts?.staleLockMs ?? DEFAULT_STALE_LOCK_MS;
     const dir = canonicalTasksDir(teamName, opts?.cwd);
     ensureDirWithMode(dir);
-    const lockPath = join(dir, `${sanitizeTaskId(taskId)}.lock`);
+    const lockPath = join(dir, `${normalizeTaskFileStem(sanitizeTaskId(taskId))}.lock`);
     for (let attempt = 0; attempt < 2; attempt++) {
         try {
             const fd = openSync(lockPath, fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_WRONLY, 0o600);
@@ -162,10 +162,15 @@ function legacyTasksDir(teamName) {
  * New writes never use the legacy path.
  */
 function resolveTaskPathForRead(teamName, taskId, cwd) {
-    const canonical = join(canonicalTasksDir(teamName, cwd), `${sanitizeTaskId(taskId)}.json`);
+    const safeTaskId = sanitizeTaskId(taskId);
+    const canonicalDir = canonicalTasksDir(teamName, cwd);
+    const canonical = join(canonicalDir, `${normalizeTaskFileStem(safeTaskId)}.json`);
     if (existsSync(canonical))
         return canonical;
-    const legacy = join(legacyTasksDir(teamName), `${sanitizeTaskId(taskId)}.json`);
+    const legacyCanonical = join(canonicalDir, `${safeTaskId}.json`);
+    if (existsSync(legacyCanonical))
+        return legacyCanonical;
+    const legacy = join(legacyTasksDir(teamName), `${safeTaskId}.json`);
     if (existsSync(legacy))
         return legacy;
     // Neither exists — return canonical so callers get a predictable missing-file path
@@ -176,10 +181,10 @@ function resolveTaskPathForRead(teamName, taskId, cwd) {
  * Always returns the canonical path regardless of whether legacy data exists.
  */
 function resolveTaskPathForWrite(teamName, taskId, cwd) {
-    return join(canonicalTasksDir(teamName, cwd), `${sanitizeTaskId(taskId)}.json`);
+    return join(canonicalTasksDir(teamName, cwd), `${normalizeTaskFileStem(sanitizeTaskId(taskId))}.json`);
 }
 function failureSidecarPath(teamName, taskId, cwd) {
-    return join(canonicalTasksDir(teamName, cwd), `${sanitizeTaskId(taskId)}.failure.json`);
+    return join(canonicalTasksDir(teamName, cwd), `${normalizeTaskFileStem(sanitizeTaskId(taskId))}.failure.json`);
 }
 // ─── Public API ────────────────────────────────────────────────────────────
 /** Read a single task file. Returns null if not found or malformed. */
@@ -367,7 +372,7 @@ export function listTaskIds(teamName, opts) {
         try {
             return readdirSync(dir)
                 .filter(f => f.endsWith('.json') && !f.includes('.tmp.') && !f.includes('.failure.') && !f.endsWith('.lock'))
-                .map(f => f.replace('.json', ''));
+                .map(f => f.replace(/^task-/, '').replace('.json', ''));
         }
         catch {
             return [];

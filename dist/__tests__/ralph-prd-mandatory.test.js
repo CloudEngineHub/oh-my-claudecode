@@ -6,8 +6,14 @@ import { detectNoPrdFlag, stripNoPrdFlag, detectCriticModeFlag, stripCriticModeF
 import { getArchitectVerificationPrompt, startVerification, detectArchitectApproval, detectArchitectRejection, } from '../hooks/ralph/verifier.js';
 describe('Ralph PRD-Mandatory', () => {
     let testDir;
+    let previousHome;
+    let previousUserProfile;
     beforeEach(() => {
         testDir = join(tmpdir(), `ralph-prd-mandatory-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        previousHome = process.env.HOME;
+        previousUserProfile = process.env.USERPROFILE;
+        process.env.HOME = testDir;
+        process.env.USERPROFILE = testDir;
         mkdirSync(testDir, { recursive: true });
         // Create .omc/state directory for ralph state files
         mkdirSync(join(testDir, '.omc', 'state'), { recursive: true });
@@ -16,6 +22,14 @@ describe('Ralph PRD-Mandatory', () => {
         if (existsSync(testDir)) {
             rmSync(testDir, { recursive: true, force: true });
         }
+        if (previousHome === undefined)
+            delete process.env.HOME;
+        else
+            process.env.HOME = previousHome;
+        if (previousUserProfile === undefined)
+            delete process.env.USERPROFILE;
+        else
+            process.env.USERPROFILE = previousUserProfile;
     });
     // ==========================================================================
     // Prompt Flag Sanitization

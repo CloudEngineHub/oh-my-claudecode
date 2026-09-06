@@ -1,14 +1,19 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { basename, dirname, join } from 'path';
-import { createHash } from 'crypto';
+import { dirname, join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.unmock('child_process');
 vi.unmock('node:child_process');
 import { execFileSync } from 'child_process';
 // @ts-expect-error Local hook helper is a JS module loaded directly by the tests.
 import { evaluateAgentHeavyPreflight } from '../../scripts/lib/pre-tool-enforcer-preflight.mjs';
+import { clearWorktreeCache, getOmcRoot } from '../lib/worktree-paths.js';
 const SCRIPT_PATH = join(process.cwd(), 'scripts', 'pre-tool-enforcer.mjs');
+function makeGitTemp(prefix) {
+    const directory = mkdtempSync(join(tmpdir(), prefix));
+    execFileSync('git', ['init'], { cwd: directory, stdio: 'pipe' });
+    return directory;
+}
 function runPreToolEnforcer(input) {
     return runPreToolEnforcerWithEnv(input);
 }
@@ -23,10 +28,13 @@ function runPreToolEnforcerWithEnv(input, env = {}) {
         env: {
             ...process.env,
             HOME: homeDir,
+            USERPROFILE: homeDir,
             CLAUDE_CONFIG_DIR: join(homeDir, '.claude'),
             NODE_ENV: 'test',
             DISABLE_OMC: '',
             OMC_SKIP_HOOKS: '',
+            OMC_STATE_DIR: '',
+            CLAUDE_PLUGIN_ROOT: '',
             // Advisory verbosity: unset it so a contributor running with OMC_QUIET
             // exported does not silence the advisories these tests assert on.
             // The OMC_QUIET suites pass their own value via `env`, which wins below.
@@ -74,7 +82,7 @@ function writeTranscriptWithContext(filePath, contextWindow, inputTokens) {
 describe('pre-tool-enforcer advisory throttling (issue #3163)', () => {
     let tempDir;
     beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-advisory-throttle-'));
+        tempDir = makeGitTemp('pre-tool-enforcer-advisory-throttle-');
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
@@ -178,7 +186,7 @@ describe('pre-tool-enforcer advisory throttling (issue #3163)', () => {
 describe('pre-tool-enforcer fallback gating (issue #970)', () => {
     let tempDir;
     beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-'));
+        tempDir = makeGitTemp('pre-tool-enforcer-');
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
@@ -1662,7 +1670,7 @@ describe('pre-tool-enforcer fallback gating (issue #970)', () => {
 describe('pre-tool-enforcer force-agent-delegation enforcement', () => {
     let tempDir;
     beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-fad-'));
+        tempDir = makeGitTemp('pre-tool-enforcer-fad-');
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
@@ -1800,7 +1808,7 @@ describe('pre-tool-enforcer agents.<name>.model injection (issue #3242)', () => 
     let tempDir;
     let xdgConfigHome;
     beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-agent-model-'));
+        tempDir = makeGitTemp('pre-tool-enforcer-agent-model-');
         xdgConfigHome = join(tempDir, 'xdg-config');
         mkdirSync(join(xdgConfigHome, 'claude-omc'), { recursive: true });
     });
@@ -1913,7 +1921,7 @@ describe('pre-tool-enforcer agents.<name>.model injection (issue #3242)', () => 
 describe('pre-tool-enforcer skill vs agent namespace guard (issue #3667)', () => {
     let tempDir;
     beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-skill-agent-'));
+        tempDir = makeGitTemp('pre-tool-enforcer-skill-agent-');
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
@@ -2175,7 +2183,7 @@ describe('pre-tool-enforcer skill vs agent namespace guard (issue #3667)', () =>
 describe('pre-tool-enforcer session-scoped agent tracking (issue #3732)', () => {
     let tempDir;
     beforeEach(() => {
-        tempDir = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-session-tracking-'));
+        tempDir = makeGitTemp('pre-tool-enforcer-session-tracking-');
     });
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
@@ -2267,26 +2275,40 @@ describe('pre-tool-enforcer session-scoped agent tracking (issue #3732)', () => 
     it('resolves the session-scoped tracking read through OMC_STATE_DIR centralized state', () => {
         const sessionId = 'session-3732-centralized';
         const centralRoot = mkdtempSync(join(tmpdir(), 'pre-tool-enforcer-central-'));
-        const stateRoot = join(centralRoot, `${basename(tempDir)}-${createHash('sha256').update(tempDir).digest('hex').slice(0, 16)}`);
-        writeJson(join(stateRoot, 'state', 'sessions', sessionId, 'subagent-tracking-state.json'), {
-            agents: [
-                { agent_id: 'z1', agent_type: 'oh-my-claudecode:executor', status: 'running' },
-            ],
-            total_spawned: 4,
-            total_completed: 3,
-            total_failed: 0,
-            last_updated: new Date().toISOString(),
-        });
-        const output = runPreToolEnforcerWithEnv({
-            tool_name: 'Task',
-            cwd: tempDir,
-            session_id: sessionId,
-            toolInput: {
-                subagent_type: 'oh-my-claudecode:executor',
-                description: 'issue #3732 centralized regression',
-            },
-        }, { OMC_STATE_DIR: centralRoot });
-        rmSync(centralRoot, { recursive: true, force: true });
+        const previousStateDir = process.env.OMC_STATE_DIR;
+        let output;
+        try {
+            process.env.OMC_STATE_DIR = centralRoot;
+            clearWorktreeCache();
+            const stateRoot = getOmcRoot(centralRoot);
+            writeJson(join(stateRoot, 'state', 'sessions', sessionId, 'subagent-tracking-state.json'), {
+                session_id: sessionId,
+                agents: [
+                    { agent_id: 'z1', agent_type: 'oh-my-claudecode:executor', status: 'running' },
+                ],
+                total_spawned: 4,
+                total_completed: 3,
+                total_failed: 0,
+                last_updated: new Date().toISOString(),
+            });
+            output = runPreToolEnforcerWithEnv({
+                tool_name: 'Task',
+                cwd: centralRoot,
+                session_id: sessionId,
+                toolInput: {
+                    subagent_type: 'oh-my-claudecode:executor',
+                    description: 'issue #3732 centralized regression',
+                },
+            }, { OMC_STATE_DIR: centralRoot });
+        }
+        finally {
+            if (previousStateDir === undefined)
+                delete process.env.OMC_STATE_DIR;
+            else
+                process.env.OMC_STATE_DIR = previousStateDir;
+            clearWorktreeCache();
+            rmSync(centralRoot, { recursive: true, force: true });
+        }
         const advisory = output.hookSpecificOutput.additionalContext;
         // The canonical resolver (not manual join(stateDir, ...)) routes the read
         // into the centralized state root; a manual stateDir join would miss it.

@@ -202,11 +202,13 @@ function approvedTempRoots(): string[] {
 export function isTempOrScratchpadPath(filePath: string, directory?: string): boolean {
   const target = portablePath(filePath);
   if (!filePath || !isAbsolutePath(target)) return false;
+  const hostIsWindows = process.platform === 'win32';
+  if (isWindowsPath(target) !== hostIsWindows) return false;
   const canonical = canonicalPath(filePath), roots = projectRoots(directory);
   if (roots.some(root => withinPath(target, root) || withinPath(canonical, canonicalPath(root))) || hasGitAncestor(canonical)) return false;
   const temps = approvedTempRoots(), canonicalTemps = temps.map(canonicalPath);
-  const lexical = temps.some(root => withinPath(target, root)) || WINDOWS_TEMP.some(pattern => pattern.test(target));
-  const resolved = canonicalTemps.some(root => withinPath(canonical, root)) || WINDOWS_TEMP.some(pattern => pattern.test(canonical));
+  const lexical = temps.some(root => withinPath(target, root)) || (hostIsWindows && WINDOWS_TEMP.some(pattern => pattern.test(target)));
+  const resolved = canonicalTemps.some(root => withinPath(canonical, root)) || (hostIsWindows && WINDOWS_TEMP.some(pattern => pattern.test(canonical)));
   return lexical && resolved;
 }
 

@@ -11,6 +11,7 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { sanitizeName } from './tmux-session.js';
 import { validateResolvedPath } from './fs-utils.js';
+import { teamStateRoot } from './state-paths.js';
 const LEADER_INBOX_HEADER = `# Leader Inbox
 
 Runtime notifications (merge conflicts, rebase events, etc.) appear here.
@@ -24,7 +25,7 @@ Check this file periodically and after long-running operations.
  */
 export function leaderInboxPath(teamName, cwd) {
     const safe = sanitizeName(teamName);
-    return join(cwd, `.omc/state/team/${safe}/leader/inbox.md`);
+    return join(teamStateRoot(cwd, safe), 'leader', 'inbox.md');
 }
 /**
  * Ensures the leader inbox directory and seed file exist.
@@ -35,7 +36,7 @@ export function leaderInboxPath(teamName, cwd) {
  */
 export async function ensureLeaderInbox(teamName, cwd) {
     const inboxPath = leaderInboxPath(teamName, cwd);
-    validateResolvedPath(inboxPath, cwd);
+    validateResolvedPath(inboxPath, teamStateRoot(cwd, sanitizeName(teamName)));
     await mkdir(dirname(inboxPath), { recursive: true });
     if (!existsSync(inboxPath)) {
         await writeFile(inboxPath, LEADER_INBOX_HEADER, 'utf-8');
@@ -49,7 +50,7 @@ export async function ensureLeaderInbox(teamName, cwd) {
  */
 export async function appendToLeaderInbox(teamName, message, cwd) {
     const inboxPath = leaderInboxPath(teamName, cwd);
-    validateResolvedPath(inboxPath, cwd);
+    validateResolvedPath(inboxPath, teamStateRoot(cwd, sanitizeName(teamName)));
     await mkdir(dirname(inboxPath), { recursive: true });
     await appendFile(inboxPath, `\n\n---\n${message}`, 'utf-8');
 }
@@ -60,9 +61,11 @@ export async function appendToLeaderInbox(teamName, message, cwd) {
  * directive is consumed by the leader process which interprets the path
  * relative to its own working directory).
  */
-export function extendLeaderBootstrapPrompt(teamName) {
+export function extendLeaderBootstrapPrompt(teamName, cwd) {
     const safe = sanitizeName(teamName);
-    const path = `.omc/state/team/${safe}/leader/inbox.md`;
+    const path = cwd
+        ? join(teamStateRoot(cwd, safe), 'leader', 'inbox.md')
+        : `.omc/state/team/${safe}/leader/inbox.md`;
     return `Runtime notifications appear at ${path} — check this file periodically and after long-running operations.`;
 }
 //# sourceMappingURL=leader-inbox.js.map

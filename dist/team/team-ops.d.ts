@@ -68,6 +68,7 @@ export declare function teamClaimTask(teamName: string, taskId: string, workerNa
 export declare function teamTransitionTaskStatus(teamName: string, taskId: string, from: TeamTaskStatus, to: TeamTaskStatus, claimToken: string, cwd: string, terminalData?: {
     result?: string;
     error?: string;
+    metadata?: Record<string, unknown>;
 }): Promise<TransitionTaskResult>;
 export declare function teamReleaseTaskClaim(teamName: string, taskId: string, claimToken: string, workerName: string, cwd: string): Promise<ReleaseTaskClaimResult>;
 export declare function teamPublishTaskRecoveryCheckpoint(input: PublishTaskRecoveryCheckpointInput, cwd: string): Promise<import("./task-recovery-checkpoint.js").PublishTaskRecoveryCheckpointResult>;
@@ -80,7 +81,7 @@ export declare function teamRequeueRecoveredTask(teamName: string, cwd: string, 
     adoptionTokenHash: string;
 }): Promise<TaskRecoveryRequeueResult>;
 /** Runtime-owner-only continuation adoption; call before provider launch. */
-export declare function teamAdoptRecoveryReservations(teamName: string, cwd: string, taskIds: string[], workerName: string, proof: TaskRecoveryAdoptionProof): Promise<TaskRecoveryAdoptionResult[]>;
+export declare function teamAdoptRecoveryReservations(teamName: string, cwd: string, taskIds: string[], workerName: string, proof: TaskRecoveryAdoptionProof, launchAttemptId?: string): Promise<TaskRecoveryAdoptionResult[]>;
 /**
  * Reads one exact message from the canonical JSON mailbox without using the
  * compatibility JSONL fallback. It validates every canonical record first so
