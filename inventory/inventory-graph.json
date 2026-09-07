@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "729ede5f45bb80be688977870d11d9f0867f0df4",
-    "sourceSha256": "dc1624dad8c7c0dcfe5149c6cdddb9d5c8ea5cc7dbc324cd95873242321bd405",
+    "head": "2116310a3b0dfd2ea5a3e34ec9db6f98f8c384e9",
+    "sourceSha256": "505d96fe861071d1dae8c0787934bb6260798ba7491aed35387d626ea31a33fd",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "729ede5f45bb80be688977870d11d9f0867f0df4",
-  "sourceSha256": "dc1624dad8c7c0dcfe5149c6cdddb9d5c8ea5cc7dbc324cd95873242321bd405",
+  "head": "2116310a3b0dfd2ea5a3e34ec9db6f98f8c384e9",
+  "sourceSha256": "505d96fe861071d1dae8c0787934bb6260798ba7491aed35387d626ea31a33fd",
   "counts": {
     "public": {
       "skills": 37,
@@ -69927,6 +69927,11 @@
       },
       {
         "from": "src/team/__tests__/runtime-v2.dispatch.test.ts",
+        "to": "external:node:crypto",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/runtime-v2.dispatch.test.ts",
         "to": "external:os",
         "kind": "imports"
       },
@@ -69952,7 +69957,17 @@
       },
       {
         "from": "src/team/__tests__/runtime-v2.dispatch.test.ts",
+        "to": "src/team/recovery-request-store.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/runtime-v2.dispatch.test.ts",
         "to": "src/team/runtime-v2.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/runtime-v2.dispatch.test.ts",
+        "to": "src/team/state-paths.ts",
         "kind": "imports"
       },
       {
@@ -70109,6 +70124,11 @@
         "from": "src/team/__tests__/runtime-v2.shutdown-pane-cleanup.test.ts",
         "to": "src/team/worker-launch-ack.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/runtime-v2.shutdown-pane-cleanup.test.ts",
+        "to": "src/team/worker-launch-ack.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/team/__tests__/runtime-v2.shutdown.test.ts",
@@ -71328,6 +71348,11 @@
       {
         "from": "src/team/__tests__/worker-launch-posix-transport.test.ts",
         "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/worker-launch-posix-transport.test.ts",
+        "to": "src/platform/process-utils.ts",
         "kind": "imports"
       },
       {
@@ -74359,6 +74384,11 @@
         "from": "src/team/worker-launch-ack.ts",
         "to": "external:node:path",
         "kind": "imports"
+      },
+      {
+        "from": "src/team/worker-launch-ack.ts",
+        "to": "external:node:stream",
+        "kind": "type-imports"
       },
       {
         "from": "src/team/worker-launch-ack.ts",
@@ -77528,11 +77558,11 @@
     ],
     "stats": {
       "nodeCount": 6897,
-      "edgeCount": 7343,
-      "importEdgeCount": 6043,
+      "edgeCount": 7349,
+      "importEdgeCount": 6047,
       "registerEdgeCount": 58
     }
   },
   "inventorySha256": "d4529469934f2cbf2fa4897aea788da0e912fad10235f00a88b9afff515417b5",
-  "manifestSha256": "2c711b3b46916d3cbe0090151f940c5fa5b65348cd8cffdfb51db04aca799b93"
+  "manifestSha256": "9fa3d6aa06dc61c1934a866fcb7def0741d555b98f4fbe80e54e2b7ef503f883"
 }
