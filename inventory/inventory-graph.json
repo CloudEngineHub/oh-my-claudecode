@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "654c8abcc3e4d121c56e9df69d75ab9813b77136",
-    "sourceSha256": "9fae15e15f13eb38f4ae768f08239bd69fc8561f0c57552abf611808a7888c24",
+    "head": "8edc8cd485cc2d85a07372d30e3d5d8330a6addc",
+    "sourceSha256": "5037a9dbb767b808ede22006e883a0c76bb3d8a0cdd13b4a0e7f09f914e6a92f",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "654c8abcc3e4d121c56e9df69d75ab9813b77136",
-  "sourceSha256": "9fae15e15f13eb38f4ae768f08239bd69fc8561f0c57552abf611808a7888c24",
+  "head": "8edc8cd485cc2d85a07372d30e3d5d8330a6addc",
+  "sourceSha256": "5037a9dbb767b808ede22006e883a0c76bb3d8a0cdd13b4a0e7f09f914e6a92f",
   "counts": {
     "public": {
       "skills": 38,
@@ -24,12 +24,12 @@
     },
     "internal": {
       "hookFiles": 295,
-      "featureFiles": 71,
+      "featureFiles": 73,
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1335,
-      "total": 1356
+      "srcFiles": 1338,
+      "total": 1359
     },
     "generated": {
       "distFiles": 4986,
@@ -479,6 +479,8 @@
       "src/features/delegation-routing/resolver.ts",
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
+      "src/features/lookout/__tests__/lookout.test.ts",
+      "src/features/lookout/index.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -6225,6 +6227,8 @@
       "src/features/delegation-routing/resolver.ts",
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
+      "src/features/lookout/__tests__/lookout.test.ts",
+      "src/features/lookout/index.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -35767,6 +35771,11 @@
         "path": "src/cli/launch.ts"
       },
       {
+        "id": "src/cli/lookout.ts",
+        "kind": "src",
+        "path": "src/cli/lookout.ts"
+      },
+      {
         "id": "src/cli/team.ts",
         "kind": "src",
         "path": "src/cli/team.ts"
@@ -36035,6 +36044,16 @@
         "id": "src/features/index.ts",
         "kind": "feature",
         "path": "src/features/index.ts"
+      },
+      {
+        "id": "src/features/lookout/__tests__/lookout.test.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/__tests__/lookout.test.ts"
+      },
+      {
+        "id": "src/features/lookout/index.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/index.ts"
       },
       {
         "id": "src/features/magic-keywords.ts",
@@ -52170,6 +52189,11 @@
       },
       {
         "from": "src/cli/index.ts",
+        "to": "src/cli/lookout.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/index.ts",
         "to": "src/cli/win32-warning.ts",
         "kind": "imports"
       },
@@ -52312,6 +52336,26 @@
         "from": "src/cli/launch.ts",
         "to": "src/utils/config-dir.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "external:chalk",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "external:commander",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/cli/team.ts",
@@ -53242,6 +53286,51 @@
         "from": "src/features/index.ts",
         "to": "src/features/verification/index.ts",
         "kind": "type-exports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "external:path",
+        "kind": "imports"
       },
       {
         "from": "src/features/magic-keywords.ts",
@@ -77690,12 +77779,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6903,
-      "edgeCount": 7369,
-      "importEdgeCount": 6068,
+      "nodeCount": 6906,
+      "edgeCount": 7383,
+      "importEdgeCount": 6081,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "96b61cb5df14663620165d68dbccea8b03c6757c289db671e8a2be1356240e0e",
-  "manifestSha256": "0001d6524990d7d1f13c894417fb92fb919fa52e1146562fa0b9d066f3883c2c"
+  "inventorySha256": "1a528b2c45ed4ac6825d1463e188c4284d38acf1fe6954bb33499d1ffa8424d1",
+  "manifestSha256": "ccab3a742e0c4a04e86b6e59fb568460e412f64fd53f8b6045552b10e4db021a"
 }
