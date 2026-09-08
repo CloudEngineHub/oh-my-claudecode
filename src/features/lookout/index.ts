@@ -106,10 +106,17 @@ interface BriefRule {
   /**
    * Optional code-level scanner for signals a single regex cannot express
    * (e.g. inspecting every refspec of a push command, not just the first).
-   * Returns evidence snippets for the line; each is still subject to the
-   * same negation check as regex matches.
+   * Returns matches with their line-relative offsets; each is still subject
+   * to the same negation check as regex matches, at its own position (a
+   * repeated token must not inherit a negation from an earlier occurrence).
    */
-  collect?: (line: string) => string[];
+  collect?: (line: string) => CollectedMatch[];
+}
+
+interface CollectedMatch {
+  text: string;
+  /** Offset of the match within the full briefing line. */
+  index: number;
 }
 
 /**
@@ -171,59 +178,92 @@ const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|wh
 
 interface ParsedPush {
   /** Genuine flags — option values never land here. */
-  flags: string[];
+  flags: CollectedMatch[];
   /** First non-flag operand, or null. */
-  repo: string | null;
+  repo: CollectedMatch | null;
   /** Refspecs: every non-flag operand after the repository. */
-  refspecs: string[];
+  refspecs: CollectedMatch[];
 }
 
-function parsePushCommand(segment: string): ParsedPush | null {
-  const push = /\bgit\s+push\b/.exec(segment);
-  if (!push) return null;
-  const tokens = segment.slice((push.index ?? 0) + push[0].length).split(/\s+/).filter(Boolean);
+/**
+ * Parses every command-shaped push on the line. Semicolon and &&/||
+ * segments are independent commands; token positions are line-relative so
+ * the negation check maps each match to its own occurrence.
+ */
+function parsePushCommands(line: string): ParsedPush[] {
+  const out: ParsedPush[] = [];
+  const parts = line.split(/(;|&&|\|\|)/); // separators kept, offsets align
+  let offset = 0;
+  for (const part of parts) {
+    if (part === ";" || part === "&&" || part === "||") {
+      offset += part.length;
+      continue;
+    }
+    const push = /\bgit\s+push\b/.exec(part);
+    if (push) {
+      const parsed = parseOnePush(part, push, offset);
+      if (parsed) out.push(parsed);
+    }
+    offset += part.length;
+  }
+  return out;
+}
+
+function parseOnePush(segment: string, pushMatch: RegExpExecArray, segmentOffset: number): ParsedPush | null {
+  const matchStart = segmentOffset + (pushMatch.index ?? 0);
+  const restOffset = matchStart + pushMatch[0].length;
+  const rest = segment.slice((pushMatch.index ?? 0) + pushMatch[0].length);
+  const list = [...rest.matchAll(/\S+/g)];
   const parsed: ParsedPush = { flags: [], repo: null, refspecs: [] };
   let i = 0;
-  while (i < tokens.length) {
+  while (i < list.length) {
+    const raw = list[i];
+    i += 1;
     // Shell/Markdown quoting travels with the operand (`git push origin
     // 'main'`, backtick-wrapped commands); strip leading/trailing quote
     // characters. A quote character inside the word (prose like "don't")
     // still fails the command-word test below.
-    const token = tokens[i].replace(/^['"`]+|['"`]+$/g, "");
-    i += 1;
+    const token = raw[0].replace(/^['"`]+|['"`]+$/g, "");
     if (token.length === 0 || !COMMAND_WORD.test(token)) break; // prose begins here
+    // raw.index is relative to the post-`git push` slice; re-anchor it to
+    // the full line.
+    const index = restOffset + (raw.index ?? 0);
     if (token.startsWith("-")) {
-      if (PUSH_VALUE_OPTION.test(token)) i += 1; // consume the option value
-      else parsed.flags.push(token);
+      // Attached option values (-on means -o n, --push-option=x carries
+      // its own value) are values, never flags.
+      if (/^-(?:o|--push-option)\S/.test(token) || /^--push-option=/.test(token)) continue;
+      if (PUSH_VALUE_OPTION.test(token)) {
+        i += 1; // consume the separated option value
+        continue;
+      }
+      parsed.flags.push({ text: token, index });
       continue;
     }
     if (CLAUSE_CONNECTOR.test(token)) break; // prose begins here
-    if (parsed.repo === null) parsed.repo = token;
-    else parsed.refspecs.push(token);
+    if (parsed.repo === null) parsed.repo = { text: token, index };
+    else parsed.refspecs.push({ text: token, index });
   }
   return parsed;
 }
 
 function isPushDryRun(parsed: ParsedPush): boolean {
   // A bundled -nf is a dry run first: git would not perform the push.
-  return parsed.flags.some((flag) => isPushDryRunFlag(flag));
+  return parsed.flags.some((flag) => isPushDryRunFlag(flag.text));
 }
 
-/** Force/mirror pushes and `+`-prefixed refspecs, as evidence snippets. */
-function collectPushForceOps(line: string): string[] {
-  const hits: string[] = [];
-  // Semicolons and &&/|| separate commands; each segment is parsed alone.
-  for (const segment of line.split(/;|&&|\|\|/)) {
-    const parsed = parsePushCommand(segment);
-    if (!parsed || isPushDryRun(parsed)) continue;
+/** Force/mirror pushes and `+`-prefixed refspecs. */
+function collectPushForceOps(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const parsed of parsePushCommands(line)) {
+    if (isPushDryRun(parsed)) continue;
     for (const flag of parsed.flags) {
-      if (isPushForceFlag(flag)) {
+      if (isPushForceFlag(flag.text)) {
         hits.push(flag);
         break;
       }
     }
     for (const refspec of parsed.refspecs) {
-      if (refspec.startsWith("+")) {
+      if (refspec.text.startsWith("+")) {
         hits.push(refspec);
         break;
       }
@@ -232,15 +272,14 @@ function collectPushForceOps(line: string): string[] {
   return hits;
 }
 
-function collectProtectedPushDests(line: string): string[] {
-  const hits: string[] = [];
-  for (const segment of line.split(/;|&&|\|\|/)) {
-    const parsed = parsePushCommand(segment);
-    if (!parsed || isPushDryRun(parsed)) continue;
+function collectProtectedPushDests(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const parsed of parsePushCommands(line)) {
+    if (isPushDryRun(parsed)) continue;
     for (const refspec of parsed.refspecs) {
       // Refspec: [+][src:]dst — destination is the side after the last
       // colon, with an optional refs/heads/ prefix.
-      const bare = refspec.replace(/^\+/, "");
+      const bare = refspec.text.replace(/^\+/, "");
       const dest = (bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare).replace(
         /^refs\/heads\//,
         "",
@@ -286,7 +325,7 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE)\b|\bDROP\s+COLUMN\b|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+){0,2}(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
+      /\bDROP\s+(?:TABLE|DATABASE)\b|\bDROP\s+COLUMN\b|\bDELETE\s+FROM\b|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+){0,2}(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
   },
   {
     id: "lookout.brief.test-deletion",
@@ -554,10 +593,9 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
           if (evidence.length >= 3) break;
         }
         if (rule.collect) {
-          for (const snippet of rule.collect(line)) {
-            const at = line.indexOf(snippet);
-            if (at >= 0 && isNegated(line, at)) continue;
-            if (!evidence.includes(snippet)) evidence.push(snippet);
+          for (const hit of rule.collect(line)) {
+            if (isNegated(line, hit.index)) continue;
+            if (!evidence.includes(hit.text)) evidence.push(hit.text);
             if (evidence.length >= 3) break;
           }
         }

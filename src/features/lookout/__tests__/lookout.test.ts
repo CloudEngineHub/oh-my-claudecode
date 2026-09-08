@@ -100,6 +100,12 @@ describe("scanLookout: briefing rules", () => {
     // Keyword case is the signal, not identifier case.
     const mixed = scanLookout({ ...base(), brief: "TRUNCATE TABLE SessionLog;" });
     expect(ids(mixed.findings)).toContain("lookout.brief.db-destructive");
+    // Bulk row deletion is destructive SQL too.
+    const del = scanLookout({ ...base(), brief: "DELETE FROM production_users;" });
+    expect(ids(del.findings)).toContain("lookout.brief.db-destructive");
+    // ...while lowercase prose stays silent.
+    const prose = scanLookout({ ...base(), brief: "copy the records, delete from memory afterwards" });
+    expect(ids(prose.findings)).not.toContain("lookout.brief.db-destructive");
   });
 
   it("flags equivalent destructive flag layouts", () => {
@@ -257,6 +263,18 @@ describe("scanLookout: briefing rules", () => {
     const forceValue = scanLookout({ ...base(), brief: "git push -o -f origin feature" });
     expect(ids(forceValue.findings)).not.toContain("lookout.brief.force-op");
     expect(ids(forceValue.findings)).not.toContain("lookout.brief.protected-branch");
+    // attached value form: -on is -o n, not a bundled dry run
+    const attached = scanLookout({ ...base(), brief: "git push -on --force origin feature" });
+    expect(ids(attached.findings)).toContain("lookout.brief.force-op");
+  });
+
+  it("applies negation per occurrence, not per token text", () => {
+    const report = scanLookout({
+      ...base(),
+      brief:
+        "Never run git push --force origin feature; after approval run git push --force origin feature",
+    });
+    expect(ids(report.findings)).toContain("lookout.brief.force-op");
   });
 
   it("stops tokenizing at clause connectors, not just punctuation", () => {
