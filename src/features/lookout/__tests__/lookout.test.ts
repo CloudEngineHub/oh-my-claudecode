@@ -109,6 +109,8 @@ describe("scanLookout: briefing rules", () => {
       "drop table users;",
       "TRUNCATE users;",
       'DELETE FROM "production_users";',
+      "delete from users where inactive = true;",
+      "drop table users cascade;",
     ]) {
       const contextual = scanLookout({ ...base(), brief });
       expect(ids(contextual.findings)).toContain("lookout.brief.db-destructive");
@@ -189,6 +191,8 @@ describe("scanLookout: briefing rules", () => {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
     }
+    const resetPathspec = scanLookout({ ...base(), brief: "git reset -- --hard" });
+    expect(ids(resetPathspec.findings)).not.toContain("lookout.brief.force-op");
   });
 
   it("parses full protected-branch refspec destinations", () => {
@@ -343,6 +347,7 @@ describe("scanLookout: briefing rules", () => {
     for (const brief of [
       "Do not skip tests under any circumstances",
       "Never run git reset --hard on the release branch",
+      "Never, ever run git reset --hard on the release branch",
       "Do not push into main directly; open a PR instead",
     ]) {
       const report = scanLookout({ ...base(), brief });

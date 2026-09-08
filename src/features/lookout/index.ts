@@ -114,7 +114,8 @@ interface BriefRule {
  * prohibition from masking a separate requested operation later in a line.
  */
 const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|prohibited)\b/gi;
-const NEGATION_BOUNDARY = /[;,.!?]|&&|\|\||\b(?:but|however|except|instead)\b/gi;
+const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[.!?]/g;
+const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
 function isNegated(line: string, matchIndex: number): boolean {
   let cueIndex = -1;
@@ -124,10 +125,22 @@ function isNegated(line: string, matchIndex: number): boolean {
     }
   }
   if (cueIndex < 0) return false;
-  for (const boundary of line.matchAll(NEGATION_BOUNDARY)) {
+  for (const boundary of line.matchAll(NEGATION_HARD_BOUNDARY)) {
     if (boundary.index !== undefined && boundary.index > cueIndex && boundary.index < matchIndex) {
       return false;
     }
+  }
+  for (const boundary of line.matchAll(NEGATION_WORD_BOUNDARY)) {
+    const index = boundary.index ?? -1;
+    if (index <= cueIndex || index >= matchIndex) continue;
+    const before = index > 0 ? line[index - 1] : "";
+    const after = line[index + boundary[0].length] ?? "";
+    if ((before === "" || /\s/.test(before)) && (after === "" || /\s/.test(after))) return false;
+  }
+  for (const comma of line.matchAll(/,/g)) {
+    const index = comma.index ?? -1;
+    if (index <= cueIndex || index >= matchIndex) continue;
+    if (/^\s*(?:then|and|but|however|except|instead)\b/i.test(line.slice(index + 1))) return false;
   }
   return true;
 }
@@ -397,7 +410,10 @@ function collectGitForceOps(line: string): CollectedMatch[] {
     const tokens = tokenizeCommand(clause.text);
     const reset = findGitSubcommand(tokens, "reset");
     if (reset) {
-      const hard = tokens.slice(reset.commandIndex + 1).find((token) => token.value === "--hard");
+      const resetArgs = tokens.slice(reset.commandIndex + 1);
+      const terminator = resetArgs.findIndex((token) => token.value === "--");
+      const resetOptions = terminator < 0 ? resetArgs : resetArgs.slice(0, terminator);
+      const hard = resetOptions.find((token) => token.value === "--hard");
       if (hard) {
         addMatch(hits, "git reset --hard", clause.index + tokens[reset.gitIndex].index);
       }
@@ -452,7 +468,16 @@ const SQL_CONTEXT_PATTERN =
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
   const before = line.slice(0, start);
   const backticks = (before.match(/`/g) ?? []).length;
-  return backticks % 2 === 1 || /^\s*;/.test(line.slice(end));
+  if (backticks % 2 === 1) return true;
+  const rest = line.slice(end);
+  if (/^\s*;/.test(rest)) return true;
+  const semicolon = rest.indexOf(";");
+  return (
+    semicolon >= 0 &&
+    /\b(?:where|cascade|restrict|using|returning|set|order\s+by|group\s+by|limit|having)\b/i.test(
+      rest.slice(0, semicolon),
+    )
+  );
 }
 
 function collectSqlDestructive(line: string): CollectedMatch[] {
@@ -574,6 +599,7 @@ interface GitFailure {
 function sanitizedGitEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
   for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[key];
+  env.LC_ALL = "C";
   return env;
 }
 
