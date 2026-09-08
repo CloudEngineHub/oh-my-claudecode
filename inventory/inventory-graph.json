@@ -6,14 +6,14 @@
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
     "head": "04674e35110f7050e2416be828973df8990aaa40",
-    "sourceSha256": "59a0d214559bf377e907c85f117e5d6b5cee582aad5072473577b33d7caef583",
+    "sourceSha256": "3ce1d3643cf9979f9baf320b568958fc3e87264c616db60b3b54736fedbeb479",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
   "head": "04674e35110f7050e2416be828973df8990aaa40",
-  "sourceSha256": "59a0d214559bf377e907c85f117e5d6b5cee582aad5072473577b33d7caef583",
+  "sourceSha256": "3ce1d3643cf9979f9baf320b568958fc3e87264c616db60b3b54736fedbeb479",
   "counts": {
     "public": {
       "skills": 38,
@@ -24,12 +24,12 @@
     },
     "internal": {
       "hookFiles": 295,
-      "featureFiles": 73,
+      "featureFiles": 76,
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1339,
-      "total": 1360
+      "srcFiles": 1342,
+      "total": 1363
     },
     "generated": {
       "distFiles": 4986,
@@ -480,7 +480,10 @@
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
       "src/features/lookout/__tests__/lookout.test.ts",
+      "src/features/lookout/command-parser.ts",
       "src/features/lookout/index.ts",
+      "src/features/lookout/types.ts",
+      "src/features/lookout/workspace.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -6228,7 +6231,10 @@
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
       "src/features/lookout/__tests__/lookout.test.ts",
+      "src/features/lookout/command-parser.ts",
       "src/features/lookout/index.ts",
+      "src/features/lookout/types.ts",
+      "src/features/lookout/workspace.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -36056,9 +36062,24 @@
         "path": "src/features/lookout/__tests__/lookout.test.ts"
       },
       {
+        "id": "src/features/lookout/command-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/command-parser.ts"
+      },
+      {
         "id": "src/features/lookout/index.ts",
         "kind": "feature",
         "path": "src/features/lookout/index.ts"
+      },
+      {
+        "id": "src/features/lookout/types.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/types.ts"
+      },
+      {
+        "id": "src/features/lookout/workspace.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/workspace.ts"
       },
       {
         "id": "src/features/magic-keywords.ts",
@@ -53406,6 +53427,31 @@
         "from": "src/features/lookout/index.ts",
         "to": "src/features/lookout/workspace.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/features/magic-keywords.ts",
@@ -77854,12 +77900,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6907,
-      "edgeCount": 7397,
-      "importEdgeCount": 6089,
+      "nodeCount": 6910,
+      "edgeCount": 7402,
+      "importEdgeCount": 6093,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "1d3c3cab13b77a9faacc7d9427cd1a3277f56de944cc7eec354de5481777a3b8",
-  "manifestSha256": "d2c9269f52574de9b22d95966d2ef714702dd5fa57e8f41e35dbfd6b15c0e7d9"
+  "inventorySha256": "10bc6004f382b6eb091ad6495d7c865efef773a33d62a0dca751579d77fe4fda",
+  "manifestSha256": "a47558735ef6e962fa888bb263ee6493e2503c1da1c12a481c0bf1fd0d827e91"
 }
