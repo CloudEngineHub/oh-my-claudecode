@@ -647,7 +647,26 @@ interface GitFailure {
  */
 function sanitizedGitEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
-  for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[key];
+  for (const key of [
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_CONFIG",
+    "GIT_CONFIG_PARAMETERS",
+    "GIT_CONFIG_COUNT",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_IMPLICIT_WORK_TREE",
+    "GIT_GRAFT_FILE",
+    "GIT_INDEX_FILE",
+    "GIT_NO_REPLACE_OBJECTS",
+    "GIT_REPLACE_REF_BASE",
+    "GIT_PREFIX",
+    "GIT_INTERNAL_SUPER_PREFIX",
+    "GIT_SHALLOW_FILE",
+    "GIT_COMMON_DIR",
+  ]) {
+    delete env[key];
+  }
   env.LC_ALL = "C";
   return env;
 }
@@ -762,7 +781,6 @@ function scanWorkspace(root: string): LookoutFinding[] {
   if (tracked) {
     const secretPaths = tracked
       .split("\0")
-      .map((line) => line.trim())
       .filter((line) => line.length > 0)
       .filter((line) => SECRETS_PATH.test(line))
       .slice(0, 5);
@@ -783,7 +801,7 @@ function scanWorkspace(root: string): LookoutFinding[] {
 
   // -uall overrides a repository-local status.showUntrackedFiles=no, which
   // would otherwise hide untracked files and report a clean workspace.
-  const status = runGit(["status", "--porcelain", "-uall"], root);
+  const status = runGit(["status", "--porcelain", "-uall", "--ignore-submodules=none"], root);
   if (status && status.trim().length > 0) {
     const lines = status.trim().split("\n").slice(0, 5);
     findings.push({

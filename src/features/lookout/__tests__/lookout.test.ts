@@ -547,6 +547,15 @@ describe("scanLookout: workspace rules", () => {
     );
   });
 
+  it("does not trim tracked paths before classifying them", () => {
+    const dir = makeRepo();
+    writeFileSync(join(dir, " .env"), "placeholder\n");
+    git(dir, ["add", "."]);
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add leading-space file"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(ids(report.findings)).not.toContain("lookout.ws.secrets-present");
+  });
+
   it("does not flag environment templates as secrets", () => {
     const dir = makeRepo();
     for (const name of [".env.example", ".env.local.example", ".env.production.template", ".env.dist"]) {
@@ -637,6 +646,8 @@ describe("scanLookout: workspace rules", () => {
     try {
       process.env.GIT_DIR = join(withSecret, ".git");
       process.env.GIT_WORK_TREE = withSecret;
+      process.env.GIT_COMMON_DIR = join(withSecret, "missing-common");
+      process.env.GIT_OBJECT_DIRECTORY = join(withSecret, "missing-objects");
       // --repo points at the clean repo; inherited variables point at the
       // secret-bearing one. The scan must follow --repo.
       const report = scanLookout({ repo: clean, now: new Date("2026-09-08T00:00:00Z") });
