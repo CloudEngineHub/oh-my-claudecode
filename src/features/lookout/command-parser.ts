@@ -1,7 +1,7 @@
 /** Quote-aware shell/Git command parsing for lookout briefing rules. */
 
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
-const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
+const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-$]+$/;
 /** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
@@ -279,7 +279,9 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
   for (const clause of splitCommandClauses(line)) {
     const tokens = tokenizeCommand(clause.text);
     if (!SHELL_WRAPPER.test(tokens[0]?.value ?? "")) continue;
-    const commandIndex = tokens.findIndex((token) => token.value === "-c" || token.value === "--command");
+    const commandIndex = tokens.findIndex(
+      (token) => token.value === "-c" || token.value === "--command" || /^-[^-]*c$/.test(token.value),
+    );
     const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
     if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
   }
@@ -448,17 +450,16 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
     const inlineConfig = value.match(/^--config-env=([^=]+)=(.+)$/i);
     if (
       inlineConfig &&
-      inlineConfig[1].toLowerCase() === "clean.requireforce" &&
-      isFalseGitBoolean(process.env[inlineConfig[2]])
+      inlineConfig[1].toLowerCase() === "clean.requireforce"
     ) {
-      cleanRequireForceDisabled = true;
+      cleanRequireForceDisabled = isFalseGitBoolean(process.env[inlineConfig[2]]);
       index += 1;
       continue;
     }
     if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
       const config = tokens[index + 1]?.value.match(/^clean\.requireforce=(.+)$/i);
-      if (value === "-c" && config && isFalseGitBoolean(config[1])) {
-        cleanRequireForceDisabled = true;
+      if (value === "-c" && config) {
+        cleanRequireForceDisabled = isFalseGitBoolean(config[1]);
       }
       index += 2;
       continue;
