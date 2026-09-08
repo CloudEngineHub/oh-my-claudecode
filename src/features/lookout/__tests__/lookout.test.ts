@@ -385,6 +385,7 @@ describe("scanLookout: briefing rules", () => {
       "echo 'git reset --hard'",
       "git reset --hard -- README.md",
       "echo foo\\; git push --force origin feature",
+      "Prohibited: git push https://github.com/x/y.git --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -408,8 +409,12 @@ describe("scanLookout: briefing rules", () => {
       "bash -c 'git push --force origin feature'",
       "bash -lc 'git push --force origin feature'",
       "/usr/bin/bash -c 'git push --force origin feature'",
+      "sudo bash -c 'git push --force origin feature'",
       "sh -c 'rm -rf build'",
       "REMOTE=origin git push $REMOTE --force main",
+      "nohup git push --force origin feature",
+      "timeout 30 git push --force origin feature",
+      "git push -von origin HEAD:main",
       "if git push --force origin feature; then continue",
       "Please run git push --force origin feature",
       "git push \"/tmp/remote repo.git\" --force HEAD:main",
@@ -428,6 +433,7 @@ describe("scanLookout: briefing rules", () => {
       "git -c clean.requireForce=0 clean",
       "git -c CLEAN.REQUIREFORCE=FALSE clean",
       "rm -v -rf build",
+      "rm -rf -- build",
       "git push -v --force origin feature",
       "> git push --force origin feature",
     ]) {
@@ -456,7 +462,13 @@ describe("scanLookout: briefing rules", () => {
     // non-deletion work on a test file stays silent
     const report = scanLookout({ ...base(), brief: "refactor the helpers in src/auth.test.ts" });
     expect(ids(report.findings)).not.toContain("lookout.brief.test-deletion");
-    for (const brief of ["remove the test account", "delete the test environment", "disable the test database"]) {
+    for (const brief of [
+      "remove the test account",
+      "delete the test environment",
+      "disable the test database",
+      "remove the test helper",
+      "disable this test hook",
+    ]) {
       const falsePositive = scanLookout({ ...base(), brief });
       expect(ids(falsePositive.findings)).not.toContain("lookout.brief.test-deletion");
     }

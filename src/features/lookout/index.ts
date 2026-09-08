@@ -83,7 +83,7 @@ interface BriefRule {
  * prohibition from masking a separate requested operation later in a line.
  */
 const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|should\s+not|prohibited)\b/gi;
-const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[.!?]|\r?\n/g;
+const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[!?]|\.(?=\s|$)|\r?\n/g;
 const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
 function isNegated(line: string, matchIndex: number): boolean {
@@ -203,7 +203,7 @@ const BRIEF_RULES: BriefRule[] = [
     // Covers plural "tests", "test files/suites/cases" phrases, and direct
     // conventional test paths (src/auth.test.ts, tests/auth.spec.ts).
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|files?|suites?|cases?|directory|folder|account|environment|database|server|user|record|table|branch)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|files?|suites?|cases?|directory|folder|account|environment|database|server|user|record|table|branch|helper|hook)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
     advice: GATE_ADVICE,
   },
   {

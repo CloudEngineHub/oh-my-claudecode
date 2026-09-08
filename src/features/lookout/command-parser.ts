@@ -24,13 +24,21 @@ const SHELL_WRAPPER = /(?:^|\/)(?:bash|sh|dash|zsh|ksh)$/;
 function isPushForceFlag(flag: string): boolean {
   if (PUSH_FORCE_FLAG.test(flag)) return true;
   if (/^--force(?:-with-lease)?=/.test(flag)) return true;
-  return BUNDLED_SHORT_FLAGS.test(flag) && /f/.test(flag.slice(1));
+  return BUNDLED_SHORT_FLAGS.test(flag) && bundledPushHasFlag(flag, "f");
 }
 
 function isPushDryRunFlag(flag: string): boolean {
   if (PUSH_DRY_RUN_FLAG.test(flag)) return true;
   // Bundled -n (e.g. -nu, -nf) is still a dry run.
-  return BUNDLED_SHORT_FLAGS.test(flag) && /n/.test(flag.slice(1));
+  return BUNDLED_SHORT_FLAGS.test(flag) && bundledPushHasFlag(flag, "n");
+}
+
+function bundledPushHasFlag(flag: string, wanted: string): boolean {
+  for (const character of flag.slice(1)) {
+    if (character === "o") return false;
+    if (character === wanted) return true;
+  }
+  return false;
 }
 /** Words that typically begin trailing prose after a command. */
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
@@ -202,7 +210,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
     const wrapper = tokens[prefixIndex]?.value.toLowerCase();
-    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until)$/.test(wrapper ?? "")) {
+    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
@@ -269,6 +277,14 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
         continue;
       }
     }
+    if (wrapper === "timeout") {
+      if (value.startsWith("-")) {
+        index += 1;
+        continue;
+      }
+      index += 1;
+      continue;
+    }
     return -1;
   }
   return -1;
@@ -278,9 +294,12 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
   const nested: Array<{ text: string; index: number }> = [];
   for (const clause of splitCommandClauses(line)) {
     const tokens = tokenizeCommand(clause.text);
-    if (!SHELL_WRAPPER.test(tokens[0]?.value ?? "")) continue;
+    const shellIndex = tokens.findIndex((token) => SHELL_WRAPPER.test(token.value));
+    if (shellIndex < 0) continue;
     const commandIndex = tokens.findIndex(
-      (token) => token.value === "-c" || token.value === "--command" || /^-[^-]*c$/.test(token.value),
+      (token, index) =>
+        index > shellIndex &&
+        (token.value === "-c" || token.value === "--command" || /^-[^-]*c$/.test(token.value)),
     );
     const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
     if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
@@ -399,10 +418,18 @@ function collectRmForceOps(line: string): CollectedMatch[] {
     let destructive = false;
     let help = false;
     let hasOperand = false;
+    let operandsOnly = false;
     const optionTokens: CommandToken[] = [];
     for (const token of tokens.slice(rmIndex + 1)) {
-      if (token.value === "--") break;
+      if (token.value === "--") {
+        operandsOnly = true;
+        continue;
+      }
       if (token.value === "rm" || token.value.endsWith("/rm")) break;
+      if (operandsOnly) {
+        hasOperand = true;
+        continue;
+      }
       if (/^(?:-h|--help|--version)$/.test(token.value)) {
         help = true;
         break;
