@@ -113,7 +113,7 @@ interface BriefRule {
  * 48 characters before it on the same clause. Clause boundaries prevent a
  * prohibition from masking a separate requested operation later in a line.
  */
-const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|prohibited)\b/gi;
+const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|should\s+not|prohibited)\b/gi;
 const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[.!?]|\r?\n/g;
 const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
@@ -212,6 +212,7 @@ interface CommandToken {
   value: string;
   index: number;
   quoted: boolean;
+  raw: string;
 }
 
 function normalizeCommandToken(token: string): string {
@@ -267,7 +268,7 @@ function tokenizeCommand(segment: string): CommandToken[] {
       raw += character;
       index += 1;
     }
-    tokens.push({ value: normalizeCommandToken(raw), index: start, quoted: /['"]/.test(raw) });
+    tokens.push({ value: normalizeCommandToken(raw), index: start, quoted: /['"]/.test(raw), raw });
   }
   return tokens;
 }
@@ -322,7 +323,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   const proseCommand = tokens.findIndex(
     (token, index) =>
       index > 0 &&
-      /[:;]$/.test(token.value) &&
+      /[:;,]$/.test(token.raw) &&
       (tokens[index + 1]?.value === executable || tokens[index + 1]?.value.endsWith(`/${executable}`)),
   );
   if (proseCommand >= 0) return proseCommand + 1;
@@ -335,9 +336,9 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   if (reminderCommand >= 0) return reminderCommand + 1;
 
   let index = 0;
-  if (/^(?:-|\*|\d+)$/.test(tokens[0]?.value ?? "")) index = 1;
+  while (/^(?:-|\*|>|\d+)$/.test(tokens[index]?.value ?? "")) index += 1;
   if (
-    index === 1 &&
+    index > 0 &&
     tokens[index]?.value === "[" &&
     /^(?:\]|x|X)$/.test(tokens[index + 1]?.value ?? "")
   ) {
@@ -392,7 +393,8 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
         continue;
       }
     }
-    if (wrapper === "command" && /^-[pVv]$/.test(value)) {
+    if (wrapper === "command" && /^-[Vv]$/.test(value)) return -1;
+    if (wrapper === "command" && /^-p$/.test(value)) {
       index += 1;
       continue;
     }
@@ -678,11 +680,10 @@ const BRIEF_RULES: BriefRule[] = [
     id: "lookout.brief.force-op",
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
-    // Non-push operations only: command-shaped pushes are classified by the
-    // operand parser (collect below), because a bare regex cannot tell a
-    // force flag from a push-option value (`git push -o -f origin feature`).
-    pattern:
-      /\bgit\s+reset\s+--hard\b/gi,
+    // All command-shaped operations are classified by the operand parser
+    // below; a bare regex would also flag printed examples such as
+    // `echo 'git reset --hard'`.
+    pattern: /$^/g,
     advice: GATE_ADVICE,
     // Command-shaped pushes and rm invocations are parsed below so option
     // values, dry runs, mixed spellings, and clause boundaries are handled

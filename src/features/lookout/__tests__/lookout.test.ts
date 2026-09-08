@@ -363,6 +363,9 @@ describe("scanLookout: briefing rules", () => {
       "git --info-path push --force origin feature",
       "git push -F origin feature",
       "git push --force --no-force origin feature",
+      "command -v git push --force origin feature",
+      "command -V git push --force origin feature",
+      "echo 'git reset --hard'",
       "echo foo\\; git push --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
@@ -390,6 +393,7 @@ describe("scanLookout: briefing rules", () => {
       "git push -4f origin feature",
       "git push -n --no-dry-run --force origin feature",
       "git clean -n --no-dry-run -f",
+      "> git push --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings.some((finding) => finding.id === "lookout.brief.force-op" || finding.id === "lookout.brief.protected-branch")).toBe(true);
@@ -428,6 +432,7 @@ describe("scanLookout: briefing rules", () => {
       "Never run git reset --hard on the release branch",
       "Never, ever run git reset --hard on the release branch",
       "Do not push into main directly; open a PR instead",
+      "You should not git push --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
