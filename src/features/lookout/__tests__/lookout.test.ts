@@ -395,6 +395,8 @@ describe("scanLookout: briefing rules", () => {
       "Prohibited: git push https://github.com/x/y.git --force origin feature",
       "bash harmless.sh -c 'rm -rf build'",
       "First run psql -c 'select 1'. Then drop table borders on mobile",
+      "echo \"\\$(rm -rf build)\"",
+      "rm -zrf build",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -428,6 +430,8 @@ describe("scanLookout: briefing rules", () => {
       "! rm -rf build",
       "echo $(git push --force origin feature)",
       "printf '%s\\n' \"$(rm -rf build)\"",
+      "cat <(rm -rf build)",
+      "cat >(git push --force origin feature)",
       "git push -von origin HEAD:main",
       "if git push --force origin feature; then continue",
       "Please run git push --force origin feature",

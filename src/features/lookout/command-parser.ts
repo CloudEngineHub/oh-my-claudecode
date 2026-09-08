@@ -24,6 +24,10 @@ function isValidPushBundle(value: string): boolean {
   return true;
 }
 
+function isValidRmBundle(value: string): boolean {
+  return /^-[^-][A-Za-z]*$/.test(value) && [...value.slice(1)].every((character) => /[fFiIrRdv]/.test(character));
+}
+
 
 /**
  * Force/mirror classification for one flag token, including parameterized
@@ -369,6 +373,10 @@ function nestedShellSubstitutions(line: string): Array<{ text: string; index: nu
         continue;
       }
       if (quote === '"') {
+        if (character === "\\") {
+          index += 1;
+          continue;
+        }
         if (character === '"' && clause.text[index - 1] !== "\\") quote = null;
       } else if (character === "'") {
         quote = "'";
@@ -376,11 +384,27 @@ function nestedShellSubstitutions(line: string): Array<{ text: string; index: nu
         quote = '"';
       }
       if (quote === "'") continue;
+      if (character === "\\") {
+        index += 1;
+        continue;
+      }
       if (clause.text.startsWith("$(", index)) {
         let depth = 1;
         let end = index + 2;
         while (end < clause.text.length && depth > 0) {
           if (clause.text.startsWith("$(", end)) depth += 1;
+          else if (clause.text[end] === ")") depth -= 1;
+          end += 1;
+        }
+        if (depth === 0) {
+          nested.push({ text: clause.text.slice(index + 2, end - 1), index: clause.index + index + 2 });
+          index = end - 1;
+        }
+      } else if (clause.text.startsWith("<(", index) || clause.text.startsWith(">(", index)) {
+        let depth = 1;
+        let end = index + 2;
+        while (end < clause.text.length && depth > 0) {
+          if (clause.text[end] === "(") depth += 1;
           else if (clause.text[end] === ")") depth -= 1;
           end += 1;
         }
@@ -512,6 +536,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
     let destructive = false;
     let help = false;
     let hasOperand = false;
+    let invalid = false;
     let operandsOnly = false;
     const optionTokens: CommandToken[] = [];
     for (const token of tokens.slice(rmIndex + 1)) {
@@ -532,6 +557,10 @@ function collectRmForceOps(line: string): CollectedMatch[] {
         optionTokens.push(token);
         destructive = true;
       } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
+        if (!isValidRmBundle(token.value)) {
+          invalid = true;
+          break;
+        }
         const options = token.value.slice(1).toLowerCase();
         if (options.includes("r") || options.includes("f")) {
           optionTokens.push(token);
@@ -541,7 +570,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
         hasOperand = true;
       }
     }
-    if (destructive && hasOperand && !help) {
+    if (destructive && hasOperand && !help && !invalid) {
       addMatch(
         hits,
         `rm ${optionTokens.map((token) => token.value).join(" ")}`,
