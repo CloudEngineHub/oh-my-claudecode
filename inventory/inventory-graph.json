@@ -6,14 +6,14 @@
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
     "head": "04674e35110f7050e2416be828973df8990aaa40",
-    "sourceSha256": "b10c18a39db0cfd43d25c31b0b2d146ab71c5a4ce1e4ce4d9dccd6a46c5e33bb",
+    "sourceSha256": "f9aa3ae11f14ba3770c1f14e310069dea25eccee090e7b8af5661f786d8eae10",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
   "head": "04674e35110f7050e2416be828973df8990aaa40",
-  "sourceSha256": "b10c18a39db0cfd43d25c31b0b2d146ab71c5a4ce1e4ce4d9dccd6a46c5e33bb",
+  "sourceSha256": "f9aa3ae11f14ba3770c1f14e310069dea25eccee090e7b8af5661f786d8eae10",
   "counts": {
     "public": {
       "skills": 38,
@@ -24,12 +24,12 @@
     },
     "internal": {
       "hookFiles": 295,
-      "featureFiles": 76,
+      "featureFiles": 77,
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1342,
-      "total": 1363
+      "srcFiles": 1343,
+      "total": 1364
     },
     "generated": {
       "distFiles": 4986,
@@ -479,6 +479,7 @@
       "src/features/delegation-routing/resolver.ts",
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
+      "src/features/lookout/__tests__/lookout-workspace.test.ts",
       "src/features/lookout/__tests__/lookout.test.ts",
       "src/features/lookout/command-parser.ts",
       "src/features/lookout/index.ts",
@@ -6230,6 +6231,7 @@
       "src/features/delegation-routing/resolver.ts",
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
+      "src/features/lookout/__tests__/lookout-workspace.test.ts",
       "src/features/lookout/__tests__/lookout.test.ts",
       "src/features/lookout/command-parser.ts",
       "src/features/lookout/index.ts",
@@ -36057,6 +36059,11 @@
         "path": "src/features/index.ts"
       },
       {
+        "id": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/__tests__/lookout-workspace.test.ts"
+      },
+      {
         "id": "src/features/lookout/__tests__/lookout.test.ts",
         "kind": "feature",
         "path": "src/features/lookout/__tests__/lookout.test.ts"
@@ -53352,6 +53359,36 @@
         "from": "src/features/index.ts",
         "to": "src/features/verification/index.ts",
         "kind": "type-exports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "imports"
       },
       {
         "from": "src/features/lookout/__tests__/lookout.test.ts",
@@ -77900,12 +77937,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6910,
-      "edgeCount": 7402,
-      "importEdgeCount": 6093,
+      "nodeCount": 6911,
+      "edgeCount": 7408,
+      "importEdgeCount": 6099,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "10bc6004f382b6eb091ad6495d7c865efef773a33d62a0dca751579d77fe4fda",
-  "manifestSha256": "32de89f7371fad65aa3582899ed4cbe88ffd9375023724165a1550151dd8c186"
+  "inventorySha256": "c040cd5f1f634b2c49b4d104320bf775d6e8c1e9631c2e961c0dddcf6f7a6ba3",
+  "manifestSha256": "e33bc46d61a53df8a71ce796131741928babecabc95af6f0087b4d601a5f91fb"
 }
