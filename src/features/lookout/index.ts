@@ -33,6 +33,13 @@ import { readFileSync } from "fs";
 import { isAbsolute, join, resolve } from "path";
 
 const GIT_TIMEOUT_MS = 30_000;
+/**
+ * Deliberate output ceiling for the read-only git calls: Node's 1 MiB
+ * default kills `git ls-files` on large repositories with ENOBUFS (scan
+ * error instead of a report). 16 MiB comfortably covers tracked-file
+ * listings and porcelain status for any repository OMC operates in.
+ */
+const GIT_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
 
 export type LookoutSeverity = "high" | "medium" | "low" | "info";
 export type LookoutConfidence = "high" | "low";
@@ -103,7 +110,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease\b|--force\b|-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-[a-z]*[fd][a-z]*[fd][a-z]*\b|\bgit\s+clean\b[^;\n]*\s-f\b[^;\n]*\s-d\b|\bgit\s+clean\b[^;\n]*\s-d\b[^;\n]*\s-f\b/gi,
+      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease\b|--force\b|-f\b)|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-[a-z]*[fd][a-z]*[fd][a-z]*\b|\bgit\s+clean\b[^;\n]*\s-f\b[^;\n]*\s-d\b|\bgit\s+clean\b[^;\n]*\s-d\b[^;\n]*\s-f\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -111,7 +118,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for destructive database operations",
     severity: "high",
     pattern:
-      /\bdrop\s+table\b|\btruncate\s+(?!the\b|this\b|that\b|these\b|those\b|a\b|an\b|your\b|its\b|the\s)(?:table\s+|only\s+)?[a-z_][\w.]*\b|\bdrop\s+column\b|\bdrop\s+database\b/gi,
+      /\bdrop\s+table\b|\btruncate\s+(?:table\s+|only\s+){0,2}(?!the\b|this\b|that\b|these\b|those\b|a\b|an\b|your\b|its\b|only\b|table\b)[a-z_][\w.]*\b|\bdrop\s+column\b|\bdrop\s+database\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -127,7 +134,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing targets a protected branch directly",
     severity: "high",
     pattern:
-      /\b(?:push|merge|force-merge|squash-merge|rebase)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+\S+){0,3}?\s+(?:origin|upstream)\s+(?:\S*[:/])?(?:main|master|release|production|develop)\b/gi,
+      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+--?\S+){0,2}\s+(?:\S+\s+)?(?:\S*[:/])?(?:main|master|release|production|develop)(?![\w-])/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -189,6 +196,7 @@ function runGit(args: string[], cwd: string): string {
       cwd,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
+      maxBuffer: GIT_MAX_BUFFER_BYTES,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
@@ -212,6 +220,7 @@ function repoRoot(repoArg: string): string | null {
       cwd: repoArg,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
+      maxBuffer: GIT_MAX_BUFFER_BYTES,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });

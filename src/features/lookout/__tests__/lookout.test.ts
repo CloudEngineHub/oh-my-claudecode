@@ -93,7 +93,7 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("flags destructive database operations", () => {
-    const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events;" });
+    const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;" });
     expect(ids(report.findings)).toContain("lookout.brief.db-destructive");
     expect(report.summary.verdict).toBe("review-recommended");
   });
@@ -105,6 +105,16 @@ describe("scanLookout: briefing rules", () => {
       "rm --recursive --force dir",
       "git clean -df",
       "git clean -f -d",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+  });
+
+  it("flags leading-plus refspec force pushes", () => {
+    for (const brief of [
+      "git push origin +main",
+      "git push origin +refs/heads/main",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
@@ -141,6 +151,29 @@ describe("scanLookout: briefing rules", () => {
   it("flags CI configuration changes as medium", () => {
     const report = scanLookout({ ...base(), brief: "Tighten the CI pipeline timeouts" });
     expect(ids(report.findings)).toContain("lookout.brief.ci-touch");
+  });
+
+  it("flags raw pushes through custom remote names", () => {
+    for (const brief of [
+      "git push github main",
+      "git push myremote release",
+      "git push origin release/v2",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
+  });
+
+  it("stays silent on rebasing onto a protected branch and lookalike branches", () => {
+    for (const brief of [
+      "Rebase this feature branch onto main",
+      "truncate only the display label",
+      "git push origin release-candidate-notes",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
+      expect(ids(report.findings)).not.toContain("lookout.brief.db-destructive");
+    }
   });
 
   it("flags suite-type modifiers in skip instructions", () => {
