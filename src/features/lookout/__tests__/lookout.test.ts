@@ -9,7 +9,7 @@
  */
 
 import { execFileSync } from "child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "fs";
+import { existsSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -104,6 +104,10 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(deleted.findings)).toContain("lookout.brief.db-destructive");
     const prose = scanLookout({ ...base(), brief: "copy the records, delete from memory afterwards" });
     expect(ids(prose.findings)).not.toContain("lookout.brief.db-destructive");
+    for (const brief of ["Run `drop table users`;", "drop table users;"]) {
+      const contextual = scanLookout({ ...base(), brief });
+      expect(ids(contextual.findings)).toContain("lookout.brief.db-destructive");
+    }
     const incomplete = scanLookout({ ...base(), brief: "DROP TABLE" });
     expect(ids(incomplete.findings)).not.toContain("lookout.brief.db-destructive");
   });
@@ -152,9 +156,20 @@ describe("scanLookout: briefing rules", () => {
 
   it("flags forced cleans without -d and recognizes dry-run exclusions", () => {
     // git clean -f deletes untracked files without -d
-    for (const brief of ["git clean -f", "git clean -fd", "git clean -dfx", "git clean -d -f"]) {
+    for (const brief of [
+      "git clean -f",
+      "git clean -fd",
+      "git clean -dfx",
+      "git clean -d -f",
+      "git clean -n -f",
+      "git clean --dry-run --force",
+    ]) {
       const report = scanLookout({ ...base(), brief });
-      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+      if (brief.includes("dry-run") || brief.includes("-n")) {
+        expect(ids(report.findings)).not.toContain("lookout.brief.force-op");
+      } else {
+        expect(ids(report.findings)).toContain("lookout.brief.force-op");
+      }
     }
     // dry runs cannot perform the operation
     for (const brief of ["git clean -nfd", "git clean -n", "git push --dry-run --force origin main"]) {
@@ -163,6 +178,10 @@ describe("scanLookout: briefing rules", () => {
     }
     const mixedClauses = scanLookout({ ...base(), brief: "git clean --dry-run; git reset --hard HEAD~1" });
     expect(ids(mixedClauses.findings)).toContain("lookout.brief.force-op");
+    for (const brief of ["git -C /repo reset --hard HEAD~1", "git reset -q --hard HEAD~1"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
   });
 
   it("parses full protected-branch refspec destinations", () => {
@@ -270,10 +289,17 @@ describe("scanLookout: briefing rules", () => {
       'git push origin "main"',
       "run `git push origin main` next",
       "git push origin 'refs/heads/main'",
+      "Run `git push origin main`.",
+      "Run git push origin main, then continue",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
     }
+  });
+
+  it("keeps connector words inside refspecs", () => {
+    const report = scanLookout({ ...base(), brief: "git push origin feature-and-fix:main" });
+    expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
   });
 
   it("does not treat push-option values as dry-run or force flags", () => {
@@ -528,6 +554,19 @@ describe("scanLookout: workspace rules", () => {
     const dir = mkdtempSync(join(tmpdir(), "omc-lookout-broken-"));
     tempDirs.push(dir);
     writeFileSync(join(dir, ".git"), "gitdir: /nonexistent/omc-lookout-gitdir\n");
+    try {
+      scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(LookoutError);
+      expect((error as LookoutError).exitCode).toBe(2);
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("fails closed on a dangling .git symlink", () => {
+    const dir = mkdtempSync(join(tmpdir(), "omc-lookout-dangling-"));
+    tempDirs.push(dir);
+    symlinkSync(join(dir, "missing-gitdir"), join(dir, ".git"));
     try {
       scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
       expect.unreachable();

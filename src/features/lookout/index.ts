@@ -29,7 +29,7 @@
  */
 
 import { execFileSync } from "child_process";
-import { existsSync, readFileSync } from "fs";
+import { lstatSync, readFileSync } from "fs";
 import { dirname, isAbsolute, join, resolve } from "path";
 
 const GIT_TIMEOUT_MS = 30_000;
@@ -197,6 +197,7 @@ interface CommandToken {
 
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
+  value = value.replace(/[.,!?;:]+$/, "");
   while (
     value.length >= 2 &&
     ((value.startsWith("'") && value.endsWith("'")) ||
@@ -205,6 +206,7 @@ function normalizeCommandToken(token: string): string {
   ) {
     value = value.slice(1, -1);
   }
+  value = value.replace(/[.,!?;:]+$/, "");
   return value;
 }
 
@@ -227,6 +229,12 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
     /;|&&|\|\||\b(?:then|and|but|however|except|instead)\b/gi,
   )) {
     const index = separator.index ?? 0;
+    const isWordConnector = /^[A-Za-z]/.test(separator[0]);
+    const before = index > 0 ? line[index - 1] : "";
+    const after = line[index + separator[0].length] ?? "";
+    if (isWordConnector && (before !== "" && !/\s/.test(before) || after !== "" && !/\s/.test(after))) {
+      continue;
+    }
     clauses.push({ text: line.slice(start, index), index: start });
     start = index + separator[0].length;
   }
@@ -351,8 +359,63 @@ function collectRmForceOps(line: string): CollectedMatch[] {
   return hits;
 }
 
+interface GitSubcommand {
+  gitIndex: number;
+  commandIndex: number;
+}
+
+function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcommand | null {
+  const gitIndex = tokens.findIndex((token) => token.value === "git" || token.value.endsWith("/git"));
+  if (gitIndex < 0) return null;
+
+  let index = gitIndex + 1;
+  while (index < tokens.length) {
+    const value = tokens[index].value;
+    if (value === command) return { gitIndex, commandIndex: index };
+    if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
+      index += 2;
+      continue;
+    }
+    if (value.startsWith("-")) {
+      index += 1;
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
+function isBundledFlag(value: string, letter: string): boolean {
+  return BUNDLED_SHORT_FLAGS.test(value) && value.slice(1).toLowerCase().includes(letter);
+}
+
+function collectGitForceOps(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const clause of splitCommandClauses(line)) {
+    const tokens = tokenizeCommand(clause.text);
+    const reset = findGitSubcommand(tokens, "reset");
+    if (reset) {
+      const hard = tokens.slice(reset.commandIndex + 1).find((token) => token.value === "--hard");
+      if (hard) {
+        addMatch(hits, "git reset --hard", clause.index + tokens[reset.gitIndex].index);
+      }
+    }
+
+    const clean = findGitSubcommand(tokens, "clean");
+    if (!clean) continue;
+    let force = false;
+    let dryRun = false;
+    for (const token of tokens.slice(clean.commandIndex + 1)) {
+      if (token.value === "--force" || isBundledFlag(token.value, "f")) force = true;
+      if (token.value === "--dry-run" || isBundledFlag(token.value, "n")) dryRun = true;
+    }
+    if (force && !dryRun) addMatch(hits, "git clean", clause.index + tokens[clean.gitIndex].index);
+  }
+  return hits;
+}
+
 function collectForceOps(line: string): CollectedMatch[] {
-  return [...collectPushForceOps(line), ...collectRmForceOps(line)];
+  return [...collectGitForceOps(line), ...collectPushForceOps(line), ...collectRmForceOps(line)];
 }
 
 function collectProtectedPushDests(line: string): CollectedMatch[] {
@@ -374,6 +437,26 @@ function collectProtectedPushDests(line: string): CollectedMatch[] {
   return hits;
 }
 
+const SQL_CONTEXT_PATTERN =
+  /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:TABLE|ONLY)\s+(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/gi;
+
+function isExplicitSqlContext(line: string, end: number, start: number): boolean {
+  const before = line.slice(0, start);
+  const backticks = (before.match(/`/g) ?? []).length;
+  return backticks % 2 === 1 || /^\s*;/.test(line.slice(end));
+}
+
+function collectSqlDestructive(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const match of line.matchAll(SQL_CONTEXT_PATTERN)) {
+    const index = match.index ?? 0;
+    if (isExplicitSqlContext(line, index + match[0].length, index)) {
+      addMatch(hits, match[0].replace(/\s+/g, " ").trim(), index);
+    }
+  }
+  return hits;
+}
+
 /**
  * Briefing rules. Every pattern is anchored on the dangerous operation or
  * surface itself (word boundaries, explicit compound phrases) — never on
@@ -388,7 +471,7 @@ const BRIEF_RULES: BriefRule[] = [
     // operand parser (collect below), because a bare regex cannot tell a
     // force flag from a push-option value (`git push -o -f origin feature`).
     pattern:
-      /\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
+      /\bgit\s+reset\s+--hard\b/gi,
     advice: GATE_ADVICE,
     // Command-shaped pushes and rm invocations are parsed below so option
     // values, dry runs, mixed spellings, and clause boundaries are handled
@@ -406,7 +489,8 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+){0,2}(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
+      /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:TABLE|ONLY)\s+(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
+    collect: collectSqlDestructive,
   },
   {
     id: "lookout.brief.test-deletion",
@@ -521,7 +605,13 @@ function runGit(args: string[], cwd: string): string {
 function hasGitEntry(dir: string): boolean {
   let current = resolve(dir);
   for (;;) {
-    if (existsSync(join(current, ".git"))) return true;
+    try {
+      lstatSync(join(current, ".git"));
+      return true;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT") return true;
+    }
     const parent = dirname(current);
     if (parent === current) return false;
     current = parent;
