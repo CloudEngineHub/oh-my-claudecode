@@ -14,6 +14,7 @@ const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
+const SHELL_WRAPPER = /^(?:bash|sh|dash|zsh|ksh)$/;
 
 /**
  * Force/mirror classification for one flag token, including parameterized
@@ -273,6 +274,18 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   return -1;
 }
 
+function nestedShellCommands(line: string): Array<{ text: string; index: number }> {
+  const nested: Array<{ text: string; index: number }> = [];
+  for (const clause of splitCommandClauses(line)) {
+    const tokens = tokenizeCommand(clause.text);
+    if (!SHELL_WRAPPER.test(tokens[0]?.value ?? "")) continue;
+    const commandIndex = tokens.findIndex((token) => token.value === "-c" || token.value === "--command");
+    const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
+    if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
+  }
+  return nested;
+}
+
 function parsePushCommand(segment: string): ParsedPush | null {
   const tokens = tokenizeCommand(segment);
   const gitIndex = findExecutableIndex(tokens, "git");
@@ -432,9 +445,19 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
       value === "--" ||
       /^(?:-h|--help|-v|--version|--html-path|--man-path|--info-path)$/.test(value)
     ) return null;
+    const inlineConfig = value.match(/^--config-env=([^=]+)=(.+)$/i);
+    if (
+      inlineConfig &&
+      inlineConfig[1].toLowerCase() === "clean.requireforce" &&
+      isFalseGitBoolean(process.env[inlineConfig[2]])
+    ) {
+      cleanRequireForceDisabled = true;
+      index += 1;
+      continue;
+    }
     if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
       const config = tokens[index + 1]?.value.match(/^clean\.requireforce=(.+)$/i);
-      if (value === "-c" && config && /^(?:false|0|no|off)$/i.test(config[1])) {
+      if (value === "-c" && config && isFalseGitBoolean(config[1])) {
         cleanRequireForceDisabled = true;
       }
       index += 2;
@@ -451,6 +474,10 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
 
 function isBundledFlag(value: string, letter: string): boolean {
   return BUNDLED_SHORT_FLAGS.test(value) && value.slice(1).includes(letter);
+}
+
+function isFalseGitBoolean(value: string | undefined): boolean {
+  return /^(?:false|0|no|off)$/i.test(value ?? "");
 }
 
 function collectGitForceOps(line: string): CollectedMatch[] {
@@ -505,7 +532,13 @@ function collectGitForceOps(line: string): CollectedMatch[] {
 }
 
 export function collectForceOps(line: string): CollectedMatch[] {
-  return [...collectGitForceOps(line), ...collectPushForceOps(line), ...collectRmForceOps(line)];
+  const hits = [...collectGitForceOps(line), ...collectPushForceOps(line), ...collectRmForceOps(line)];
+  for (const nested of nestedShellCommands(line)) {
+    for (const match of collectForceOps(nested.text)) {
+      addMatch(hits, match.snippet, nested.index + match.index);
+    }
+  }
+  return hits;
 }
 
 export function collectProtectedPushDests(line: string): CollectedMatch[] {
@@ -530,6 +563,11 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
       if (PROTECTED_BRANCH_NAME.test(dest)) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
       }
+    }
+  }
+  for (const nested of nestedShellCommands(line)) {
+    for (const match of collectProtectedPushDests(nested.text)) {
+      addMatch(hits, match.snippet, nested.index + match.index);
     }
   }
   return hits;

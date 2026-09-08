@@ -207,6 +207,18 @@ describe("scanLookout: briefing rules", () => {
     }
     const resetPathspec = scanLookout({ ...base(), brief: "git reset -- --hard" });
     expect(ids(resetPathspec.findings)).not.toContain("lookout.brief.force-op");
+    const previousCleanForce = process.env.CLEAN_FORCE;
+    process.env.CLEAN_FORCE = "0";
+    try {
+      const configEnv = scanLookout({
+        ...base(),
+        brief: "git --config-env=clean.requireForce=CLEAN_FORCE clean",
+      });
+      expect(ids(configEnv.findings)).toContain("lookout.brief.force-op");
+    } finally {
+      if (previousCleanForce === undefined) delete process.env.CLEAN_FORCE;
+      else process.env.CLEAN_FORCE = previousCleanForce;
+    }
   });
 
   it("parses full protected-branch refspec destinations", () => {
@@ -391,6 +403,8 @@ describe("scanLookout: briefing rules", () => {
       "command git push --force origin feature",
       "exec git push --force origin feature",
       "exec -a worker git push --force origin feature",
+      "bash -c 'git push --force origin feature'",
+      "sh -c 'rm -rf build'",
       "if git push --force origin feature; then continue",
       "Please run git push --force origin feature",
       "git push \"/tmp/remote repo.git\" --force HEAD:main",
