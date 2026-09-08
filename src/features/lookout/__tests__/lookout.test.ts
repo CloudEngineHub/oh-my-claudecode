@@ -96,6 +96,9 @@ describe("scanLookout: briefing rules", () => {
     const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;" });
     expect(ids(report.findings)).toContain("lookout.brief.db-destructive");
     expect(report.summary.verdict).toBe("review-recommended");
+    // Keyword case is the signal, not identifier case.
+    const mixed = scanLookout({ ...base(), brief: "TRUNCATE TABLE SessionLog;" });
+    expect(ids(mixed.findings)).toContain("lookout.brief.db-destructive");
   });
 
   it("flags equivalent destructive flag layouts", () => {
@@ -138,6 +141,56 @@ describe("scanLookout: briefing rules", () => {
     // inverse of the existing HEAD:main case still holds
     const report2 = scanLookout({ ...base(), brief: "git push origin HEAD:main" });
     expect(ids(report2.findings)).toContain("lookout.brief.protected-branch");
+  });
+
+  it("flags forced cleans without -d and recognizes dry-run exclusions", () => {
+    // git clean -f deletes untracked files without -d
+    for (const brief of ["git clean -f", "git clean -fd", "git clean -dfx", "git clean -d -f"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+    // dry runs cannot perform the operation
+    for (const brief of ["git clean -nfd", "git clean -n", "git push --dry-run --force origin main"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).not.toContain("lookout.brief.force-op");
+    }
+  });
+
+  it("parses full protected-branch refspec destinations", () => {
+    // :main (empty source) deletes the remote branch
+    for (const brief of ["git push origin :main", "git push origin HEAD:refs/heads/main"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
+  });
+
+  it("skips dry-run protected-branch pushes", () => {
+    const report = scanLookout({ ...base(), brief: "git push --dry-run origin main" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
+  });
+
+  it("honors explicit negation in briefings", () => {
+    for (const brief of [
+      "Do not skip tests under any circumstances",
+      "Never run git reset --hard on the release branch",
+      "Do not push into main directly; open a PR instead",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(report.findings).toEqual([]);
+    }
+  });
+
+  it("requires SQL context before flagging destructive prose", () => {
+    for (const brief of [
+      "Drop table borders on mobile",
+      "truncate long labels to 80 characters",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).not.toContain("lookout.brief.db-destructive");
+    }
+    // uppercase SQL keywords remain high-confidence signals
+    const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;" });
+    expect(ids(report.findings)).toContain("lookout.brief.db-destructive");
   });
 
   it("flags test deletion and test skipping", () => {
@@ -217,7 +270,8 @@ describe("scanLookout: briefing rules", () => {
       brief:
         "Add password validation to the signup form, document the auth flow, " +
         "write tests for the migration guide page, truncate the log file " +
-        "before capturing fixtures, and clean up the docs folder.",
+        "before capturing fixtures, drop stale table borders in the UI, " +
+        "and clean up the docs folder.",
     });
     // "password validation", "auth flow", "migration guide", "test data"
     // are ordinary development topics — none is a danger signal.

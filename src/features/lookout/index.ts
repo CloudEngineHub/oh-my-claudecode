@@ -97,6 +97,30 @@ interface BriefRule {
   severity: Extract<LookoutSeverity, "high" | "medium" | "low">;
   pattern: RegExp;
   advice: string;
+  /**
+   * Lines matching this pattern are skipped before the rule runs — for
+   * example dry-run demonstrations, which cannot perform the operation
+   * they name and must not produce high-severity findings.
+   */
+  excludedPattern?: RegExp;
+}
+
+/**
+ * Bounded negation handling: a briefing that *forbids* a dangerous action
+ * ("Do not skip tests", "Never run git reset --hard") must not be flagged
+ * for requesting it. A match is ignored when a negation cue appears within
+ * 48 characters before it on the same line — close enough to be a
+ * prohibition, far enough that unrelated mentions don't mask real ones.
+ */
+const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|without|prohibited)\b/gi;
+
+function isNegated(line: string, matchIndex: number): boolean {
+  for (const cue of line.matchAll(NEGATION_CUE)) {
+    if (cue.index !== undefined && matchIndex >= cue.index && matchIndex - cue.index < 48) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -110,16 +134,24 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease(?![\w-])|--force(?![\w-])|-f(?![\w-]))|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+push\b[^;\n]*\s--mirror(?![\w-])|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-[a-z]*[fd][a-z]*[fd][a-z]*\b|\bgit\s+clean\b[^;\n]*\s-f\b[^;\n]*\s-d\b|\bgit\s+clean\b[^;\n]*\s-d\b[^;\n]*\s-f\b/gi,
+      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease(?![\w-])|--force(?![\w-])|-f(?![\w-]))|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+push\b[^;\n]*\s--mirror(?![\w-])|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s-f(?![\w-])\b/gi,
     advice: GATE_ADVICE,
+    // --dry-run (and clean's -n) cannot perform the operation; flagging it
+    // violates the high-confidence contract.
+    excludedPattern: /\bgit\b[^;\n]*(?:--dry-run|\s-n(?![\w-]))/i,
   },
   {
     id: "lookout.brief.db-destructive",
     title: "Briefing asks for destructive database operations",
     severity: "high",
-    pattern:
-      /\bdrop\s+table\b|\btruncate\s+(?:table\s+|only\s+){0,2}(?!the\b|this\b|that\b|these\b|those\b|a\b|an\b|your\b|its\b|only\b|table\b)[a-z_][\w.]*\b|\bdrop\s+column\b|\bdrop\s+database\b/gi,
+    // Case-sensitive SQL keywords on purpose: "drop table borders" and
+    // "truncate long labels" are English prose, not SQL. Uppercase (or a
+    // quoted/statement context) is the high-confidence signal. The keyword
+    // carries the case sensitivity — the identifier may be any case
+    // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
+    pattern:
+      /\bDROP\s+(?:TABLE|DATABASE)\b|\bDROP\s+COLUMN\b|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+){0,2}(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
   },
   {
     id: "lookout.brief.test-deletion",
@@ -134,8 +166,10 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing targets a protected branch directly",
     severity: "high",
     pattern:
-      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+--?\S+){0,2}\s+(?:\S+\s+)?(?:[\w./+-]+:)?(?:main|master|release|production|develop)(?![\w:-])(?:\/[\w./-]+)?(?=[\s;]|$)/gi,
+      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+--?\S+){0,2}\s+(?:\S+\s+)?(?:[\w./+-]*:)?(?:refs\/heads\/)?(?:main|master|release|production|develop)(?![\w:-])(?:\/[\w./-]+)?(?=[\s;]|$)/gi,
     advice: GATE_ADVICE,
+    // A dry-run push names the protected branch but cannot move it.
+    excludedPattern: /\bgit\b[^;\n]*(?:--dry-run|\s-n(?![\w-]))/i,
   },
   {
     id: "lookout.brief.secrets-touch",
@@ -168,18 +202,6 @@ const BRIEF_RULES: BriefRule[] = [
       GATE_ADVICE,
   },
 ];
-
-/** Returns the distinct matches of a global regex, trimmed for evidence. */
-function collectMatches(text: string, pattern: RegExp, limit = 3): string[] {
-  const out: string[] = [];
-  const re = new RegExp(pattern.source, pattern.flags);
-  for (const match of text.matchAll(re)) {
-    const snippet = match[0].replace(/\s+/g, " ").trim();
-    if (snippet && !out.includes(snippet)) out.push(snippet);
-    if (out.length >= limit) break;
-  }
-  return out;
-}
 
 interface GitFailure {
   stderr: string;
@@ -328,8 +350,22 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
 
   const brief = options.brief;
   if (brief !== undefined) {
+    // Rules evaluate line by line: dry-run exclusion and negation handling
+    // are per-line judgments, and a briefing rarely mixes requests and
+    // prohibitions on one line.
     for (const rule of BRIEF_RULES) {
-      const evidence = collectMatches(brief, rule.pattern);
+      const evidence: string[] = [];
+      for (const line of brief.split("\n")) {
+        if (rule.excludedPattern?.test(line)) continue;
+        const re = new RegExp(rule.pattern.source, rule.pattern.flags);
+        for (const match of line.matchAll(re)) {
+          if (match.index !== undefined && isNegated(line, match.index)) continue;
+          const snippet = match[0].replace(/\s+/g, " ").trim();
+          if (snippet && !evidence.includes(snippet)) evidence.push(snippet);
+          if (evidence.length >= 3) break;
+        }
+        if (evidence.length >= 3) break;
+      }
       if (evidence.length > 0) {
         findings.push({
           id: rule.id,
