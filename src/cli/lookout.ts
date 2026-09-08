@@ -43,6 +43,10 @@ function fail(message: string, code: number): void {
   process.exitCode = code;
 }
 
+function safeEvidence(value: string): string {
+  return JSON.stringify(value).slice(1, -1);
+}
+
 function printHuman(report: LookoutReport): void {
   console.log(chalk.bold('🚨 lookout report'));
   console.log(
@@ -58,7 +62,8 @@ function printHuman(report: LookoutReport): void {
     console.log('');
     console.log(`${SEVERITY_BADGE[finding.severity]}  ${chalk.bold(finding.title)}  ${chalk.dim(finding.id)}`);
     for (const item of finding.evidence) {
-      console.log(`    evidence: ${chalk.italic(item.length > 120 ? `${item.slice(0, 117)}...` : item)}`);
+      const safe = safeEvidence(item);
+      console.log(`    evidence: ${chalk.italic(safe.length > 120 ? `${safe.slice(0, 117)}...` : safe)}`);
     }
     console.log(`    advice: ${finding.advice}`);
   }

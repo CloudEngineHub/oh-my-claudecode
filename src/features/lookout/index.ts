@@ -208,6 +208,7 @@ interface CollectedMatch {
 interface CommandToken {
   value: string;
   index: number;
+  quoted: boolean;
 }
 
 function normalizeCommandToken(token: string): string {
@@ -263,7 +264,7 @@ function tokenizeCommand(segment: string): CommandToken[] {
       raw += character;
       index += 1;
     }
-    tokens.push({ value: normalizeCommandToken(raw), index: start });
+    tokens.push({ value: normalizeCommandToken(raw), index: start, quoted: /['"]/.test(raw) });
   }
   return tokens;
 }
@@ -280,6 +281,10 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
       index += 1;
       continue;
     }
+    if (character === "\\" && index + 1 < line.length) {
+      index += 2;
+      continue;
+    }
     if (character === "'" || character === '"') {
       quote = character;
       index += 1;
@@ -288,6 +293,7 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
     let separatorLength = 0;
     if (character === ";") separatorLength = 1;
     else if (line.startsWith("&&", index) || line.startsWith("||", index)) separatorLength = 2;
+    else if (character === "&" || character === "|") separatorLength = 1;
     else if (/\s/.test(character)) {
       const connector = /^\s+(?:then|and|but|however|except|instead)\b/i.exec(line.slice(index));
       if (connector) {
@@ -332,7 +338,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
     const wrapper = tokens[prefixIndex]?.value.toLowerCase();
-    if (index === prefixIndex && /^(?:run|sudo|env)$/.test(wrapper ?? "")) {
+    if (index === prefixIndex && /^(?:run|sudo|env|command)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
@@ -355,6 +361,28 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       }
     }
     if (wrapper === "env" && /^[A-Za-z_][A-Za-z0-9_]*=/.test(value)) {
+      index += 1;
+      continue;
+    }
+    if (wrapper === "env") {
+      if (value === "--" || value === "-i" || value === "--ignore-environment") {
+        index += 1;
+        continue;
+      }
+      if (value === "-u" || value === "--unset") {
+        index += 2;
+        continue;
+      }
+      if (value.startsWith("--unset=")) {
+        index += 1;
+        continue;
+      }
+      if (value.startsWith("-")) {
+        index += 1;
+        continue;
+      }
+    }
+    if (wrapper === "command" && /^-[pVv]$/.test(value)) {
       index += 1;
       continue;
     }
@@ -390,7 +418,7 @@ function parsePushCommand(segment: string): ParsedPush | null {
     const value = token.value;
     i += 1;
     if (/^(?:-h|--help|-v|--version)$/.test(value)) return null;
-    if (value.length === 0 || !COMMAND_WORD.test(value)) break; // prose begins here
+    if (value.length === 0 || (!COMMAND_WORD.test(value) && !token.quoted)) break; // prose begins here
     if (value.startsWith("-")) {
       if (PUSH_REPO_OPTION.test(value)) {
         const repoToken = tokens[i];
@@ -949,6 +977,13 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
         for (const match of line.matchAll(re)) {
           if (match.index !== undefined && isNegated(line, match.index)) continue;
           const snippet = match[0].replace(/\s+/g, " ").trim();
+          if (
+            rule.id === "lookout.brief.protected-branch" &&
+            /\bproduction(?:\/[\w./-]+)?\b/i.test(snippet) &&
+            !/\b(?:git|branch|ref(?:spec)?|remote|commit|merge)\b/i.test(line)
+          ) {
+            continue;
+          }
           if (snippet && !evidence.includes(snippet)) evidence.push(snippet);
           if (evidence.length >= 3) break;
         }

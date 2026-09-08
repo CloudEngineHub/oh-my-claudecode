@@ -359,6 +359,7 @@ describe("scanLookout: briefing rules", () => {
       "git --help push --force origin feature",
       "git --version push --force origin feature",
       "git push -F origin feature",
+      "echo foo\\; git push --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -372,6 +373,12 @@ describe("scanLookout: briefing rules", () => {
       "1. git push origin main",
       "- [ ] git push --force origin feature",
       "sudo -u root git push --force origin feature",
+      "env --ignore-environment git push --force origin feature",
+      "env -u FOO git push --force origin feature",
+      "command git push --force origin feature",
+      "git push \"/tmp/remote repo.git\" --force HEAD:main",
+      "git status | git push --force origin feature",
+      "git status & git push origin main",
       "Run `git status; git push --force origin feature`.",
       "git push -o one\\ and\\ two --force origin feature",
       "git push --receive-pack evil --force origin feature",
@@ -495,6 +502,10 @@ describe("scanLookout: briefing rules", () => {
     }
     const prose = scanLookout({ ...base(), brief: "Push this branch into release/v2" });
     expect(ids(prose.findings)).toContain("lookout.brief.protected-branch");
+    for (const brief of ["Push the Docker image to production", "Push metrics to production cluster"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
+    }
   });
 
   it("stays silent on rebasing onto a protected branch and lookalike branches", () => {
