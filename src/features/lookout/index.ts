@@ -438,7 +438,7 @@ function collectProtectedPushDests(line: string): CollectedMatch[] {
 }
 
 const SQL_CONTEXT_PATTERN =
-  /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:TABLE|ONLY)\s+(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/gi;
+  /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/gi;
 
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
   const before = line.slice(0, start);

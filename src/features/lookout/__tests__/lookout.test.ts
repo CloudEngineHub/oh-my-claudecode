@@ -104,7 +104,7 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(deleted.findings)).toContain("lookout.brief.db-destructive");
     const prose = scanLookout({ ...base(), brief: "copy the records, delete from memory afterwards" });
     expect(ids(prose.findings)).not.toContain("lookout.brief.db-destructive");
-    for (const brief of ["Run `drop table users`;", "drop table users;"]) {
+    for (const brief of ["Run `drop table users`;", "drop table users;", "TRUNCATE users;"]) {
       const contextual = scanLookout({ ...base(), brief });
       expect(ids(contextual.findings)).toContain("lookout.brief.db-destructive");
     }
