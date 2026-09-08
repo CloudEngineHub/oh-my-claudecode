@@ -15,6 +15,7 @@ const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
+const CLEAN_BUNDLED_SHORT_FLAGS = /^-[a-zA-Z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 const MAX_NESTED_SCAN_DEPTH = 64;
@@ -40,7 +41,7 @@ function isValidRmBundle(value: string): boolean {
 }
 
 function isValidCleanBundle(value: string): boolean {
-  if (!BUNDLED_SHORT_FLAGS.test(value)) return true;
+  if (!CLEAN_BUNDLED_SHORT_FLAGS.test(value)) return true;
   for (const character of value.slice(1)) {
     if (character === "e") return true;
     if (!/[dfinqxX]/.test(character)) return false;
@@ -411,7 +412,9 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
       if (!value.startsWith("-")) break;
     }
     const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
-    if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
+    if (command && (command.quoted || command.raw !== command.value)) {
+      nested.push({ text: command.value, index: clause.index + command.index });
+    }
 
   }
   return nested;
@@ -663,7 +666,7 @@ function collectGitForceOps(line: string): CollectedMatch[] {
         help = true;
         break;
       }
-      if (BUNDLED_SHORT_FLAGS.test(value) && !isValidCleanBundle(value)) {
+      if (CLEAN_BUNDLED_SHORT_FLAGS.test(value) && !isValidCleanBundle(value)) {
         help = true;
         break;
       }
@@ -673,9 +676,9 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       }
       if (CLEAN_INLINE_VALUE_OPTION.test(value)) continue;
       if (value === "--no-force") force = false;
-      else if (value === "--force" || (BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "f"))) force = true;
+      else if (value === "--force" || (CLEAN_BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "f"))) force = true;
       if (value === "--no-dry-run") dryRun = false;
-      else if (value === "--dry-run" || (BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "n"))) dryRun = true;
+      else if (value === "--dry-run" || (CLEAN_BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "n"))) dryRun = true;
     }
     if (!help && !dryRun && (force || clean.cleanRequireForceDisabled)) {
       addMatch(
