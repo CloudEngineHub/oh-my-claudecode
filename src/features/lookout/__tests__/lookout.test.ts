@@ -113,6 +113,7 @@ describe("scanLookout: briefing rules", () => {
       'DELETE FROM "production_users";',
       "delete from users where inactive = true;",
       "drop table users cascade;",
+      "DROP SCHEMA production CASCADE;",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
     ]) {
@@ -356,6 +357,7 @@ describe("scanLookout: briefing rules", () => {
       "echo rm -rf directory",
       "git --help push --force origin feature",
       "git --version push --force origin feature",
+      "git push -F origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -367,6 +369,8 @@ describe("scanLookout: briefing rules", () => {
       "- git push --force origin feature",
       "* rm -rf build",
       "1. git push origin main",
+      "- [ ] git push --force origin feature",
+      "sudo -u root git push --force origin feature",
       "Run `git status; git push --force origin feature`.",
       "git push -o one\\ and\\ two --force origin feature",
     ]) {
@@ -385,6 +389,9 @@ describe("scanLookout: briefing rules", () => {
       "remove tests/auth.spec.ts",
       "delete the tests directory",
       "skip src/auth.test.ts for now",
+      "skip the failing test",
+      "disable this test",
+      "remove the failing test",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.test-deletion");

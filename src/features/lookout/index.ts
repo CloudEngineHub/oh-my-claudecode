@@ -168,7 +168,7 @@ const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+)$/;
 const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
-const BUNDLED_SHORT_FLAGS = /^-[a-z]+$/i;
+const BUNDLED_SHORT_FLAGS = /^-[a-z]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 
@@ -180,13 +180,13 @@ const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 function isPushForceFlag(flag: string): boolean {
   if (PUSH_FORCE_FLAG.test(flag)) return true;
   if (/^--force(?:-with-lease)?=/.test(flag)) return true;
-  return BUNDLED_SHORT_FLAGS.test(flag) && /f/i.test(flag.slice(1));
+  return BUNDLED_SHORT_FLAGS.test(flag) && /f/.test(flag.slice(1));
 }
 
 function isPushDryRunFlag(flag: string): boolean {
   if (PUSH_DRY_RUN_FLAG.test(flag)) return true;
   // Bundled -n (e.g. -nu, -nf) is still a dry run.
-  return BUNDLED_SHORT_FLAGS.test(flag) && /n/i.test(flag.slice(1));
+  return BUNDLED_SHORT_FLAGS.test(flag) && /n/.test(flag.slice(1));
 }
 /** Words that typically begin trailing prose after a command. */
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
@@ -320,11 +320,19 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
 
   let index = 0;
   if (/^(?:-|\*|\d+)$/.test(tokens[0]?.value ?? "")) index = 1;
+  if (
+    index === 1 &&
+    tokens[index]?.value === "[" &&
+    /^(?:\]|x|X)$/.test(tokens[index + 1]?.value ?? "")
+  ) {
+    index += 2;
+  }
   const prefixIndex = index;
   while (index < tokens.length) {
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
-    if (index === prefixIndex && /^(?:run|sudo|env)$/i.test(value)) {
+    const wrapper = tokens[prefixIndex]?.value.toLowerCase();
+    if (index === prefixIndex && /^(?:run|sudo|env)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
@@ -332,7 +340,21 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       index += 1;
       continue;
     }
-    if (index === prefixIndex + 1 && /^(?:-[A-Za-z]+|--[\w-]+)$/.test(value) && tokens[prefixIndex]?.value === "sudo") {
+    if (wrapper === "sudo") {
+      if (value === "--") {
+        index += 1;
+        continue;
+      }
+      if (/^(?:-u|--user|-g|--group|-C|--chdir|-p|--prompt|-r|--role|-t|--type)$/.test(value)) {
+        index += 2;
+        continue;
+      }
+      if (/^-[A-Za-z]+$/.test(value) || /^--[\w-]+$/.test(value)) {
+        index += 1;
+        continue;
+      }
+    }
+    if (wrapper === "env" && /^[A-Za-z_][A-Za-z0-9_]*=/.test(value)) {
       index += 1;
       continue;
     }
@@ -491,7 +513,7 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
 }
 
 function isBundledFlag(value: string, letter: string): boolean {
-  return BUNDLED_SHORT_FLAGS.test(value) && value.slice(1).toLowerCase().includes(letter);
+  return BUNDLED_SHORT_FLAGS.test(value) && value.slice(1).includes(letter);
 }
 
 function collectGitForceOps(line: string): CollectedMatch[] {
@@ -564,6 +586,7 @@ function collectProtectedPushDests(line: string): CollectedMatch[] {
 
 const SQL_CONTEXT_PATTERN =
   /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/gi;
+const SQL_SCHEMA_PATTERN = /\bDROP\s+SCHEMA(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/gi;
 
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
   const before = line.slice(0, start);
@@ -582,10 +605,12 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
 
 function collectSqlDestructive(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
-  for (const match of line.matchAll(SQL_CONTEXT_PATTERN)) {
-    const index = match.index ?? 0;
-    if (isExplicitSqlContext(line, index + match[0].length, index)) {
-      addMatch(hits, match[0].replace(/\s+/g, " ").trim(), index);
+  for (const pattern of [SQL_CONTEXT_PATTERN, SQL_SCHEMA_PATTERN]) {
+    for (const match of line.matchAll(pattern)) {
+      const index = match.index ?? 0;
+      if (isExplicitSqlContext(line, index + match[0].length, index)) {
+        addMatch(hits, match[0].replace(/\s+/g, " ").trim(), index);
+      }
     }
   }
   return hits;
@@ -633,7 +658,7 @@ const BRIEF_RULES: BriefRule[] = [
     // Covers plural "tests", "test files/suites/cases" phrases, and direct
     // conventional test paths (src/auth.test.ts, tests/auth.spec.ts).
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|files?|suites?|cases?|directory|folder)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -715,6 +740,8 @@ function sanitizedGitEnv(): NodeJS.ProcessEnv {
     "GIT_INTERNAL_SUPER_PREFIX",
     "GIT_SHALLOW_FILE",
     "GIT_COMMON_DIR",
+    "GIT_CEILING_DIRECTORIES",
+    "GIT_DISCOVERY_ACROSS_FILESYSTEM",
   ]) {
     delete env[key];
   }
