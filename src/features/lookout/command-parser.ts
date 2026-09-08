@@ -14,7 +14,7 @@ const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
-const SHELL_WRAPPER = /(?:^|\/)(?:bash|sh|dash|zsh|ksh)$/;
+
 
 /**
  * Force/mirror classification for one flag token, including parameterized
@@ -206,11 +206,21 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     index += 2;
   }
   const prefixIndex = index;
+  let wrapper = tokens[prefixIndex]?.value.toLowerCase();
+  let timeoutDurationConsumed = false;
   while (index < tokens.length) {
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
-    const wrapper = tokens[prefixIndex]?.value.toLowerCase();
     if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout)$/.test(wrapper ?? "")) {
+      index += 1;
+      continue;
+    }
+    if (
+      index > prefixIndex &&
+      /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout)$/.test(value.toLowerCase())
+    ) {
+      wrapper = value.toLowerCase();
+      timeoutDurationConsumed = false;
       index += 1;
       continue;
     }
@@ -282,7 +292,12 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
         index += 1;
         continue;
       }
-      index += 1;
+      if (!timeoutDurationConsumed) {
+        timeoutDurationConsumed = true;
+        index += 1;
+        continue;
+      }
+      wrapper = "";
       continue;
     }
     return -1;
@@ -294,7 +309,10 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
   const nested: Array<{ text: string; index: number }> = [];
   for (const clause of splitCommandClauses(line)) {
     const tokens = tokenizeCommand(clause.text);
-    const shellIndex = tokens.findIndex((token) => SHELL_WRAPPER.test(token.value));
+    const shellIndex = ["bash", "sh", "dash", "zsh", "ksh"]
+      .map((shell) => findExecutableIndex(tokens, shell))
+      .filter((index) => index >= 0)
+      .sort((left, right) => left - right)[0] ?? -1;
     if (shellIndex < 0) continue;
     const commandIndex = tokens.findIndex(
       (token, index) =>
@@ -303,6 +321,24 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
     );
     const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
     if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
+
+    const envIndex = findExecutableIndex(tokens, "env");
+    if (envIndex >= 0) {
+      const splitIndex = tokens.findIndex(
+        (token, index) => index > envIndex && (token.value === "-S" || token.value === "--split-string"),
+      );
+      const splitToken = splitIndex >= 0 ? tokens[splitIndex + 1] : undefined;
+      if (splitToken?.quoted) nested.push({ text: splitToken.value, index: clause.index + splitToken.index });
+      const inlineSplit = tokens.find(
+        (token, index) => index > envIndex && token.value.startsWith("--split-string="),
+      );
+      if (inlineSplit) {
+        nested.push({
+          text: inlineSplit.value.slice("--split-string=".length),
+          index: clause.index + inlineSplit.index,
+        });
+      }
+    }
   }
   return nested;
 }

@@ -86,31 +86,50 @@ const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|should\s+n
 const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[!?]|\.(?=\s|$)|\r?\n/g;
 const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
-function isNegated(line: string, matchIndex: number): boolean {
+interface NegationContext {
+  cues: Array<{ index: number; end: number }>;
+  hardBoundaries: number[];
+  wordBoundaries: Array<{ index: number; length: number }>;
+  commas: number[];
+}
+
+function buildNegationContext(line: string): NegationContext {
+  return {
+    cues: [...line.matchAll(NEGATION_CUE)].flatMap((match) =>
+      match.index === undefined ? [] : [{ index: match.index, end: match.index + match[0].length }],
+    ),
+    hardBoundaries: [...line.matchAll(NEGATION_HARD_BOUNDARY)].flatMap((match) =>
+      match.index === undefined ? [] : [match.index],
+    ),
+    wordBoundaries: [...line.matchAll(NEGATION_WORD_BOUNDARY)].flatMap((match) =>
+      match.index === undefined ? [] : [{ index: match.index, length: match[0].length }],
+    ),
+    commas: [...line.matchAll(/,/g)].flatMap((match) =>
+      match.index === undefined ? [] : [match.index],
+    ),
+  };
+}
+
+function isNegated(line: string, matchIndex: number, context = buildNegationContext(line)): boolean {
   let cueIndex = -1;
   let cueEnd = -1;
-  for (const cue of line.matchAll(NEGATION_CUE)) {
-    if (cue.index !== undefined && cue.index <= matchIndex && matchIndex - cue.index < 48) {
+  for (const cue of context.cues) {
+    if (cue.index <= matchIndex && matchIndex - cue.index < 48) {
       cueIndex = cue.index;
-      cueEnd = cue.index + cue[0].length;
+      cueEnd = cue.end;
     }
   }
   if (cueIndex < 0) return false;
   if (/^\s+(?:forget|hesitate)\b/i.test(line.slice(cueEnd))) return false;
-  for (const boundary of line.matchAll(NEGATION_HARD_BOUNDARY)) {
-    if (boundary.index !== undefined && boundary.index > cueIndex && boundary.index < matchIndex) {
-      return false;
-    }
-  }
-  for (const boundary of line.matchAll(NEGATION_WORD_BOUNDARY)) {
-    const index = boundary.index ?? -1;
+  if (context.hardBoundaries.some((index) => index > cueIndex && index < matchIndex)) return false;
+  for (const boundary of context.wordBoundaries) {
+    const index = boundary.index;
     if (index <= cueIndex || index >= matchIndex) continue;
     const before = index > 0 ? line[index - 1] : "";
-    const after = line[index + boundary[0].length] ?? "";
+    const after = line[index + boundary.length] ?? "";
     if ((before === "" || /\s/.test(before)) && (after === "" || /\s/.test(after))) return false;
   }
-  for (const comma of line.matchAll(/,/g)) {
-    const index = comma.index ?? -1;
+  for (const index of context.commas) {
     if (index <= cueIndex || index >= matchIndex) continue;
     if (/^\s*(?:then|and|but|however|except|instead)\b/i.test(line.slice(index + 1))) return false;
   }
@@ -137,6 +156,7 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
   const before = line.slice(0, start);
   const backticks = (before.match(/`/g) ?? []).length;
   if (backticks % 2 === 1) return true;
+  if (/(?:^|\s)(?:sqlite3|psql|mysql|mariadb|sqlcmd)\b[^;\r\n]*['"][^'"]*$/i.test(before)) return true;
   const rest = line.slice(end);
   if (/^\s*;/.test(rest)) return true;
   const semicolon = rest.indexOf(";");
@@ -301,9 +321,10 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
       const inputLines =
         rule.id === "lookout.brief.db-destructive" ? [scanBrief] : scanBrief.split("\n");
       for (const line of inputLines) {
+        const negationContext = buildNegationContext(line);
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
-          if (match.index !== undefined && isNegated(line, match.index)) continue;
+          if (match.index !== undefined && isNegated(line, match.index, negationContext)) continue;
           const snippet = match[0].replace(/\s+/g, " ").trim();
           if (
             rule.id === "lookout.brief.protected-branch" &&
@@ -317,7 +338,7 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
         }
         if (rule.collect) {
           for (const match of rule.collect(line)) {
-            if (isNegated(line, match.index)) continue;
+            if (isNegated(line, match.index, negationContext)) continue;
             if (!evidence.includes(match.snippet)) evidence.push(match.snippet);
             if (evidence.length >= 3) break;
           }
