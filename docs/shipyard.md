@@ -57,6 +57,7 @@ A repo that humans and agents both build on carries four pillars across five con
 | The charts | specs + tickets | Launch's output; build from the chart |
 | The logbook | `docs/adr/` | Decisions, auditable after the fact |
 | The launch | `/oh-my-claudecode:launch` | Everyone may launch — and not one class check may be skipped |
+| The lookout | `omc lookout` | The mast watch: before an unattended run, scan the briefing and the workspace for danger — the lookout reports, the captain decides |
 
 ## The six skills compose
 
@@ -70,6 +71,8 @@ A repo that humans and agents both build on carries four pillars across five con
 The gates form one chain with the same anatomy — run checks, list findings verbatim, sign only what fails expensively: **harbor gate** (take this external request?) → **fog gate** (can the destination be stated?) → **yard gate** (are the surfaces laid and clean?) → C1–C5 (quality signatures).
 
 They share one rule of thumb: **starting needs no permission; landing goes into a shipyard slot.** A change that cannot say which slot it lands in (or explicitly none) is the smell.
+
+`omc lookout` (a CLI command, not a skill) is the mast watch that can feed these gates: before an unattended effort starts it scans the task briefing and the workspace for high-confidence danger signals and reports them in the same findings vocabulary (severity / confidence / actionable) drydock's `--check` audit documents — the structured contract drydock marks as a planned follow-up can adopt the same shape. Advisory only, by design: it never blocks, and it pairs with the remote approval gates and checkpoints when a signal is real.
 
 ## The feedback loop
 

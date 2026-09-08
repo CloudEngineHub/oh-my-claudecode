@@ -627,6 +627,22 @@ omc checkpoint rollback <id> --force
 - `rollback` refuses to discard uncommitted changes unless `--force` is passed
 - Requires a git repository; no external storage is involved
 
+### `omc lookout`
+
+Pre-flight danger scan for autonomous runs. Before an unattended effort starts (graph run, autopilot, launch, a multi-agent team), lookout scans the task briefing and the workspace state and reports machine-readable findings. Advisory by design: it never blocks, never mutates, and has no skip-file backdoor.
+
+```bash
+omc lookout scan --brief "Migrate billing to v2 and update the deploy config"
+omc lookout scan --brief @task-brief.md --json
+omc lookout scan --strict   # exit 1 when review is recommended (for scripts)
+```
+
+- Briefing rules flag the dangerous operation itself — force operations, destructive SQL, test deletion/skipping, direct pushes to protected branches (high severity); secret, CI, and deployment surfaces (medium severity)
+- Workspace rules flag tracked secret-looking files and a dirty worktree; `repo` is `null` outside a git repository
+- Every finding carries `id`, `severity`, `confidence`, `actionable`, `evidence`, and `advice` — the same vocabulary drydock's `--check` audit documents, so a structured contract can be shared by both surfaces
+- `--json` emits the full report; exit codes: `0` no high-severity findings, `1` `--strict` with a review-recommended verdict, `2` usage/scan error
+- High-risk verdicts pair with approval gates and checkpoints: `omc graph run --approval-mode remote --checkpoint`, `omc checkpoint create`
+
 ### Graph approval gates (remote approvals)
 
 Graph runtime `human-approval` nodes support two gate styles via `omc graph run`:
