@@ -103,7 +103,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease\b|--force\b|-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-rf\b|\bgit\s+clean\s+-[a-z]*f[a-z]*d[a-z]*\b/gi,
+      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease\b|--force\b|-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-[a-z]*[fd][a-z]*[fd][a-z]*\b|\bgit\s+clean\b[^;\n]*\s-f\b[^;\n]*\s-d\b|\bgit\s+clean\b[^;\n]*\s-d\b[^;\n]*\s-f\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -119,7 +119,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks to delete, skip, or disable tests",
     severity: "high",
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:all\s+|the\s+|existing\s+|failing\s+|flaky\s+|these\s+)?(?:unit\s+|integration\s+|e2e\s+|regression\s+)?tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:the\s+|all\s+|failing\s+|flaky\s+)?tests\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b/gi,
     advice: GATE_ADVICE,
   },
   {

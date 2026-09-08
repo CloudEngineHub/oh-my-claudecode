@@ -73,6 +73,18 @@ function printHuman(report: LookoutReport): void {
 export function lookoutCommand(): Command {
   const command = new Command('lookout');
   command.description('Pre-flight danger scan for autonomous runs (advisory only, never blocks)');
+  // Remap Commander usage failures (e.g. a value-taking option given without
+  // its value) to the documented scan-error exit code 2, so scripts can
+  // distinguish malformed input from findings-driven --strict exits.
+  // Help/version output stays exit 0. The rethrown CommanderError is caught
+  // by the program parse wrapper in cli/index.ts.
+  command.exitOverride((err) => {
+    err.exitCode =
+      err.code === 'commander.helpDisplayed' || err.code === 'commander.version' || err.code === 'commander.help'
+        ? 0
+        : 2;
+    throw err;
+  });
 
   command
     .command('scan')

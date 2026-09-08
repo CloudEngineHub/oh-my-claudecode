@@ -98,6 +98,19 @@ describe("scanLookout: briefing rules", () => {
     expect(report.summary.verdict).toBe("review-recommended");
   });
 
+  it("flags equivalent destructive flag layouts", () => {
+    for (const brief of [
+      "rm -fr dir",
+      "rm -r -f dir",
+      "rm --recursive --force dir",
+      "git clean -df",
+      "git clean -f -d",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+  });
+
   it("flags test deletion and test skipping", () => {
     const report = scanLookout({
       ...base(),
@@ -128,6 +141,17 @@ describe("scanLookout: briefing rules", () => {
   it("flags CI configuration changes as medium", () => {
     const report = scanLookout({ ...base(), brief: "Tighten the CI pipeline timeouts" });
     expect(ids(report.findings)).toContain("lookout.brief.ci-touch");
+  });
+
+  it("flags suite-type modifiers in skip instructions", () => {
+    for (const brief of [
+      "skip the unit tests to unblock the build",
+      "disable integration tests for this run",
+      "ignore flaky unit tests and continue",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.test-deletion");
+    }
   });
 
   it("does not flag environment template mentions as secrets", () => {
