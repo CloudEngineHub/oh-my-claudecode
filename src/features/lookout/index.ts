@@ -131,53 +131,98 @@ function isNegated(line: string, matchIndex: number): boolean {
 }
 
 /**
- * Protected destinations for `git push` lines, one evidence snippet per
- * offending refspec. Grammar (git-push(1)): `git push [<options>]
+ * Protected destinations and force flags for `git push` lines, one evidence
+ * snippet per offending operand. Grammar (git-push(1)): `git push [<options>]
  * [<repository> [<refspec>...]]` — flags are skipped (value-taking options
  * consume the following token), the first non-flag token is the repository,
- * and every remaining non-flag token is a refspec whose destination side is
- * checked.
- * Tokenizing stops at anything that does not look like a command word, so a
- * command followed by prose ("... origin feature, then update main docs")
- * cannot turn prose into a refspec.
+ * and every remaining non-flag token is a refspec. Because classification is
+ * operand-based, a push-option value can never masquerade as a dry-run or
+ * force flag (`git push -o -n origin main --force` is a real forced update).
+ * Tokenizing stops at anything that does not look like a command word or at
+ * a clause connector, so trailing prose ("... origin feature, then update
+ * main docs") cannot turn prose into a refspec.
  */
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
 /** Push options that consume the following token as a value. */
-const VALUE_OPTION = /^(?:-o|--push-option|--repo)$/;
+const PUSH_VALUE_OPTION = /^(?:-o|--push-option|--repo)$/;
+const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
+const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
+/** Words that typically begin trailing prose after a command. */
+const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
+
+interface ParsedPush {
+  /** Genuine flags — option values never land here. */
+  flags: string[];
+  /** First non-flag operand, or null. */
+  repo: string | null;
+  /** Refspecs: every non-flag operand after the repository. */
+  refspecs: string[];
+}
+
+function parsePushCommand(segment: string): ParsedPush | null {
+  const push = /\bgit\s+push\b/.exec(segment);
+  if (!push) return null;
+  const tokens = segment.slice((push.index ?? 0) + push[0].length).split(/\s+/).filter(Boolean);
+  const parsed: ParsedPush = { flags: [], repo: null, refspecs: [] };
+  let i = 0;
+  while (i < tokens.length) {
+    const token = tokens[i];
+    i += 1;
+    if (!COMMAND_WORD.test(token)) break; // prose begins here
+    if (token.startsWith("-")) {
+      if (PUSH_VALUE_OPTION.test(token)) i += 1; // consume the option value
+      else parsed.flags.push(token);
+      continue;
+    }
+    if (CLAUSE_CONNECTOR.test(token)) break; // prose begins here
+    if (parsed.repo === null) parsed.repo = token;
+    else parsed.refspecs.push(token);
+  }
+  return parsed;
+}
+
+function isPushDryRun(parsed: ParsedPush): boolean {
+  return parsed.flags.some((flag) => PUSH_DRY_RUN_FLAG.test(flag));
+}
+
+/** Force/mirror pushes and `+`-prefixed refspecs, as evidence snippets. */
+function collectPushForceOps(line: string): string[] {
+  const hits: string[] = [];
+  // Semicolons and &&/|| separate commands; each segment is parsed alone.
+  for (const segment of line.split(/;|&&|\|\|/)) {
+    const parsed = parsePushCommand(segment);
+    if (!parsed || isPushDryRun(parsed)) continue;
+    for (const flag of parsed.flags) {
+      if (PUSH_FORCE_FLAG.test(flag)) {
+        hits.push(flag);
+        break;
+      }
+    }
+    for (const refspec of parsed.refspecs) {
+      if (refspec.startsWith("+")) {
+        hits.push(refspec);
+        break;
+      }
+    }
+  }
+  return hits;
+}
 
 function collectProtectedPushDests(line: string): string[] {
   const hits: string[] = [];
-  // Semicolons and &&/|| separate commands; each segment is tokenized alone.
   for (const segment of line.split(/;|&&|\|\|/)) {
-    const push = /\bgit\s+push\b/.exec(segment);
-    if (!push) continue;
-    const tokens = segment.slice((push.index ?? 0) + push[0].length).split(/\s+/);
-    let seenRepo = false;
-    let i = 0;
-    while (i < tokens.length) {
-      const token = tokens[i];
-      i += 1;
-      if (token.length === 0) continue;
-      if (!COMMAND_WORD.test(token)) break; // prose begins here
-      if (token.startsWith("-")) {
-        // `-o main` consumes the next token as a value; `--push-option=x`
-        // forms carry their own.
-        if (VALUE_OPTION.test(token)) i += 1;
-        continue;
-      }
-      if (!seenRepo) {
-        seenRepo = true; // first non-flag operand is the repository
-        continue;
-      }
-      // Refspec: [+][src:]dst — destination is the side after the last colon,
-      // with an optional refs/heads/ prefix.
-      const bare = token.replace(/^\+/, "");
+    const parsed = parsePushCommand(segment);
+    if (!parsed || isPushDryRun(parsed)) continue;
+    for (const refspec of parsed.refspecs) {
+      // Refspec: [+][src:]dst — destination is the side after the last
+      // colon, with an optional refs/heads/ prefix.
+      const bare = refspec.replace(/^\+/, "");
       const dest = (bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare).replace(
         /^refs\/heads\//,
         "",
       );
-      if (PROTECTED_BRANCH_NAME.test(dest)) hits.push(token);
+      if (PROTECTED_BRANCH_NAME.test(dest)) hits.push(refspec);
     }
   }
   return hits;
@@ -193,12 +238,19 @@ const BRIEF_RULES: BriefRule[] = [
     id: "lookout.brief.force-op",
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
+    // Non-push operations only: command-shaped pushes are classified by the
+    // operand parser (collect below), because a bare regex cannot tell a
+    // force flag from a push-option value (`git push -o -f origin feature`).
     pattern:
-      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease(?![\w-])|--force(?![\w-])|-f(?![\w-]))|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+push\b[^;\n]*\s--mirror(?![\w-])|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
+      /\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
     advice: GATE_ADVICE,
-    // --dry-run (and clean's -n) cannot perform the operation; flagging it
-    // violates the high-confidence contract.
-    excludedPattern: /\bgit\b[^;\n]*(?:--dry-run|\s-n(?![\w-]))/i,
+    // Dry runs cannot perform the operation they name. `-n` only counts for
+    // git clean here — a push's `-n` may be a push-option value, which the
+    // operand parser resolves.
+    excludedPattern: /\bgit\s+clean\b[^;\n]*\s-n(?![\w-])|\bgit\b[^;\n]*--dry-run\b/i,
+    // Command-shaped pushes: force flags, --mirror, and `+`-prefixed
+    // refspecs, with push-option values and dry runs handled by the parser.
+    collect: collectPushForceOps,
   },
   {
     id: "lookout.brief.db-destructive",
@@ -217,8 +269,10 @@ const BRIEF_RULES: BriefRule[] = [
     id: "lookout.brief.test-deletion",
     title: "Briefing asks to delete, skip, or disable tests",
     severity: "high",
+    // Covers plural "tests", "test files/suites/cases" phrases, and direct
+    // conventional test paths (src/auth.test.ts, tests/auth.spec.ts).
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -232,11 +286,9 @@ const BRIEF_RULES: BriefRule[] = [
     pattern:
       /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b/gi,
     advice: GATE_ADVICE,
-    // A dry-run push names the protected branch but cannot move it.
-    excludedPattern: /\bgit\b[^;\n]*(?:--dry-run|\s-n(?![\w-]))/i,
-    // The regex covers the common shapes; a push may carry several refspecs
-    // (`git push origin feature main` updates both), so every non-flag
-    // operand after the repository is inspected for a protected destination.
+    // A push may carry several refspecs (`git push origin feature main`
+    // updates both), so every operand-parsed refspec destination is
+    // inspected; dry-run pushes are silenced inside the parser.
     collect: collectProtectedPushDests,
   },
   {

@@ -59,7 +59,8 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(report.findings)).toContain("lookout.brief.force-op");
     const finding = report.findings.find((f) => f.id === "lookout.brief.force-op");
     expect(finding?.severity).toBe("high");
-    expect(finding?.evidence).toContain("git push --force");
+    // evidence is the exact matched operand
+    expect(finding?.evidence).toContain("--force");
     expect(report.summary.verdict).toBe("review-recommended");
   });
 
@@ -205,6 +206,36 @@ describe("scanLookout: briefing rules", () => {
     // ...but the operand after the consumed value is still inspected
     const after = scanLookout({ ...base(), brief: "git push -o ci.skip origin feature main" });
     expect(ids(after.findings)).toContain("lookout.brief.protected-branch");
+  });
+
+  it("does not treat push-option values as dry-run or force flags", () => {
+    // -n is the -o value here: this is a real forced update
+    const dryRunValue = scanLookout({ ...base(), brief: "git push -o -n origin main --force" });
+    expect(ids(dryRunValue.findings)).toContain("lookout.brief.force-op");
+    // -f is the -o value here: the command is rejected by git, not forced
+    const forceValue = scanLookout({ ...base(), brief: "git push -o -f origin feature" });
+    expect(ids(forceValue.findings)).not.toContain("lookout.brief.force-op");
+    expect(ids(forceValue.findings)).not.toContain("lookout.brief.protected-branch");
+  });
+
+  it("stops tokenizing at clause connectors, not just punctuation", () => {
+    const report = scanLookout({ ...base(), brief: "git push origin feature then update main docs" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
+  });
+
+  it("flags direct conventional test paths", () => {
+    for (const brief of [
+      "Delete src/auth.test.ts",
+      "remove tests/auth.spec.ts",
+      "delete the tests directory",
+      "skip src/auth.test.ts for now",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.test-deletion");
+    }
+    // non-deletion work on a test file stays silent
+    const report = scanLookout({ ...base(), brief: "refactor the helpers in src/auth.test.ts" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.test-deletion");
   });
 
   it("honors explicit negation in briefings", () => {
