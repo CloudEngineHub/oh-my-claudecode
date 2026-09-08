@@ -208,6 +208,47 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(after.findings)).toContain("lookout.brief.protected-branch");
   });
 
+  it("recognizes parameterized and bundled force flags", () => {
+    for (const brief of [
+      "git push --force-with-lease=feature:abc123 origin feature",
+      "git push -fu origin feature",
+      "git push -fn origin feature", // bundled force AND dry-run: dry run wins
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      const forceFlagged = ids(report.findings).includes("lookout.brief.force-op");
+      if (brief.includes("-fn")) {
+        expect(forceFlagged).toBe(false); // dry run cannot perform the push
+      } else {
+        expect(forceFlagged).toBe(true);
+      }
+    }
+  });
+
+  it("recognizes mixed recursive-force rm spellings", () => {
+    for (const brief of [
+      "rm -R -f dir",
+      "rm --recursive -f dir",
+      "rm -r --force dir",
+      "rm -f --recursive dir",
+      "rm -RF dir",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+  });
+
+  it("tokenizes quoted and Markdown-formatted refspecs", () => {
+    for (const brief of [
+      "git push origin 'main'",
+      'git push origin "main"',
+      "run `git push origin main` next",
+      "git push origin 'refs/heads/main'",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
+  });
+
   it("does not treat push-option values as dry-run or force flags", () => {
     // -n is the -o value here: this is a real forced update
     const dryRunValue = scanLookout({ ...base(), brief: "git push -o -n origin main --force" });
@@ -388,11 +429,22 @@ describe("scanLookout: workspace rules", () => {
 
   it("does not flag environment templates as secrets", () => {
     const dir = makeRepo();
-    writeFileSync(join(dir, ".env.example"), "API_KEY=placeholder\n");
-    git(dir, ["add", ".env.example"]);
-    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env template"]);
+    for (const name of [".env.example", ".env.local.example", ".env.production.template", ".env.dist"]) {
+      writeFileSync(join(dir, name), "API_KEY=placeholder\n");
+      git(dir, ["add", name]);
+    }
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env templates"]);
     const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(ids(report.findings)).not.toContain("lookout.ws.secrets-present");
+  });
+
+  it("still flags environment-specific files without a template suffix", () => {
+    const dir = makeRepo();
+    writeFileSync(join(dir, ".env.local"), "SECRET=1\n");
+    git(dir, ["add", ".env.local"]);
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(ids(report.findings)).toContain("lookout.ws.secrets-present");
   });
 
   it("fails closed with exit code 2 for a nonexistent repository path", () => {

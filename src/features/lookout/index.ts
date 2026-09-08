@@ -148,6 +148,24 @@ const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
 const PUSH_VALUE_OPTION = /^(?:-o|--push-option|--repo)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
+const BUNDLED_SHORT_FLAGS = /^-[a-z]+$/i;
+
+/**
+ * Force/mirror classification for one flag token, including parameterized
+ * long forms (--force-with-lease=<refname>:<expect>) and bundled short
+ * options (-fu is -f -u).
+ */
+function isPushForceFlag(flag: string): boolean {
+  if (PUSH_FORCE_FLAG.test(flag)) return true;
+  if (/^--force(?:-with-lease)?=/.test(flag)) return true;
+  return BUNDLED_SHORT_FLAGS.test(flag) && /f/i.test(flag.slice(1));
+}
+
+function isPushDryRunFlag(flag: string): boolean {
+  if (PUSH_DRY_RUN_FLAG.test(flag)) return true;
+  // Bundled -n (e.g. -nu, -nf) is still a dry run.
+  return BUNDLED_SHORT_FLAGS.test(flag) && /n/i.test(flag.slice(1));
+}
 /** Words that typically begin trailing prose after a command. */
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
 
@@ -167,9 +185,13 @@ function parsePushCommand(segment: string): ParsedPush | null {
   const parsed: ParsedPush = { flags: [], repo: null, refspecs: [] };
   let i = 0;
   while (i < tokens.length) {
-    const token = tokens[i];
+    // Shell/Markdown quoting travels with the operand (`git push origin
+    // 'main'`, backtick-wrapped commands); strip leading/trailing quote
+    // characters. A quote character inside the word (prose like "don't")
+    // still fails the command-word test below.
+    const token = tokens[i].replace(/^['"`]+|['"`]+$/g, "");
     i += 1;
-    if (!COMMAND_WORD.test(token)) break; // prose begins here
+    if (token.length === 0 || !COMMAND_WORD.test(token)) break; // prose begins here
     if (token.startsWith("-")) {
       if (PUSH_VALUE_OPTION.test(token)) i += 1; // consume the option value
       else parsed.flags.push(token);
@@ -183,7 +205,8 @@ function parsePushCommand(segment: string): ParsedPush | null {
 }
 
 function isPushDryRun(parsed: ParsedPush): boolean {
-  return parsed.flags.some((flag) => PUSH_DRY_RUN_FLAG.test(flag));
+  // A bundled -nf is a dry run first: git would not perform the push.
+  return parsed.flags.some((flag) => isPushDryRunFlag(flag));
 }
 
 /** Force/mirror pushes and `+`-prefixed refspecs, as evidence snippets. */
@@ -194,7 +217,7 @@ function collectPushForceOps(line: string): string[] {
     const parsed = parsePushCommand(segment);
     if (!parsed || isPushDryRun(parsed)) continue;
     for (const flag of parsed.flags) {
-      if (PUSH_FORCE_FLAG.test(flag)) {
+      if (isPushForceFlag(flag)) {
         hits.push(flag);
         break;
       }
@@ -242,7 +265,7 @@ const BRIEF_RULES: BriefRule[] = [
     // operand parser (collect below), because a bare regex cannot tell a
     // force flag from a push-option value (`git push -o -f origin feature`).
     pattern:
-      /\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
+      /\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s(?:-r|-R|--recursive)\b[^;\n]*\s(?:-f|--force)\b|\brm\b[^;\n]*\s(?:-f|--force)\b[^;\n]*\s(?:-r|-R|--recursive)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
     advice: GATE_ADVICE,
     // Dry runs cannot perform the operation they name. `-n` only counts for
     // git clean here — a push's `-n` may be a push-option value, which the
@@ -296,7 +319,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing touches secret material (.env, keys, credentials)",
     severity: "medium",
     pattern:
-      /\.env(?!\.(?:example|sample|template|dist))\b|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
+      /\.env(?!\.(?:[\w-]+\.)?(?:example|sample|template|dist)\b)|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
     advice:
       "Secret surfaces are easy to leak and hard to un-leak. If the task " +
       "really needs to read or change them, " + GATE_ADVICE,
@@ -424,13 +447,15 @@ function repoRoot(repoArg: string): string | null {
 }
 
 /**
- * Tracked secret-looking files. Environment *templates* (.env.example and
- * friends) hold placeholders by convention, not secrets, so they are
- * excluded — lookout has no ignore mechanism, and a template would be a
- * permanent false positive in every repo that tracks one.
+ * Tracked secret-looking files. Environment *templates* (.env.example,
+ * .env.local.example, .env.production.template, ...) hold placeholders by
+ * convention, not secrets, so they are excluded — lookout has no ignore
+ * mechanism, and a template would be a permanent false positive in every
+ * repo that tracks one. Environment-specific .env files without a template
+ * suffix (.env.local, .env.production) are still flagged.
  */
 const SECRETS_PATH =
-  /(?:^|\/)\.env(?!\.(?:example|sample|template|dist)\b)(?:\..+)?$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
+  /(?:^|\/)\.env(?!\.(?:[\w-]+\.)?(?:example|sample|template|dist)\b)(?:\..+)?$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
 
 function scanWorkspace(root: string): LookoutFinding[] {
   const findings: LookoutFinding[] = [];
