@@ -113,7 +113,7 @@ export function repoRoot(repoArg: string): string | null {
     }
     throw new LookoutError(`git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`, 2);
   }
-  return top.replace(/\r?\n$/, "");
+  return top.endsWith("\n") ? top.slice(0, -1) : top;
 }
 
 export function scanWorkspace(

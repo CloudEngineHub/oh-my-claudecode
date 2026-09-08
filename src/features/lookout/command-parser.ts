@@ -5,9 +5,9 @@ const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
 /** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
-const PUSH_OPTION_VALUE = /^(?:-o|--push-option|--receive-pack|--exec|--no-exec)$/;
+const PUSH_OPTION_VALUE = /^(?:-o|--push-option|--receive-pack|--exec)$/;
 const PUSH_REPO_OPTION = /^--repo$/;
-const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--exec=.+|--no-exec=.+)$/;
+const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--exec=.+)$/;
 const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
@@ -89,7 +89,10 @@ function tokenizeCommand(segment: string): CommandToken[] {
         index += 1;
         continue;
       }
-      if ((character === "'" || character === '"') && raw.length === 0) {
+      if (
+        (character === '"' || raw.length === 0 || segment.indexOf(character, index + 1) >= 0) &&
+        (character === "'" || character === '"')
+      ) {
         quote = character;
         raw += character;
         index += 1;
@@ -198,7 +201,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
     const wrapper = tokens[prefixIndex]?.value.toLowerCase();
-    if (index === prefixIndex && /^(?:run|sudo|env|command)$/.test(wrapper ?? "")) {
+    if (index === prefixIndex && /^(?:run|sudo|env|command|if|while|until)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
@@ -289,7 +292,7 @@ function parsePushCommand(segment: string): ParsedPush | null {
     const token = tokens[i];
     const value = token.value;
     i += 1;
-    if (/^(?:-h|--help|-v|--version)$/.test(value)) return null;
+    if (/^(?:-h|--help|--version)$/.test(value)) return null;
     if (value.length === 0 || (!COMMAND_WORD.test(value) && !token.quoted)) break; // prose begins here
     if (value.startsWith("-")) {
       if (PUSH_REPO_OPTION.test(value)) {
@@ -334,13 +337,22 @@ function collectPushForceOps(line: string): CollectedMatch[] {
     const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
     let forceSnippet: CollectedMatch | null = null;
+    let leaseSnippet: CollectedMatch | null = null;
+    let mirrorSnippet: CollectedMatch | null = null;
     for (const flag of parsed.flags) {
+      const match = { snippet: flag.snippet, index: clause.index + flag.index };
       if (flag.snippet === "--no-force") forceSnippet = null;
+      else if (flag.snippet === "--no-force-with-lease") leaseSnippet = null;
+      else if (flag.snippet === "--no-mirror") mirrorSnippet = null;
       else if (isPushForceFlag(flag.snippet)) {
-        forceSnippet = { snippet: flag.snippet, index: clause.index + flag.index };
+        if (/^--force-with-lease(?:=|$)/.test(flag.snippet)) leaseSnippet = match;
+        else if (flag.snippet === "--mirror") mirrorSnippet = match;
+        else forceSnippet = match;
       }
     }
     if (forceSnippet) addMatch(hits, forceSnippet.snippet, forceSnippet.index);
+    if (leaseSnippet) addMatch(hits, leaseSnippet.snippet, leaseSnippet.index);
+    if (mirrorSnippet) addMatch(hits, mirrorSnippet.snippet, mirrorSnippet.index);
     for (const refspec of parsed.refspecs) {
       if (refspec.snippet.startsWith("+")) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
@@ -365,7 +377,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
     for (const token of tokens.slice(rmIndex + 1)) {
       if (token.value === "--") break;
       if (token.value === "rm" || token.value.endsWith("/rm")) break;
-      if (/^(?:-h|--help|-v|--version)$/.test(token.value)) {
+      if (/^(?:-h|--help|--version)$/.test(token.value)) {
         help = true;
         break;
       }
@@ -394,6 +406,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
 interface GitSubcommand {
   gitIndex: number;
   commandIndex: number;
+  cleanRequireForceDisabled: boolean;
 }
 
 function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcommand | null {
@@ -401,14 +414,18 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
   if (gitIndex < 0) return null;
 
   let index = gitIndex + 1;
+  let cleanRequireForceDisabled = false;
   while (index < tokens.length) {
     const value = tokens[index].value;
-    if (value === command) return { gitIndex, commandIndex: index };
+    if (value === command) return { gitIndex, commandIndex: index, cleanRequireForceDisabled };
     if (
       value === "--" ||
       /^(?:-h|--help|-v|--version|--html-path|--man-path|--info-path)$/.test(value)
     ) return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
+      if (value === "-c" && tokens[index + 1]?.value === "clean.requireForce=false") {
+        cleanRequireForceDisabled = true;
+      }
       index += 2;
       continue;
     }
@@ -450,7 +467,7 @@ function collectGitForceOps(line: string): CollectedMatch[] {
     for (let index = 0; index < cleanArgs.length; index += 1) {
       const value = cleanArgs[index].value;
       if (value === "--") break;
-      if (/^(?:-h|--help|-v|--version)$/.test(value)) {
+      if (/^(?:-h|--help|--version)$/.test(value)) {
         help = true;
         break;
       }
@@ -464,7 +481,13 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       if (value === "--no-dry-run") dryRun = false;
       else if (value === "--dry-run" || isBundledFlag(value, "n")) dryRun = true;
     }
-    if (!help && force && !dryRun) addMatch(hits, "git clean", clause.index + tokens[clean.gitIndex].index);
+    if (!help && !dryRun && (force || clean.cleanRequireForceDisabled)) {
+      addMatch(
+        hits,
+        clean.cleanRequireForceDisabled && !force ? "git clean (clean.requireForce=false)" : "git clean",
+        clause.index + tokens[clean.gitIndex].index,
+      );
+    }
   }
   return hits;
 }
@@ -478,7 +501,12 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
   for (const clause of splitCommandClauses(line)) {
     const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
-    for (const refspec of parsed.refspecs) {
+    for (let refspecIndex = 0; refspecIndex < parsed.refspecs.length; refspecIndex += 1) {
+      const refspec = parsed.refspecs[refspecIndex];
+      if (refspec.snippet === "tag" && parsed.refspecs[refspecIndex + 1]) {
+        refspecIndex += 1;
+        continue;
+      }
       const bare = refspec.snippet.replace(/^\+/, "");
       const colon = bare.lastIndexOf(":");
       const source = colon >= 0 ? bare.slice(0, colon) : null;

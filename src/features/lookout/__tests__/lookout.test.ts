@@ -169,6 +169,8 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(tagSource.findings)).not.toContain("lookout.brief.protected-branch");
     const explicitHeads = scanLookout({ ...base(), brief: "git push origin refs/tags/v1:refs/heads/main" });
     expect(ids(explicitHeads.findings)).toContain("lookout.brief.protected-branch");
+    const tagShorthand = scanLookout({ ...base(), brief: "git push origin tag main" });
+    expect(ids(tagShorthand.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("flags forced cleans without -d and recognizes dry-run exclusions", () => {
@@ -384,7 +386,9 @@ describe("scanLookout: briefing rules", () => {
       "env --ignore-environment git push --force origin feature",
       "env -u FOO git push --force origin feature",
       "env -C /repo git push --force origin feature",
+      "FOO=\"a b\" git push --force origin feature",
       "command git push --force origin feature",
+      "if git push --force origin feature; then continue",
       "Please run git push --force origin feature",
       "git push \"/tmp/remote repo.git\" --force HEAD:main",
       "git status | git push --force origin feature",
@@ -393,9 +397,14 @@ describe("scanLookout: briefing rules", () => {
       "git push -o one\\ and\\ two --force origin feature",
       "git push --receive-pack evil --force origin feature",
       "git push --exec=evil --force origin feature",
+      "git push --no-exec origin main",
       "git push -4f origin feature",
       "git push -n --no-dry-run --force origin feature",
+      "git push --force-with-lease --no-force origin feature",
       "git clean -n --no-dry-run -f",
+      "git -c clean.requireForce=false clean",
+      "rm -v -rf build",
+      "git push -v --force origin feature",
       "> git push --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });

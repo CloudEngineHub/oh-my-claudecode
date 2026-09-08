@@ -28,7 +28,7 @@
  * contract can later be shared by both surfaces.
  */
 
-import { readFileSync } from "fs";
+import { lstatSync, readFileSync } from "fs";
 import { isAbsolute, join, resolve } from "path";
 import { LookoutError } from "./types.js";
 import type {
@@ -58,6 +58,7 @@ const GATE_ADVICE =
 const CHECKPOINT_ADVICE =
   "Snapshot the workspace first: `omc checkpoint create --label \"before <task>\"` " +
   "so any bad outcome is one `omc checkpoint rollback <id>` away from undone.";
+const MAX_BRIEF_BYTES = 1024 * 1024;
 
 interface BriefRule {
   id: string;
@@ -359,6 +360,9 @@ export function resolveBriefArg(briefArg: string): { text: string; source: Looko
   const path = isAbsolute(briefArg.slice(1)) ? briefArg.slice(1) : join(resolve(process.cwd()), briefArg.slice(1));
   let text: string;
   try {
+    const stats = lstatSync(path);
+    if (!stats.isFile()) throw new Error("briefing path is not a regular file");
+    if (stats.size > MAX_BRIEF_BYTES) throw new Error(`briefing exceeds ${MAX_BRIEF_BYTES} bytes`);
     text = readFileSync(path, "utf8");
   } catch (error) {
     throw new LookoutError(`Cannot read briefing file ${path}: ${error instanceof Error ? error.message : String(error)}`, 2);
