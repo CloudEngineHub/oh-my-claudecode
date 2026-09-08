@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "a9315e8ffda4ae84628b0b7284cf007d0da3c1ff",
-    "sourceSha256": "16f054f2a2a558db28257a1ff7095ac785100d0e6f9ea9bd4a948a9be99aeb1d",
+    "head": "f39b6464e0a994350ac9ba0df662615a42d71522",
+    "sourceSha256": "f41db943383387a56e2fb35a877ade08278b910f24a57f07168811834c761ffa",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "a9315e8ffda4ae84628b0b7284cf007d0da3c1ff",
-  "sourceSha256": "16f054f2a2a558db28257a1ff7095ac785100d0e6f9ea9bd4a948a9be99aeb1d",
+  "head": "f39b6464e0a994350ac9ba0df662615a42d71522",
+  "sourceSha256": "f41db943383387a56e2fb35a877ade08278b910f24a57f07168811834c761ffa",
   "counts": {
     "public": {
       "skills": 38,
@@ -28,8 +28,8 @@
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1338,
-      "total": 1359
+      "srcFiles": 1339,
+      "total": 1360
     },
     "generated": {
       "distFiles": 4986,
@@ -35551,6 +35551,11 @@
         "path": "src/cli/__tests__/launch.test.ts"
       },
       {
+        "id": "src/cli/__tests__/lookout-cli.test.ts",
+        "kind": "src",
+        "path": "src/cli/__tests__/lookout-cli.test.ts"
+      },
+      {
         "id": "src/cli/__tests__/plugin-dir-capture.test.ts",
         "kind": "src",
         "path": "src/cli/__tests__/plugin-dir-capture.test.ts"
@@ -50930,6 +50935,31 @@
       {
         "from": "src/cli/__tests__/launch.test.ts",
         "to": "src/cli/tmux-utils.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "src/cli/lookout.ts",
         "kind": "imports"
       },
       {
@@ -77789,12 +77819,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6906,
-      "edgeCount": 7385,
-      "importEdgeCount": 6081,
+      "nodeCount": 6907,
+      "edgeCount": 7390,
+      "importEdgeCount": 6086,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "1a528b2c45ed4ac6825d1463e188c4284d38acf1fe6954bb33499d1ffa8424d1",
-  "manifestSha256": "e800e9d4e90a1cfd7dafdbd5f64da1918b24a032cb0565084bcc27810a89f073"
+  "inventorySha256": "1d3c3cab13b77a9faacc7d9427cd1a3277f56de944cc7eec354de5481777a3b8",
+  "manifestSha256": "ecced08f37dac847a818ea122322433cf1a057a34dfbb91ff703a0e964fbe474"
 }
