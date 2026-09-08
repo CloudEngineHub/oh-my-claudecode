@@ -195,6 +195,18 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(clean.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
+  it("parses operands before classifying protected destinations", () => {
+    // a remote literally named main is a repository operand, not a refspec
+    const remote = scanLookout({ ...base(), brief: "git push main" });
+    expect(ids(remote.findings)).not.toContain("lookout.brief.protected-branch");
+    // value-taking options consume the next token (-o main is a push option)
+    const optionValue = scanLookout({ ...base(), brief: "git push -o main origin feature" });
+    expect(ids(optionValue.findings)).not.toContain("lookout.brief.protected-branch");
+    // ...but the operand after the consumed value is still inspected
+    const after = scanLookout({ ...base(), brief: "git push -o ci.skip origin feature main" });
+    expect(ids(after.findings)).toContain("lookout.brief.protected-branch");
+  });
+
   it("honors explicit negation in briefings", () => {
     for (const brief of [
       "Do not skip tests under any circumstances",
@@ -368,6 +380,30 @@ describe("scanLookout: workspace rules", () => {
     const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(report.repo).toBeNull();
     expect(report.findings).toEqual([]);
+  });
+
+  it("fails closed on a broken repository instead of reporting clear", () => {
+    // A .git file pointing at a missing gitdir makes git emit the same
+    // "not a git repository" stderr as a plain directory — but a repository
+    // exists here, so silence would hide an unreadable state.
+    const dir = mkdtempSync(join(tmpdir(), "omc-lookout-broken-"));
+    tempDirs.push(dir);
+    writeFileSync(join(dir, ".git"), "gitdir: /nonexistent/omc-lookout-gitdir\n");
+    try {
+      scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(LookoutError);
+      expect((error as LookoutError).exitCode).toBe(2);
+    }
+  });
+
+  it("overrides status.showUntrackedFiles=no when listing workspace changes", () => {
+    const dir = makeRepo();
+    git(dir, ["config", "status.showUntrackedFiles", "no"]);
+    writeFileSync(join(dir, "untracked.txt"), "pending\n");
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(ids(report.findings)).toContain("lookout.ws.dirty-worktree");
   });
 
   it("ignores inherited GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE when selecting --repo", () => {

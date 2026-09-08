@@ -29,8 +29,8 @@
  */
 
 import { execFileSync } from "child_process";
-import { readFileSync } from "fs";
-import { isAbsolute, join, resolve } from "path";
+import { existsSync, readFileSync } from "fs";
+import { dirname, isAbsolute, join, resolve } from "path";
 
 const GIT_TIMEOUT_MS = 30_000;
 /**
@@ -132,15 +132,19 @@ function isNegated(line: string, matchIndex: number): boolean {
 
 /**
  * Protected destinations for `git push` lines, one evidence snippet per
- * offending refspec. Grammar (git-push(1)): `git push [<repo>] [<refspec>...]
- * — flags are skipped, the first non-flag token is the repository, and every
- * remaining non-flag token is a refspec whose destination side is checked.
+ * offending refspec. Grammar (git-push(1)): `git push [<options>]
+ * [<repository> [<refspec>...]]` — flags are skipped (value-taking options
+ * consume the following token), the first non-flag token is the repository,
+ * and every remaining non-flag token is a refspec whose destination side is
+ * checked.
  * Tokenizing stops at anything that does not look like a command word, so a
  * command followed by prose ("... origin feature, then update main docs")
  * cannot turn prose into a refspec.
  */
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
+/** Push options that consume the following token as a value. */
+const VALUE_OPTION = /^(?:-o|--push-option|--repo)$/;
 
 function collectProtectedPushDests(line: string): string[] {
   const hits: string[] = [];
@@ -150,10 +154,18 @@ function collectProtectedPushDests(line: string): string[] {
     if (!push) continue;
     const tokens = segment.slice((push.index ?? 0) + push[0].length).split(/\s+/);
     let seenRepo = false;
-    for (const token of tokens) {
+    let i = 0;
+    while (i < tokens.length) {
+      const token = tokens[i];
+      i += 1;
       if (token.length === 0) continue;
       if (!COMMAND_WORD.test(token)) break; // prose begins here
-      if (token.startsWith("-")) continue; // flag (or flag value pairs are rare; see below)
+      if (token.startsWith("-")) {
+        // `-o main` consumes the next token as a value; `--push-option=x`
+        // forms carry their own.
+        if (VALUE_OPTION.test(token)) i += 1;
+        continue;
+      }
       if (!seenRepo) {
         seenRepo = true; // first non-flag operand is the repository
         continue;
@@ -213,8 +225,12 @@ const BRIEF_RULES: BriefRule[] = [
     id: "lookout.brief.protected-branch",
     title: "Briefing targets a protected branch directly",
     severity: "high",
+    // Prose forms only — command-shaped pushes (`git push ...`) are handled
+    // by the tokenizer below, which parses operands instead of guessing at
+    // token roles (a remote can be named main; value-taking options consume
+    // the next token).
     pattern:
-      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+--?\S+){0,2}\s+(?:\S+\s+)?(?:[\w./+-]*:)?(?:refs\/heads\/)?(?:main|master|release|production|develop)(?![\w:-])(?:\/[\w./-]+)?(?=[\s;]|$)/gi,
+      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b/gi,
     advice: GATE_ADVICE,
     // A dry-run push names the protected branch but cannot move it.
     excludedPattern: /\bgit\b[^;\n]*(?:--dry-run|\s-n(?![\w-]))/i,
@@ -296,9 +312,28 @@ function runGit(args: string[], cwd: string): string {
 }
 
 /**
- * Returns the repository root, or null when the directory is simply not a
- * git repository. Any other git failure (missing binary, unreadable path,
- * timeout) is a scan error and fails closed with exit code 2 instead of
+ * Whether the directory (or any ancestor) carries a `.git` entry. Used to
+ * distinguish a plain non-repository from a *broken* one: a `.git` file
+ * pointing at a missing gitdir makes git fail with the same "not a git
+ * repository" stderr as an ordinary directory, but reporting that as a
+ * clear scan would hide the fact that a repository exists here and could
+ * not be read.
+ */
+function hasGitEntry(dir: string): boolean {
+  let current = resolve(dir);
+  for (;;) {
+    if (existsSync(join(current, ".git"))) return true;
+    const parent = dirname(current);
+    if (parent === current) return false;
+    current = parent;
+  }
+}
+
+/**
+ * Returns the repository root, or null only when there is genuinely no
+ * repository (no `.git` entry here or in any ancestor). Any other git
+ * failure — including a broken repository, whose stderr contains the same
+ * "not a git repository" text — fails closed with exit code 2 instead of
  * masquerading as a finding-free scan.
  */
 function repoRoot(repoArg: string): string | null {
@@ -316,7 +351,15 @@ function repoRoot(repoArg: string): string | null {
   } catch (error) {
     const failure = error as GitFailure;
     const stderr = String(failure.stderr ?? "");
-    if (/not a git repository/i.test(stderr)) return null;
+    if (/not a git repository/i.test(stderr)) {
+      if (hasGitEntry(repoArg)) {
+        throw new LookoutError(
+          `Cannot scan "${repoArg}": a repository exists here but git could not read it (${stderr.trim()}).`,
+          2,
+        );
+      }
+      return null;
+    }
     if (failure.code === "ENOENT") {
       throw new LookoutError(
         `Cannot scan "${repoArg}": the directory does not exist (or the git executable is unavailable).`,
@@ -362,7 +405,9 @@ function scanWorkspace(root: string): LookoutFinding[] {
     }
   }
 
-  const status = runGit(["status", "--porcelain"], root);
+  // -uall overrides a repository-local status.showUntrackedFiles=no, which
+  // would otherwise hide untracked files and report a clean workspace.
+  const status = runGit(["status", "--porcelain", "-uall"], root);
   if (status && status.trim().length > 0) {
     const lines = status.trim().split("\n").slice(0, 5);
     findings.push({
