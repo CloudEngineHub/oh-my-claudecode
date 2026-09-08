@@ -9,7 +9,7 @@
  */
 
 import { execFileSync } from "child_process";
-import { existsSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -111,6 +111,8 @@ describe("scanLookout: briefing rules", () => {
       'DELETE FROM "production_users";',
       "delete from users where inactive = true;",
       "drop table users cascade;",
+      "DELETE\nFROM users;",
+      "DROP\nTABLE users;",
     ]) {
       const contextual = scanLookout({ ...base(), brief });
       expect(ids(contextual.findings)).toContain("lookout.brief.db-destructive");
@@ -159,6 +161,10 @@ describe("scanLookout: briefing rules", () => {
     // inverse of the existing HEAD:main case still holds
     const report2 = scanLookout({ ...base(), brief: "git push origin HEAD:main" });
     expect(ids(report2.findings)).toContain("lookout.brief.protected-branch");
+    const tagSource = scanLookout({ ...base(), brief: "git push origin refs/tags/v1:main" });
+    expect(ids(tagSource.findings)).not.toContain("lookout.brief.protected-branch");
+    const explicitHeads = scanLookout({ ...base(), brief: "git push origin refs/tags/v1:refs/heads/main" });
+    expect(ids(explicitHeads.findings)).toContain("lookout.brief.protected-branch");
   });
 
   it("flags forced cleans without -d and recognizes dry-run exclusions", () => {
@@ -187,6 +193,8 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(mixedClauses.findings)).toContain("lookout.brief.force-op");
     const excludeValue = scanLookout({ ...base(), brief: "git clean -e -n -f" });
     expect(ids(excludeValue.findings)).toContain("lookout.brief.force-op");
+    const pathspec = scanLookout({ ...base(), brief: "git clean -f -- -n" });
+    expect(ids(pathspec.findings)).toContain("lookout.brief.force-op");
     for (const brief of ["git -C /repo reset --hard HEAD~1", "git reset -q --hard HEAD~1"]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
@@ -321,6 +329,11 @@ describe("scanLookout: briefing rules", () => {
     const forceValue = scanLookout({ ...base(), brief: "git push -o -f origin feature" });
     expect(ids(forceValue.findings)).not.toContain("lookout.brief.force-op");
     expect(ids(forceValue.findings)).not.toContain("lookout.brief.protected-branch");
+    const quotedValue = scanLookout({
+      ...base(),
+      brief: "git push -o 'one and two' --force origin feature",
+    });
+    expect(ids(quotedValue.findings)).toContain("lookout.brief.force-op");
   });
 
   it("stops tokenizing at clause connectors, not just punctuation", () => {
@@ -519,6 +532,19 @@ describe("scanLookout: workspace rules", () => {
     const finding = report.findings.find((f) => f.id === "lookout.ws.secrets-present");
     expect(finding?.severity).toBe("medium");
     expect(finding?.evidence).toContain(".env");
+  });
+
+  it("flags tracked secret paths under non-ASCII directories", () => {
+    const dir = makeRepo();
+    const nested = join(dir, "秘密");
+    mkdirSync(nested);
+    writeFileSync(join(nested, ".env"), "SECRET=1\n");
+    git(dir, ["add", "."]);
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add nested env"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(report.findings.find((finding) => finding.id === "lookout.ws.secrets-present")?.evidence).toContain(
+      "秘密/.env",
+    );
   });
 
   it("does not flag environment templates as secrets", () => {

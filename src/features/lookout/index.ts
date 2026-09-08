@@ -227,12 +227,37 @@ function normalizeCommandToken(token: string): string {
 
 function tokenizeCommand(segment: string): CommandToken[] {
   const tokens: CommandToken[] = [];
-  for (const match of segment.matchAll(/\S+/g)) {
-    const index = match.index ?? 0;
-    tokens.push({
-      value: normalizeCommandToken(match[0].replace(/`/g, "")),
-      index,
-    });
+  let index = 0;
+  while (index < segment.length) {
+    while (index < segment.length && /\s/.test(segment[index] ?? "")) index += 1;
+    if (index >= segment.length) break;
+
+    const start = index;
+    let quote: "'" | '"' | null = null;
+    let raw = "";
+    while (index < segment.length) {
+      const character = segment[index] ?? "";
+      if (quote !== null) {
+        raw += character;
+        if (character === quote && segment[index - 1] !== "\\") quote = null;
+        index += 1;
+        continue;
+      }
+      if (character === "'" || character === '"') {
+        quote = character;
+        raw += character;
+        index += 1;
+        continue;
+      }
+      if (character === "`") {
+        index += 1;
+        continue;
+      }
+      if (/\s/.test(character)) break;
+      raw += character;
+      index += 1;
+    }
+    tokens.push({ value: normalizeCommandToken(raw), index: start });
   }
   return tokens;
 }
@@ -240,18 +265,38 @@ function tokenizeCommand(segment: string): CommandToken[] {
 function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
   const clauses: Array<{ text: string; index: number }> = [];
   let start = 0;
-  for (const separator of line.matchAll(
-    /;|&&|\|\||\b(?:then|and|but|however|except|instead)\b/gi,
-  )) {
-    const index = separator.index ?? 0;
-    const isWordConnector = /^[A-Za-z]/.test(separator[0]);
-    const before = index > 0 ? line[index - 1] : "";
-    const after = line[index + separator[0].length] ?? "";
-    if (isWordConnector && (before !== "" && !/\s/.test(before) || after !== "" && !/\s/.test(after))) {
+  let quote: "'" | '"' | "`" | null = null;
+  let index = 0;
+  while (index < line.length) {
+    const character = line[index] ?? "";
+    if (quote !== null) {
+      if (character === quote && line[index - 1] !== "\\") quote = null;
+      index += 1;
       continue;
     }
-    clauses.push({ text: line.slice(start, index), index: start });
-    start = index + separator[0].length;
+    if (character === "'" || character === '"' || character === "`") {
+      quote = character;
+      index += 1;
+      continue;
+    }
+    let separatorLength = 0;
+    if (character === ";") separatorLength = 1;
+    else if (line.startsWith("&&", index) || line.startsWith("||", index)) separatorLength = 2;
+    else if (/\s/.test(character)) {
+      const connector = /^\s+(?:then|and|but|however|except|instead)\b/i.exec(line.slice(index));
+      if (connector) {
+        separatorLength = connector[0].length;
+        const after = line[index + separatorLength] ?? "";
+        if (after !== "" && !/\s/.test(after)) separatorLength = 0;
+      }
+    }
+    if (separatorLength > 0) {
+      clauses.push({ text: line.slice(start, index), index: start });
+      index += separatorLength;
+      start = index;
+      continue;
+    }
+    index += 1;
   }
   clauses.push({ text: line.slice(start), index: start });
   return clauses;
@@ -426,6 +471,7 @@ function collectGitForceOps(line: string): CollectedMatch[] {
     const cleanArgs = tokens.slice(clean.commandIndex + 1);
     for (let index = 0; index < cleanArgs.length; index += 1) {
       const value = cleanArgs[index].value;
+      if (value === "--") break;
       if (CLEAN_VALUE_OPTION.test(value)) {
         index += 1;
         continue;
@@ -450,10 +496,13 @@ function collectProtectedPushDests(line: string): CollectedMatch[] {
     if (!parsed || isPushDryRun(parsed)) continue;
     for (const refspec of parsed.refspecs) {
       const bare = refspec.snippet.replace(/^\+/, "");
-      const dest = (bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare).replace(
-        /^refs\/heads\//,
-        "",
-      );
+      const colon = bare.lastIndexOf(":");
+      const source = colon >= 0 ? bare.slice(0, colon) : null;
+      const rawDestination = colon >= 0 ? bare.slice(colon + 1) : bare;
+      const explicitDestination = rawDestination.startsWith("refs/");
+      if (rawDestination.startsWith("refs/tags/") || rawDestination.startsWith("refs/remotes/")) continue;
+      if (source?.startsWith("refs/tags/") && !explicitDestination) continue;
+      const dest = rawDestination.replace(/^refs\/heads\//, "");
       if (PROTECTED_BRANCH_NAME.test(dest)) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
       }
@@ -709,11 +758,12 @@ const SECRETS_PATH =
 function scanWorkspace(root: string): LookoutFinding[] {
   const findings: LookoutFinding[] = [];
 
-  const tracked = runGit(["ls-files"], root);
+  const tracked = runGit(["ls-files", "-z"], root);
   if (tracked) {
     const secretPaths = tracked
-      .split("\n")
+      .split("\0")
       .map((line) => line.trim())
+      .filter((line) => line.length > 0)
       .filter((line) => SECRETS_PATH.test(line))
       .slice(0, 5);
     if (secretPaths.length > 0) {
@@ -793,7 +843,9 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
     // same line.
     for (const rule of BRIEF_RULES) {
       const evidence: string[] = [];
-      for (const line of brief.split("\n")) {
+      const inputLines =
+        rule.id === "lookout.brief.db-destructive" ? [brief] : brief.split("\n");
+      for (const line of inputLines) {
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
           if (match.index !== undefined && isNegated(line, match.index)) continue;
