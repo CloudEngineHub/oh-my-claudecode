@@ -76,10 +76,7 @@ export interface LookoutReport {
 }
 
 export class LookoutError extends Error {
-  constructor(
-    message: string,
-    readonly exitCode = 1,
-  ) {
+  constructor(message: string, readonly exitCode = 1) {
     super(message);
     this.name = "LookoutError";
   }
@@ -91,7 +88,7 @@ const GATE_ADVICE =
   "step waits for explicit human approval.";
 
 const CHECKPOINT_ADVICE =
-  'Snapshot the workspace first: `omc checkpoint create --label "before <task>"` ' +
+  "Snapshot the workspace first: `omc checkpoint create --label \"before <task>\"` " +
   "so any bad outcome is one `omc checkpoint rollback <id>` away from undone.";
 
 interface BriefRule {
@@ -103,10 +100,10 @@ interface BriefRule {
   /**
    * Optional code-level scanner for signals a single regex cannot express
    * (e.g. inspecting every refspec of a push command, not just the first).
-   * Returns evidence snippets for the line; each is still subject to the
-   * same negation check as regex matches.
+   * Returns evidence snippets and offsets for the line; each is still subject
+   * to the same negation check as regex matches.
    */
-  collect?: (line: string) => string[];
+  collect?: (line: string) => CollectedMatch[];
 }
 
 /**
@@ -116,29 +113,19 @@ interface BriefRule {
  * 48 characters before it on the same clause. Clause boundaries prevent a
  * prohibition from masking a separate requested operation later in a line.
  */
-const NEGATION_CUE =
-  /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|without|prohibited)\b/gi;
-const NEGATION_BOUNDARY =
-  /[;,.!?]|&&|\|\||\b(?:but|however|except|instead)\b/gi;
+const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|prohibited)\b/gi;
+const NEGATION_BOUNDARY = /[;,.!?]|&&|\|\||\b(?:but|however|except|instead)\b/gi;
 
 function isNegated(line: string, matchIndex: number): boolean {
   let cueIndex = -1;
   for (const cue of line.matchAll(NEGATION_CUE)) {
-    if (
-      cue.index !== undefined &&
-      cue.index <= matchIndex &&
-      matchIndex - cue.index < 48
-    ) {
+    if (cue.index !== undefined && cue.index <= matchIndex && matchIndex - cue.index < 48) {
       cueIndex = cue.index;
     }
   }
   if (cueIndex < 0) return false;
   for (const boundary of line.matchAll(NEGATION_BOUNDARY)) {
-    if (
-      boundary.index !== undefined &&
-      boundary.index > cueIndex &&
-      boundary.index < matchIndex
-    ) {
+    if (boundary.index !== undefined && boundary.index > cueIndex && boundary.index < matchIndex) {
       return false;
     }
   }
@@ -157,30 +144,59 @@ function isNegated(line: string, matchIndex: number): boolean {
  * a clause connector, so trailing prose ("... origin feature, then update
  * main docs") cannot turn prose into a refspec.
  */
-const PROTECTED_BRANCH_NAME =
-  /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
+const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
 /** Git global options that consume the following token as a value. */
-const GIT_GLOBAL_VALUE_OPTION =
-  /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
+const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
-const PUSH_VALUE_OPTION = /^(?:-o|--push-option|--repo)$/;
-const PUSH_INLINE_VALUE_OPTION = /^(?:-o.+|--push-option=.+|--repo=.+)$/;
+const PUSH_OPTION_VALUE = /^(?:-o|--push-option)$/;
+const PUSH_REPO_OPTION = /^--repo$/;
+const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+)$/;
+const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
+const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
+const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
+const BUNDLED_SHORT_FLAGS = /^-[a-z]+$/i;
+
+/**
+ * Force/mirror classification for one flag token, including parameterized
+ * long forms (--force-with-lease=<refname>:<expect>) and bundled short
+ * options (-fu is -f -u).
+ */
+function isPushForceFlag(flag: string): boolean {
+  if (PUSH_FORCE_FLAG.test(flag)) return true;
+  if (/^--force(?:-with-lease)?=/.test(flag)) return true;
+  return BUNDLED_SHORT_FLAGS.test(flag) && /f/i.test(flag.slice(1));
+}
+
+function isPushDryRunFlag(flag: string): boolean {
+  if (PUSH_DRY_RUN_FLAG.test(flag)) return true;
+  // Bundled -n (e.g. -nu, -nf) is still a dry run.
+  return BUNDLED_SHORT_FLAGS.test(flag) && /n/i.test(flag.slice(1));
+}
 /** Words that typically begin trailing prose after a command. */
-const CLAUSE_CONNECTOR =
-  /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
+const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
 
 interface ParsedPush {
   /** Genuine flags — option values never land here. */
-  flags: string[];
+  flags: CollectedMatch[];
   /** First non-flag operand, or null. */
   repo: string | null;
   /** Refspecs: every non-flag operand after the repository. */
-  refspecs: string[];
+  refspecs: CollectedMatch[];
+}
+
+interface CollectedMatch {
+  snippet: string;
+  index: number;
+}
+
+interface CommandToken {
+  value: string;
+  index: number;
 }
 
 function normalizeCommandToken(token: string): string {
-  let value = token;
+  let value = token.replace(/\r/g, "");
   while (
     value.length >= 2 &&
     ((value.startsWith("'") && value.endsWith("'")) ||
@@ -192,26 +208,40 @@ function normalizeCommandToken(token: string): string {
   return value;
 }
 
-function tokenizeCommand(segment: string): string[] {
-  return segment
-    .replace(/`/g, "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(normalizeCommandToken);
+function tokenizeCommand(segment: string): CommandToken[] {
+  const tokens: CommandToken[] = [];
+  for (const match of segment.matchAll(/\S+/g)) {
+    const index = match.index ?? 0;
+    tokens.push({
+      value: normalizeCommandToken(match[0].replace(/`/g, "")),
+      index,
+    });
+  }
+  return tokens;
 }
 
-function pushArguments(segment: string): string[] | null {
+function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
+  const clauses: Array<{ text: string; index: number }> = [];
+  let start = 0;
+  for (const separator of line.matchAll(/;|&&|\|\|/g)) {
+    const index = separator.index ?? 0;
+    clauses.push({ text: line.slice(start, index), index: start });
+    start = index + separator[0].length;
+  }
+  clauses.push({ text: line.slice(start), index: start });
+  return clauses;
+}
+
+function parsePushCommand(segment: string): ParsedPush | null {
   const tokens = tokenizeCommand(segment);
-  const gitIndex = tokens.findIndex(
-    (token) => token === "git" || token.endsWith("/git"),
-  );
+  const gitIndex = tokens.findIndex((token) => token.value === "git" || token.value.endsWith("/git"));
   if (gitIndex < 0) return null;
 
   let index = gitIndex + 1;
   while (index < tokens.length) {
-    const token = tokens[index];
+    const token = tokens[index].value;
     index += 1;
-    if (token === "push") return tokens.slice(index);
+    if (token === "push") break;
     if (token === "--") return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(token)) {
       index += 1;
@@ -220,70 +250,62 @@ function pushArguments(segment: string): string[] | null {
     if (token.startsWith("-")) continue;
     return null;
   }
-  return null;
-}
+  if (index > tokens.length || tokens[index - 1]?.value !== "push") return null;
 
-function parsePushCommand(segment: string): ParsedPush | null {
-  const tokens = pushArguments(segment);
-  if (!tokens) return null;
   const parsed: ParsedPush = { flags: [], repo: null, refspecs: [] };
-  let i = 0;
+  let i = index;
   while (i < tokens.length) {
     const token = tokens[i];
+    const value = token.value;
     i += 1;
-    if (!COMMAND_WORD.test(token)) break; // prose begins here
-    if (token.startsWith("-")) {
-      if (PUSH_VALUE_OPTION.test(token))
+    if (value.length === 0 || !COMMAND_WORD.test(value)) break; // prose begins here
+    if (value.startsWith("-")) {
+      if (PUSH_REPO_OPTION.test(value)) {
+        const repoToken = tokens[i];
+        if (repoToken && parsed.repo === null) parsed.repo = repoToken.value;
+        i += 1;
+      } else if (PUSH_INLINE_REPO_OPTION.test(value)) {
+        if (parsed.repo === null) parsed.repo = value.slice("--repo=".length);
+      } else if (PUSH_OPTION_VALUE.test(value)) {
         i += 1; // consume the option value
-      else if (PUSH_INLINE_VALUE_OPTION.test(token)) continue;
-      else parsed.flags.push(token);
+      } else if (PUSH_INLINE_OPTION_VALUE.test(value)) {
+        continue;
+      } else {
+        parsed.flags.push({ snippet: value, index: token.index });
+      }
       continue;
     }
-    if (CLAUSE_CONNECTOR.test(token)) break; // prose begins here
-    if (parsed.repo === null) parsed.repo = token;
-    else parsed.refspecs.push(token);
+    if (CLAUSE_CONNECTOR.test(value)) break; // prose begins here
+    if (parsed.repo === null) parsed.repo = value;
+    else parsed.refspecs.push({ snippet: value, index: token.index });
   }
   return parsed;
 }
 
 function isPushDryRun(parsed: ParsedPush): boolean {
-  return parsed.flags.some(
-    (flag) =>
-      flag === "--dry-run" ||
-      (flag.startsWith("-") &&
-        !flag.startsWith("--") &&
-        flag.slice(1).includes("n")),
-  );
+  // A bundled -nf is a dry run first: git would not perform the push.
+  return parsed.flags.some((flag) => isPushDryRunFlag(flag.snippet));
 }
 
-function isPushForceFlag(flag: string): boolean {
-  return (
-    flag === "--force" ||
-    flag === "--mirror" ||
-    flag.startsWith("--force-with-lease=") ||
-    flag === "--force-with-lease" ||
-    (flag.startsWith("-") &&
-      !flag.startsWith("--") &&
-      flag.slice(1).includes("f"))
-  );
+function addMatch(hits: CollectedMatch[], snippet: string, index: number): void {
+  if (snippet) hits.push({ snippet, index });
 }
 
 /** Force/mirror pushes and `+`-prefixed refspecs, as evidence snippets. */
-function collectPushForceOps(line: string): string[] {
-  const hits: string[] = [];
-  // Semicolons and &&/|| separate commands; each segment is parsed alone.
-  for (const segment of line.split(/;|&&|\|\|/)) {
-    const parsed = parsePushCommand(segment);
+function collectPushForceOps(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const clause of splitCommandClauses(line)) {
+    const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
     for (const flag of parsed.flags) {
-      if (isPushForceFlag(flag)) {
-        hits.push(flag);
+      if (isPushForceFlag(flag.snippet)) {
+        addMatch(hits, flag.snippet, clause.index + flag.index);
         break;
       }
     }
     for (const refspec of parsed.refspecs) {
-      if (refspec.startsWith("+")) {
-        hits.push(refspec);
+      if (refspec.snippet.startsWith("+")) {
+        addMatch(hits, refspec.snippet, clause.index + refspec.index);
         break;
       }
     }
@@ -291,55 +313,58 @@ function collectPushForceOps(line: string): string[] {
   return hits;
 }
 
-function collectRmForceOps(line: string): string[] {
-  const hits: string[] = [];
-  for (const segment of line.split(/;|&&|\|\|/)) {
-    const tokens = tokenizeCommand(segment);
-    const rmIndex = tokens.findIndex(
-      (token) => token === "rm" || token.endsWith("/rm"),
-    );
+function collectRmForceOps(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const clause of splitCommandClauses(line)) {
+    const tokens = tokenizeCommand(clause.text);
+    const rmIndex = tokens.findIndex((token) => token.value === "rm" || token.value.endsWith("/rm"));
     if (rmIndex < 0) continue;
 
-    let recursive = false;
-    let force = false;
-    const optionTokens: string[] = [];
+    let destructive = false;
+    const optionTokens: CommandToken[] = [];
     for (const token of tokens.slice(rmIndex + 1)) {
-      if (CLAUSE_CONNECTOR.test(token)) break;
-      if (token === "--") break;
-      if (token === "--recursive" || token === "--force") {
+      if (CLAUSE_CONNECTOR.test(token.value) || token.value === "--") break;
+      if (token.value === "--recursive" || token.value === "--force") {
         optionTokens.push(token);
-        recursive ||= token === "--recursive";
-        force ||= token === "--force";
-      } else if (/^-[^-][A-Za-z]*$/.test(token)) {
-        const options = token.slice(1).toLowerCase();
-        if (options.includes("r")) recursive = true;
-        if (options.includes("f")) force = true;
-        if (options.includes("r") || options.includes("f"))
+        destructive = true;
+      } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
+        const options = token.value.slice(1).toLowerCase();
+        if (options.includes("r") || options.includes("f")) {
           optionTokens.push(token);
+          destructive = true;
+        }
       }
     }
-    if (recursive && force) hits.push(`rm ${optionTokens.join(" ")}`);
+    if (destructive) {
+      const first = tokens[rmIndex];
+      addMatch(
+        hits,
+        `rm ${optionTokens.map((token) => token.value).join(" ")}`,
+        clause.index + first.index,
+      );
+    }
   }
   return hits;
 }
 
-function collectForceOps(line: string): string[] {
+function collectForceOps(line: string): CollectedMatch[] {
   return [...collectPushForceOps(line), ...collectRmForceOps(line)];
 }
 
-function collectProtectedPushDests(line: string): string[] {
-  const hits: string[] = [];
-  for (const segment of line.split(/;|&&|\|\|/)) {
-    const parsed = parsePushCommand(segment);
+function collectProtectedPushDests(line: string): CollectedMatch[] {
+  const hits: CollectedMatch[] = [];
+  for (const clause of splitCommandClauses(line)) {
+    const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
     for (const refspec of parsed.refspecs) {
-      // Refspec: [+][src:]dst — destination is the side after the last
-      // colon, with an optional refs/heads/ prefix.
-      const bare = refspec.replace(/^\+/, "");
-      const dest = (
-        bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare
-      ).replace(/^refs\/heads\//, "");
-      if (PROTECTED_BRANCH_NAME.test(dest)) hits.push(refspec);
+      const bare = refspec.snippet.replace(/^\+/, "");
+      const dest = (bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare).replace(
+        /^refs\/heads\//,
+        "",
+      );
+      if (PROTECTED_BRANCH_NAME.test(dest)) {
+        addMatch(hits, refspec.snippet, clause.index + refspec.index);
+      }
     }
   }
   return hits;
@@ -377,7 +402,7 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE)\b|\bDROP\s+COLUMN\b|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+){0,2}(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
+      /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+){0,2}(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
   },
   {
     id: "lookout.brief.test-deletion",
@@ -398,7 +423,7 @@ const BRIEF_RULES: BriefRule[] = [
     // token roles (a remote can be named main; value-taking options consume
     // the next token).
     pattern:
-      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b/gi,
+      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)(?![\w-])|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)(?![\w-])/gi,
     advice: GATE_ADVICE,
     // A push may carry several refspecs (`git push origin feature main`
     // updates both), so every operand-parsed refspec destination is
@@ -413,8 +438,7 @@ const BRIEF_RULES: BriefRule[] = [
       /\.env(?![\w-])(?!(?:\.[\w-]+)*\.(?:example|sample|template|dist)\b)(?:\.[\w-]+)*|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
     advice:
       "Secret surfaces are easy to leak and hard to un-leak. If the task " +
-      "really needs to read or change them, " +
-      GATE_ADVICE,
+      "really needs to read or change them, " + GATE_ADVICE,
   },
   {
     id: "lookout.brief.ci-touch",
@@ -452,8 +476,7 @@ interface GitFailure {
  */
 function sanitizedGitEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
-  for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"])
-    delete env[key];
+  for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[key];
   return env;
 }
 
@@ -479,10 +502,7 @@ function runGit(args: string[], cwd: string): string {
   } catch (error) {
     const failure = error as GitFailure;
     const stderr = String(failure.stderr ?? "");
-    throw new LookoutError(
-      `git ${args[0]} failed in ${cwd}: ${stderr.trim() || "unknown error"}`,
-      2,
-    );
+    throw new LookoutError(`git ${args[0]} failed in ${cwd}: ${stderr.trim() || "unknown error"}`, 2);
   }
 }
 
@@ -541,19 +561,18 @@ function repoRoot(repoArg: string): string | null {
         2,
       );
     }
-    throw new LookoutError(
-      `git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`,
-      2,
-    );
+    throw new LookoutError(`git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`, 2);
   }
   return top.trim();
 }
 
 /**
- * Tracked secret-looking files. Environment *templates* (.env.example and
- * friends) hold placeholders by convention, not secrets, so they are
- * excluded — lookout has no ignore mechanism, and a template would be a
- * permanent false positive in every repo that tracks one.
+ * Tracked secret-looking files. Environment *templates* (.env.example,
+ * .env.local.example, .env.production.template, ...) hold placeholders by
+ * convention, not secrets, so they are excluded — lookout has no ignore
+ * mechanism, and a template would be a permanent false positive in every
+ * repo that tracks one. Environment-specific .env files without a template
+ * suffix (.env.local, .env.production) are still flagged.
  */
 const SECRETS_PATH =
   /(?:^|\/)\.env(?![\w-])(?!(?:\.[\w-]+)*\.(?:example|sample|template|dist)\b)(?:\.[\w-]+)*$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
@@ -578,8 +597,7 @@ function scanWorkspace(root: string): LookoutFinding[] {
         evidence: secretPaths,
         advice:
           "Agents can read these by default. Keep the task away from them, or " +
-          "if the run must touch them, " +
-          GATE_ADVICE,
+          "if the run must touch them, " + GATE_ADVICE,
       });
     }
   }
@@ -641,25 +659,23 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
 
   const brief = options.brief;
   if (brief !== undefined) {
-    // Rules evaluate line by line: dry-run exclusion and negation handling
-    // are per-line judgments, and a briefing rarely mixes requests and
-    // prohibitions on one line.
+    // Rules evaluate line by line while command collectors split clauses so
+    // a dry run or prohibition cannot hide a separate operation later in the
+    // same line.
     for (const rule of BRIEF_RULES) {
       const evidence: string[] = [];
       for (const line of brief.split("\n")) {
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
-          if (match.index !== undefined && isNegated(line, match.index))
-            continue;
+          if (match.index !== undefined && isNegated(line, match.index)) continue;
           const snippet = match[0].replace(/\s+/g, " ").trim();
           if (snippet && !evidence.includes(snippet)) evidence.push(snippet);
           if (evidence.length >= 3) break;
         }
         if (rule.collect) {
-          for (const snippet of rule.collect(line)) {
-            const at = line.indexOf(snippet);
-            if (at >= 0 && isNegated(line, at)) continue;
-            if (!evidence.includes(snippet)) evidence.push(snippet);
+          for (const match of rule.collect(line)) {
+            if (isNegated(line, match.index)) continue;
+            if (!evidence.includes(match.snippet)) evidence.push(match.snippet);
             if (evidence.length >= 3) break;
           }
         }
@@ -692,22 +708,14 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
 }
 
 /** Loads a briefing from `@path` (or returns inline text unchanged). */
-export function resolveBriefArg(briefArg: string): {
-  text: string;
-  source: LookoutReport["briefSource"];
-} {
+export function resolveBriefArg(briefArg: string): { text: string; source: LookoutReport["briefSource"] } {
   if (!briefArg.startsWith("@")) return { text: briefArg, source: "flag" };
-  const path = isAbsolute(briefArg.slice(1))
-    ? briefArg.slice(1)
-    : join(resolve(process.cwd()), briefArg.slice(1));
+  const path = isAbsolute(briefArg.slice(1)) ? briefArg.slice(1) : join(resolve(process.cwd()), briefArg.slice(1));
   let text: string;
   try {
     text = readFileSync(path, "utf8");
   } catch (error) {
-    throw new LookoutError(
-      `Cannot read briefing file ${path}: ${error instanceof Error ? error.message : String(error)}`,
-      2,
-    );
+    throw new LookoutError(`Cannot read briefing file ${path}: ${error instanceof Error ? error.message : String(error)}`, 2);
   }
   return { text, source: "file" };
 }

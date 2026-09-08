@@ -74,4 +74,27 @@ describe("lookout CLI adapter", () => {
     expect(process.exitCode).toBe(2);
     process.exitCode = undefined;
   });
+
+  it.skipIf(Boolean(process.versions.bun))("registers and runs lookout through the root CLI program", async () => {
+    const previousSkipParse = process.env.OMC_CLI_SKIP_PARSE;
+    process.env.OMC_CLI_SKIP_PARSE = "1";
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      vi.resetModules();
+      const { buildProgram } = await import("../index.js");
+      const program = buildProgram();
+      expect(program.commands.some((command) => command.name() === "lookout")).toBe(true);
+
+      await program.parseAsync(
+        ["node", "omc", "lookout", "scan", "--brief", "hello world", "--json", "--repo", makeRepo()],
+        { from: "node" },
+      );
+      expect(logSpy).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(logSpy.mock.calls[0]![0] as string).summary.verdict).toBe("clear");
+    } finally {
+      if (previousSkipParse === undefined) delete process.env.OMC_CLI_SKIP_PARSE;
+      else process.env.OMC_CLI_SKIP_PARSE = previousSkipParse;
+      process.exitCode = undefined;
+    }
+  });
 });

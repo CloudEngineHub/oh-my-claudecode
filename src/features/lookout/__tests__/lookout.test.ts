@@ -27,29 +27,10 @@ function makeRepo(): string {
   const dir = mkdtempSync(join(tmpdir(), "omc-lookout-"));
   tempDirs.push(dir);
   git(dir, ["init", "-q"]);
-  git(dir, [
-    "-c",
-    "user.name=t",
-    "-c",
-    "user.email=t@t",
-    "commit",
-    "--allow-empty",
-    "-q",
-    "-m",
-    "init",
-  ]);
+  git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "--allow-empty", "-q", "-m", "init"]);
   writeFileSync(join(dir, "base.txt"), "v1\n");
   git(dir, ["add", "."]);
-  git(dir, [
-    "-c",
-    "user.name=t",
-    "-c",
-    "user.email=t@t",
-    "commit",
-    "-q",
-    "-m",
-    "add base",
-  ]);
+  git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add base"]);
   return dir;
 }
 
@@ -76,9 +57,7 @@ describe("scanLookout: briefing rules", () => {
       brief: "Push the release: git push --force origin main if needed",
     });
     expect(ids(report.findings)).toContain("lookout.brief.force-op");
-    const finding = report.findings.find(
-      (f) => f.id === "lookout.brief.force-op",
-    );
+    const finding = report.findings.find((f) => f.id === "lookout.brief.force-op");
     expect(finding?.severity).toBe("high");
     // evidence is the exact matched operand
     expect(finding?.evidence).toContain("--force");
@@ -110,29 +89,21 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("does not flag pushes to ordinary branches", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "git push origin feature/billing-v2",
-    });
-    expect(ids(report.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    const report = scanLookout({ ...base(), brief: "git push origin feature/billing-v2" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("flags destructive database operations", () => {
-    const report = scanLookout({
-      ...base(),
-      brief:
-        "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;",
-    });
+    const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;" });
     expect(ids(report.findings)).toContain("lookout.brief.db-destructive");
     expect(report.summary.verdict).toBe("review-recommended");
     // Keyword case is the signal, not identifier case.
-    const mixed = scanLookout({
-      ...base(),
-      brief: "TRUNCATE TABLE SessionLog;",
-    });
+    const mixed = scanLookout({ ...base(), brief: "TRUNCATE TABLE SessionLog;" });
     expect(ids(mixed.findings)).toContain("lookout.brief.db-destructive");
+    const deleted = scanLookout({ ...base(), brief: "DELETE FROM production_users WHERE disabled = true;" });
+    expect(ids(deleted.findings)).toContain("lookout.brief.db-destructive");
+    const incomplete = scanLookout({ ...base(), brief: "DROP TABLE" });
+    expect(ids(incomplete.findings)).not.toContain("lookout.brief.db-destructive");
   });
 
   it("flags equivalent destructive flag layouts", () => {
@@ -159,114 +130,54 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("flags mirror pushes as destructive", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "git push --mirror origin",
-    });
+    const report = scanLookout({ ...base(), brief: "git push --mirror origin" });
     expect(ids(report.findings)).toContain("lookout.brief.force-op");
   });
 
-  it("recognizes parameterized and bundled force flags", () => {
-    for (const brief of [
-      "git push --force-with-lease=feature:oid origin feature",
-      "git push -fu origin feature",
-    ]) {
-      const report = scanLookout({ ...base(), brief });
-      expect(ids(report.findings)).toContain("lookout.brief.force-op");
-    }
-  });
-
   it("does not flag the --force-if-includes option as a force push", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "git push --force-if-includes origin feature",
-    });
+    const report = scanLookout({ ...base(), brief: "git push --force-if-includes origin feature" });
     expect(ids(report.findings)).not.toContain("lookout.brief.force-op");
   });
 
   it("inspects only the refspec destination for protected-branch pushes", () => {
     // main is the *source* here; the destination (feature) is not protected.
-    const report = scanLookout({
-      ...base(),
-      brief: "git push origin main:feature",
-    });
-    expect(ids(report.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    const report = scanLookout({ ...base(), brief: "git push origin main:feature" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
     // inverse of the existing HEAD:main case still holds
-    const report2 = scanLookout({
-      ...base(),
-      brief: "git push origin HEAD:main",
-    });
+    const report2 = scanLookout({ ...base(), brief: "git push origin HEAD:main" });
     expect(ids(report2.findings)).toContain("lookout.brief.protected-branch");
   });
 
   it("flags forced cleans without -d and recognizes dry-run exclusions", () => {
     // git clean -f deletes untracked files without -d
-    for (const brief of [
-      "git clean -f",
-      "git clean -fd",
-      "git clean -dfx",
-      "git clean -d -f",
-    ]) {
+    for (const brief of ["git clean -f", "git clean -fd", "git clean -dfx", "git clean -d -f"]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
     }
     // dry runs cannot perform the operation
-    for (const brief of [
-      "git clean -nfd",
-      "git clean -n",
-      "git push --dry-run --force origin main",
-    ]) {
+    for (const brief of ["git clean -nfd", "git clean -n", "git push --dry-run --force origin main"]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).not.toContain("lookout.brief.force-op");
     }
-    const mixedClauses = scanLookout({
-      ...base(),
-      brief: "git clean --dry-run; git reset --hard HEAD~1",
-    });
+    const mixedClauses = scanLookout({ ...base(), brief: "git clean --dry-run; git reset --hard HEAD~1" });
     expect(ids(mixedClauses.findings)).toContain("lookout.brief.force-op");
   });
 
   it("parses full protected-branch refspec destinations", () => {
     // :main (empty source) deletes the remote branch
-    for (const brief of [
-      "git push origin :main",
-      "git push origin HEAD:refs/heads/main",
-    ]) {
-      const report = scanLookout({ ...base(), brief });
-      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
-    }
-  });
-
-  it("parses global Git options and quoted protected-branch refspecs", () => {
-    for (const brief of [
-      "git -C /repo push origin main",
-      "git push origin 'main'",
-      'git push origin "main"',
-      "git push origin `main`",
-    ]) {
+    for (const brief of ["git push origin :main", "git push origin HEAD:refs/heads/main"]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
     }
   });
 
   it("skips dry-run protected-branch pushes", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "git push --dry-run origin main",
-    });
-    expect(ids(report.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    const report = scanLookout({ ...base(), brief: "git push --dry-run origin main" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("recognizes the long --force spelling of git clean", () => {
-    for (const brief of [
-      "git clean --force",
-      "git clean -d --force",
-      "git clean --force -d",
-    ]) {
+    for (const brief of ["git clean --force", "git clean -d --force", "git clean --force -d"]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
     }
@@ -284,67 +195,98 @@ describe("scanLookout: briefing rules", () => {
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
     }
     // prose after the command must not become a refspec
-    const prose = scanLookout({
-      ...base(),
-      brief: "git push origin feature, then update main docs",
-    });
+    const prose = scanLookout({ ...base(), brief: "git push origin feature, then update main docs" });
     expect(ids(prose.findings)).not.toContain("lookout.brief.protected-branch");
     // non-protected multi-refspec pushes stay silent
-    const clean = scanLookout({
-      ...base(),
-      brief: "git push origin feature other",
-    });
+    const clean = scanLookout({ ...base(), brief: "git push origin feature other" });
     expect(ids(clean.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("parses operands before classifying protected destinations", () => {
     // a remote literally named main is a repository operand, not a refspec
     const remote = scanLookout({ ...base(), brief: "git push main" });
-    expect(ids(remote.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    expect(ids(remote.findings)).not.toContain("lookout.brief.protected-branch");
     // value-taking options consume the next token (-o main is a push option)
-    const optionValue = scanLookout({
-      ...base(),
-      brief: "git push -o main origin feature",
-    });
-    expect(ids(optionValue.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    const optionValue = scanLookout({ ...base(), brief: "git push -o main origin feature" });
+    expect(ids(optionValue.findings)).not.toContain("lookout.brief.protected-branch");
     // ...but the operand after the consumed value is still inspected
-    const after = scanLookout({
-      ...base(),
-      brief: "git push -o ci.skip origin feature main",
-    });
+    const after = scanLookout({ ...base(), brief: "git push -o ci.skip origin feature main" });
     expect(ids(after.findings)).toContain("lookout.brief.protected-branch");
+  });
+
+  it("parses repository options, global options, and attached push values", () => {
+    for (const brief of [
+      "git push --repo origin main",
+      "git push --repo=origin main",
+      "git -C /repo push origin main",
+      "git push origin main\r\n",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
+    const attachedOption = scanLookout({
+      ...base(),
+      brief: "git push -on --force origin feature",
+    });
+    expect(ids(attachedOption.findings)).toContain("lookout.brief.force-op");
+  });
+
+  it("recognizes parameterized and bundled force flags", () => {
+    for (const brief of [
+      "git push --force-with-lease=feature:abc123 origin feature",
+      "git push -fu origin feature",
+      "git push -fn origin feature", // bundled force AND dry-run: dry run wins
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      const forceFlagged = ids(report.findings).includes("lookout.brief.force-op");
+      if (brief.includes("-fn")) {
+        expect(forceFlagged).toBe(false); // dry run cannot perform the push
+      } else {
+        expect(forceFlagged).toBe(true);
+      }
+    }
+  });
+
+  it("recognizes mixed recursive-force rm spellings", () => {
+    for (const brief of [
+      "rm -f file.txt",
+      "rm -r tree",
+      "rm -R -f dir",
+      "rm --recursive -f dir",
+      "rm -r --force dir",
+      "rm -f --recursive dir",
+      "rm -RF dir",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+  });
+
+  it("tokenizes quoted and Markdown-formatted refspecs", () => {
+    for (const brief of [
+      "git push origin 'main'",
+      'git push origin "main"',
+      "run `git push origin main` next",
+      "git push origin 'refs/heads/main'",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
   });
 
   it("does not treat push-option values as dry-run or force flags", () => {
     // -n is the -o value here: this is a real forced update
-    const dryRunValue = scanLookout({
-      ...base(),
-      brief: "git push -o -n origin main --force",
-    });
+    const dryRunValue = scanLookout({ ...base(), brief: "git push -o -n origin main --force" });
     expect(ids(dryRunValue.findings)).toContain("lookout.brief.force-op");
     // -f is the -o value here: the command is rejected by git, not forced
-    const forceValue = scanLookout({
-      ...base(),
-      brief: "git push -o -f origin feature",
-    });
+    const forceValue = scanLookout({ ...base(), brief: "git push -o -f origin feature" });
     expect(ids(forceValue.findings)).not.toContain("lookout.brief.force-op");
-    expect(ids(forceValue.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    expect(ids(forceValue.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("stops tokenizing at clause connectors, not just punctuation", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "git push origin feature then update main docs",
-    });
-    expect(ids(report.findings)).not.toContain(
-      "lookout.brief.protected-branch",
-    );
+    const report = scanLookout({ ...base(), brief: "git push origin feature then update main docs" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("flags direct conventional test paths", () => {
@@ -358,10 +300,7 @@ describe("scanLookout: briefing rules", () => {
       expect(ids(report.findings)).toContain("lookout.brief.test-deletion");
     }
     // non-deletion work on a test file stays silent
-    const report = scanLookout({
-      ...base(),
-      brief: "refactor the helpers in src/auth.test.ts",
-    });
+    const report = scanLookout({ ...base(), brief: "refactor the helpers in src/auth.test.ts" });
     expect(ids(report.findings)).not.toContain("lookout.brief.test-deletion");
   });
 
@@ -376,22 +315,39 @@ describe("scanLookout: briefing rules", () => {
     }
   });
 
+  it("does not treat approval context as negation and scopes repeated commands", () => {
+    const withoutApproval = scanLookout({
+      ...base(),
+      brief: "Without approval, git reset --hard HEAD",
+    });
+    expect(ids(withoutApproval.findings)).toContain("lookout.brief.force-op");
+
+    const repeated = scanLookout({
+      ...base(),
+      brief:
+        "Never run git push --force origin feature; after approval run git push --force origin feature",
+    });
+    expect(ids(repeated.findings)).toContain("lookout.brief.force-op");
+  });
+
+  it("does not flag prohibited rm operations but flags later requested ones", () => {
+    const report = scanLookout({
+      ...base(),
+      brief: "Do not rm -f file.txt; then rm -f file.txt",
+    });
+    expect(ids(report.findings)).toContain("lookout.brief.force-op");
+  });
+
   it("requires SQL context before flagging destructive prose", () => {
     for (const brief of [
       "Drop table borders on mobile",
       "truncate long labels to 80 characters",
     ]) {
       const report = scanLookout({ ...base(), brief });
-      expect(ids(report.findings)).not.toContain(
-        "lookout.brief.db-destructive",
-      );
+      expect(ids(report.findings)).not.toContain("lookout.brief.db-destructive");
     }
     // uppercase SQL keywords remain high-confidence signals
-    const report = scanLookout({
-      ...base(),
-      brief:
-        "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;",
-    });
+    const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events; then TRUNCATE TABLE session_log;" });
     expect(ids(report.findings)).toContain("lookout.brief.db-destructive");
   });
 
@@ -423,10 +379,7 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("flags CI configuration changes as medium", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "Tighten the CI pipeline timeouts",
-    });
+    const report = scanLookout({ ...base(), brief: "Tighten the CI pipeline timeouts" });
     expect(ids(report.findings)).toContain("lookout.brief.ci-touch");
   });
 
@@ -439,6 +392,8 @@ describe("scanLookout: briefing rules", () => {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
     }
+    const prose = scanLookout({ ...base(), brief: "Push this branch into release/v2" });
+    expect(ids(prose.findings)).toContain("lookout.brief.protected-branch");
   });
 
   it("stays silent on rebasing onto a protected branch and lookalike branches", () => {
@@ -446,14 +401,11 @@ describe("scanLookout: briefing rules", () => {
       "Rebase this feature branch onto main",
       "truncate only the display label",
       "git push origin release-candidate-notes",
+      "Push this branch into release-candidate-notes",
     ]) {
       const report = scanLookout({ ...base(), brief });
-      expect(ids(report.findings)).not.toContain(
-        "lookout.brief.protected-branch",
-      );
-      expect(ids(report.findings)).not.toContain(
-        "lookout.brief.db-destructive",
-      );
+      expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
+      expect(ids(report.findings)).not.toContain("lookout.brief.db-destructive");
     }
   });
 
@@ -471,8 +423,7 @@ describe("scanLookout: briefing rules", () => {
   it("does not flag environment template mentions as secrets", () => {
     const report = scanLookout({
       ...base(),
-      brief:
-        "Update .env.example, .env.local.example, .env.production.template, and .env.dist docs",
+      brief: "Update .env.example, .env.local.example, .env.production.template, and .env.dist docs",
     });
     expect(ids(report.findings)).not.toContain("lookout.brief.secrets-touch");
   });
@@ -490,25 +441,6 @@ describe("scanLookout: briefing rules", () => {
     // are ordinary development topics — none is a danger signal.
     expect(report.findings).toEqual([]);
     expect(report.summary.verdict).toBe("clear");
-  });
-
-  it("recognizes mixed recursive-force rm spellings", () => {
-    for (const brief of [
-      "rm --recursive -f dir",
-      "rm -r --force dir",
-      "rm -R --force dir",
-    ]) {
-      const report = scanLookout({ ...base(), brief });
-      expect(ids(report.findings)).toContain("lookout.brief.force-op");
-    }
-  });
-
-  it("scopes negation to one clause", () => {
-    const report = scanLookout({
-      ...base(),
-      brief: "Never skip tests; but git reset --hard HEAD~1",
-    });
-    expect(ids(report.findings)).toContain("lookout.brief.force-op");
   });
 
   it("reports every finding with evidence, high confidence, and advice", () => {
@@ -531,13 +463,8 @@ describe("scanLookout: workspace rules", () => {
   it("flags a dirty worktree as low severity with checkpoint advice", () => {
     const dir = makeRepo();
     writeFileSync(join(dir, "base.txt"), "v2\n");
-    const report = scanLookout({
-      repo: dir,
-      now: new Date("2026-09-08T00:00:00Z"),
-    });
-    const finding = report.findings.find(
-      (f) => f.id === "lookout.ws.dirty-worktree",
-    );
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    const finding = report.findings.find((f) => f.id === "lookout.ws.dirty-worktree");
     expect(finding?.severity).toBe("low");
     expect(finding?.advice).toContain("omc checkpoint create");
     expect(report.summary.verdict).toBe("advisory"); // low findings are not "clear"
@@ -547,64 +474,36 @@ describe("scanLookout: workspace rules", () => {
     const dir = makeRepo();
     writeFileSync(join(dir, ".env"), "SECRET=1\n");
     git(dir, ["add", ".env"]);
-    git(dir, [
-      "-c",
-      "user.name=t",
-      "-c",
-      "user.email=t@t",
-      "commit",
-      "-q",
-      "-m",
-      "add env",
-    ]);
-    const report = scanLookout({
-      repo: dir,
-      now: new Date("2026-09-08T00:00:00Z"),
-    });
-    const finding = report.findings.find(
-      (f) => f.id === "lookout.ws.secrets-present",
-    );
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    const finding = report.findings.find((f) => f.id === "lookout.ws.secrets-present");
     expect(finding?.severity).toBe("medium");
     expect(finding?.evidence).toContain(".env");
   });
 
   it("does not flag environment templates as secrets", () => {
     const dir = makeRepo();
-    writeFileSync(join(dir, ".env.example"), "API_KEY=placeholder\n");
-    writeFileSync(join(dir, ".env.local.example"), "API_KEY=placeholder\n");
-    writeFileSync(
-      join(dir, ".env.production.template"),
-      "API_KEY=placeholder\n",
-    );
-    git(dir, [
-      "add",
-      ".env.example",
-      ".env.local.example",
-      ".env.production.template",
-    ]);
-    git(dir, [
-      "-c",
-      "user.name=t",
-      "-c",
-      "user.email=t@t",
-      "commit",
-      "-q",
-      "-m",
-      "add env template",
-    ]);
-    const report = scanLookout({
-      repo: dir,
-      now: new Date("2026-09-08T00:00:00Z"),
-    });
+    for (const name of [".env.example", ".env.local.example", ".env.production.template", ".env.dist"]) {
+      writeFileSync(join(dir, name), "API_KEY=placeholder\n");
+      git(dir, ["add", name]);
+    }
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env templates"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(ids(report.findings)).not.toContain("lookout.ws.secrets-present");
+  });
+
+  it("still flags environment-specific files without a template suffix", () => {
+    const dir = makeRepo();
+    writeFileSync(join(dir, ".env.local"), "SECRET=1\n");
+    git(dir, ["add", ".env.local"]);
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(ids(report.findings)).toContain("lookout.ws.secrets-present");
   });
 
   it("fails closed with exit code 2 for a nonexistent repository path", () => {
     try {
-      scanLookout({
-        repo: "/nonexistent/omc-lookout-path",
-        now: new Date("2026-09-08T00:00:00Z"),
-      });
+      scanLookout({ repo: "/nonexistent/omc-lookout-path", now: new Date("2026-09-08T00:00:00Z") });
       expect.unreachable();
     } catch (error) {
       expect(error).toBeInstanceOf(LookoutError);
@@ -615,10 +514,7 @@ describe("scanLookout: workspace rules", () => {
   it("reports a null repo outside a git repository", () => {
     const dir = mkdtempSync(join(tmpdir(), "omc-lookout-nogit-"));
     tempDirs.push(dir);
-    const report = scanLookout({
-      repo: dir,
-      now: new Date("2026-09-08T00:00:00Z"),
-    });
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(report.repo).toBeNull();
     expect(report.findings).toEqual([]);
   });
@@ -629,10 +525,7 @@ describe("scanLookout: workspace rules", () => {
     // exists here, so silence would hide an unreadable state.
     const dir = mkdtempSync(join(tmpdir(), "omc-lookout-broken-"));
     tempDirs.push(dir);
-    writeFileSync(
-      join(dir, ".git"),
-      "gitdir: /nonexistent/omc-lookout-gitdir\n",
-    );
+    writeFileSync(join(dir, ".git"), "gitdir: /nonexistent/omc-lookout-gitdir\n");
     try {
       scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
       expect.unreachable();
@@ -646,10 +539,7 @@ describe("scanLookout: workspace rules", () => {
     const dir = makeRepo();
     git(dir, ["config", "status.showUntrackedFiles", "no"]);
     writeFileSync(join(dir, "untracked.txt"), "pending\n");
-    const report = scanLookout({
-      repo: dir,
-      now: new Date("2026-09-08T00:00:00Z"),
-    });
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(ids(report.findings)).toContain("lookout.ws.dirty-worktree");
   });
 
@@ -657,16 +547,7 @@ describe("scanLookout: workspace rules", () => {
     const withSecret = makeRepo();
     writeFileSync(join(withSecret, ".env"), "SECRET=1\n");
     git(withSecret, ["add", ".env"]);
-    git(withSecret, [
-      "-c",
-      "user.name=t",
-      "-c",
-      "user.email=t@t",
-      "commit",
-      "-q",
-      "-m",
-      "add env",
-    ]);
+    git(withSecret, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env"]);
     const clean = makeRepo();
     // Compute the expected toplevel BEFORE the selection variables are
     // exported: the bare helper below does not sanitize them, and a
@@ -679,17 +560,11 @@ describe("scanLookout: workspace rules", () => {
       process.env.GIT_WORK_TREE = withSecret;
       // --repo points at the clean repo; inherited variables point at the
       // secret-bearing one. The scan must follow --repo.
-      const report = scanLookout({
-        repo: clean,
-        now: new Date("2026-09-08T00:00:00Z"),
-      });
+      const report = scanLookout({ repo: clean, now: new Date("2026-09-08T00:00:00Z") });
       expect(report.repo).toBe(cleanTop);
       expect(ids(report.findings)).not.toContain("lookout.ws.secrets-present");
       // ...and the explicitly selected repo is scanned correctly.
-      const direct = scanLookout({
-        repo: withSecret,
-        now: new Date("2026-09-08T00:00:00Z"),
-      });
+      const direct = scanLookout({ repo: withSecret, now: new Date("2026-09-08T00:00:00Z") });
       expect(ids(direct.findings)).toContain("lookout.ws.secrets-present");
     } finally {
       for (const key of Object.keys(process.env)) {
@@ -699,28 +574,25 @@ describe("scanLookout: workspace rules", () => {
     }
   });
 
-  it.skipIf(process.platform === "win32")(
-    "disables fsmonitor during scans",
-    () => {
-      const dir = makeRepo();
-      const marker = join(dir, "fsmonitor-marker");
-      const hook = join(dir, "fsmonitor-hook.cjs");
-      writeFileSync(
-        hook,
-        "require('node:fs').appendFileSync(process.argv[2], 'x'); process.stdout.write('');",
-      );
-      git(dir, [
-        "config",
-        "core.fsmonitor",
-        `${JSON.stringify(process.execPath)} ${JSON.stringify(hook)} ${JSON.stringify(marker)}`,
-      ]);
+  it.skipIf(process.platform === "win32")("disables fsmonitor during scans", () => {
+    const dir = makeRepo();
+    const marker = join(dir, "fsmonitor-marker");
+    const hook = join(dir, "fsmonitor-hook.cjs");
+    writeFileSync(
+      hook,
+      "require('node:fs').appendFileSync(process.argv[2], 'x'); process.stdout.write('');",
+    );
+    git(dir, [
+      "config",
+      "core.fsmonitor",
+      `${JSON.stringify(process.execPath)} ${JSON.stringify(hook)} ${JSON.stringify(marker)}`,
+    ]);
 
-      scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
 
-      expect(existsSync(marker)).toBe(false);
-      expect(existsSync(hook)).toBe(true);
-    },
-  );
+    expect(existsSync(marker)).toBe(false);
+    expect(existsSync(hook)).toBe(true);
+  });
 });
 
 describe("resolveBriefArg", () => {
