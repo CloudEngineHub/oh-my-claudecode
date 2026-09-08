@@ -169,6 +169,32 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
+  it("recognizes the long --force spelling of git clean", () => {
+    for (const brief of ["git clean --force", "git clean -d --force", "git clean --force -d"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+  });
+
+  it("inspects every refspec of a multi-refspec push", () => {
+    // protected branch is not the first refspec
+    for (const brief of [
+      "git push origin feature main",
+      "git push origin feature refs/heads/main",
+      "git push origin --force feature main",
+      "git push upstream feature main; git push upstream other thing",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
+    // prose after the command must not become a refspec
+    const prose = scanLookout({ ...base(), brief: "git push origin feature, then update main docs" });
+    expect(ids(prose.findings)).not.toContain("lookout.brief.protected-branch");
+    // non-protected multi-refspec pushes stay silent
+    const clean = scanLookout({ ...base(), brief: "git push origin feature other" });
+    expect(ids(clean.findings)).not.toContain("lookout.brief.protected-branch");
+  });
+
   it("honors explicit negation in briefings", () => {
     for (const brief of [
       "Do not skip tests under any circumstances",
@@ -342,6 +368,37 @@ describe("scanLookout: workspace rules", () => {
     const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(report.repo).toBeNull();
     expect(report.findings).toEqual([]);
+  });
+
+  it("ignores inherited GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE when selecting --repo", () => {
+    const withSecret = makeRepo();
+    writeFileSync(join(withSecret, ".env"), "SECRET=1\n");
+    git(withSecret, ["add", ".env"]);
+    git(withSecret, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env"]);
+    const clean = makeRepo();
+    // Compute the expected toplevel BEFORE the selection variables are
+    // exported: the bare helper below does not sanitize them, and a
+    // GIT_DIR-inherited rev-parse would return the wrong repo here too.
+    const cleanTop = git(clean, ["rev-parse", "--show-toplevel"]);
+
+    const saved = { ...process.env };
+    try {
+      process.env.GIT_DIR = join(withSecret, ".git");
+      process.env.GIT_WORK_TREE = withSecret;
+      // --repo points at the clean repo; inherited variables point at the
+      // secret-bearing one. The scan must follow --repo.
+      const report = scanLookout({ repo: clean, now: new Date("2026-09-08T00:00:00Z") });
+      expect(report.repo).toBe(cleanTop);
+      expect(ids(report.findings)).not.toContain("lookout.ws.secrets-present");
+      // ...and the explicitly selected repo is scanned correctly.
+      const direct = scanLookout({ repo: withSecret, now: new Date("2026-09-08T00:00:00Z") });
+      expect(ids(direct.findings)).toContain("lookout.ws.secrets-present");
+    } finally {
+      for (const key of Object.keys(process.env)) {
+        if (!(key in saved)) delete process.env[key];
+        else process.env[key] = saved[key];
+      }
+    }
   });
 });
 

@@ -103,6 +103,13 @@ interface BriefRule {
    * they name and must not produce high-severity findings.
    */
   excludedPattern?: RegExp;
+  /**
+   * Optional code-level scanner for signals a single regex cannot express
+   * (e.g. inspecting every refspec of a push command, not just the first).
+   * Returns evidence snippets for the line; each is still subject to the
+   * same negation check as regex matches.
+   */
+  collect?: (line: string) => string[];
 }
 
 /**
@@ -124,6 +131,47 @@ function isNegated(line: string, matchIndex: number): boolean {
 }
 
 /**
+ * Protected destinations for `git push` lines, one evidence snippet per
+ * offending refspec. Grammar (git-push(1)): `git push [<repo>] [<refspec>...]
+ * — flags are skipped, the first non-flag token is the repository, and every
+ * remaining non-flag token is a refspec whose destination side is checked.
+ * Tokenizing stops at anything that does not look like a command word, so a
+ * command followed by prose ("... origin feature, then update main docs")
+ * cannot turn prose into a refspec.
+ */
+const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
+const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
+
+function collectProtectedPushDests(line: string): string[] {
+  const hits: string[] = [];
+  // Semicolons and &&/|| separate commands; each segment is tokenized alone.
+  for (const segment of line.split(/;|&&|\|\|/)) {
+    const push = /\bgit\s+push\b/.exec(segment);
+    if (!push) continue;
+    const tokens = segment.slice((push.index ?? 0) + push[0].length).split(/\s+/);
+    let seenRepo = false;
+    for (const token of tokens) {
+      if (token.length === 0) continue;
+      if (!COMMAND_WORD.test(token)) break; // prose begins here
+      if (token.startsWith("-")) continue; // flag (or flag value pairs are rare; see below)
+      if (!seenRepo) {
+        seenRepo = true; // first non-flag operand is the repository
+        continue;
+      }
+      // Refspec: [+][src:]dst — destination is the side after the last colon,
+      // with an optional refs/heads/ prefix.
+      const bare = token.replace(/^\+/, "");
+      const dest = (bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare).replace(
+        /^refs\/heads\//,
+        "",
+      );
+      if (PROTECTED_BRANCH_NAME.test(dest)) hits.push(token);
+    }
+  }
+  return hits;
+}
+
+/**
  * Briefing rules. Every pattern is anchored on the dangerous operation or
  * surface itself (word boundaries, explicit compound phrases) — never on
  * broad tokens like "auth" or "migration" that appear in routine work.
@@ -134,7 +182,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease(?![\w-])|--force(?![\w-])|-f(?![\w-]))|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+push\b[^;\n]*\s--mirror(?![\w-])|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s-f(?![\w-])\b/gi,
+      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease(?![\w-])|--force(?![\w-])|-f(?![\w-]))|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+push\b[^;\n]*\s--mirror(?![\w-])|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
     advice: GATE_ADVICE,
     // --dry-run (and clean's -n) cannot perform the operation; flagging it
     // violates the high-confidence contract.
@@ -170,6 +218,10 @@ const BRIEF_RULES: BriefRule[] = [
     advice: GATE_ADVICE,
     // A dry-run push names the protected branch but cannot move it.
     excludedPattern: /\bgit\b[^;\n]*(?:--dry-run|\s-n(?![\w-]))/i,
+    // The regex covers the common shapes; a push may carry several refspecs
+    // (`git push origin feature main` updates both), so every non-flag
+    // operand after the repository is inspected for a protected destination.
+    collect: collectProtectedPushDests,
   },
   {
     id: "lookout.brief.secrets-touch",
@@ -208,6 +260,19 @@ interface GitFailure {
   code?: string | number;
 }
 
+/**
+ * Repository-selection variables are stripped before every child git call:
+ * when lookout runs inside Git-driven automation that exports GIT_DIR,
+ * GIT_WORK_TREE, or GIT_INDEX_FILE, the `--repo` argument would otherwise
+ * not select the state actually scanned (child git would report a different
+ * repository than the one under the given cwd).
+ */
+function sanitizedGitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[key];
+  return env;
+}
+
 function runGit(args: string[], cwd: string): string {
   try {
     // --no-optional-locks keeps the scan read-only: `git status` would
@@ -221,6 +286,7 @@ function runGit(args: string[], cwd: string): string {
       maxBuffer: GIT_MAX_BUFFER_BYTES,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
+      env: sanitizedGitEnv(),
     });
   } catch (error) {
     const failure = error as GitFailure;
@@ -245,6 +311,7 @@ function repoRoot(repoArg: string): string | null {
       maxBuffer: GIT_MAX_BUFFER_BYTES,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
+      env: sanitizedGitEnv(),
     });
   } catch (error) {
     const failure = error as GitFailure;
@@ -363,6 +430,14 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
           const snippet = match[0].replace(/\s+/g, " ").trim();
           if (snippet && !evidence.includes(snippet)) evidence.push(snippet);
           if (evidence.length >= 3) break;
+        }
+        if (rule.collect) {
+          for (const snippet of rule.collect(line)) {
+            const at = line.indexOf(snippet);
+            if (at >= 0 && isNegated(line, at)) continue;
+            if (!evidence.includes(snippet)) evidence.push(snippet);
+            if (evidence.length >= 3) break;
+          }
         }
         if (evidence.length >= 3) break;
       }
