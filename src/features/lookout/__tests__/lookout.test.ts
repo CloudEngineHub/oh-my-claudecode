@@ -119,6 +119,7 @@ describe("scanLookout: briefing rules", () => {
       "DROP SCHEMA production CASCADE;",
       "DROP SCHEMA production",
       "sqlite3 db.sqlite 'drop view active_users'",
+      "sqlite3 db.sqlite 'drop index users_email_idx'",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
     ]) {
@@ -396,6 +397,8 @@ describe("scanLookout: briefing rules", () => {
       "bash harmless.sh -c 'rm -rf build'",
       "First run psql -c 'select 1'. Then drop table borders on mobile",
       "echo \"\\$(rm -rf build)\"",
+      "echo \"<(rm -rf build)\"",
+      "echo \"psql -c 'drop table users'\"",
       "rm -zrf build",
     ]) {
       const report = scanLookout({ ...base(), brief });
@@ -410,6 +413,7 @@ describe("scanLookout: briefing rules", () => {
       "1. git push origin main",
       "- [ ] git push --force origin feature",
       "sudo -u root git push --force origin feature",
+      "sudo -D /tmp git push --force origin feature",
       "env --ignore-environment git push --force origin feature",
       "env -u FOO git push --force origin feature",
       "env -C /repo git push --force origin feature",

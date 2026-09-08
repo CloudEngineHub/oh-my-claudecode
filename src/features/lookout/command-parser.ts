@@ -247,7 +247,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
         index += 1;
         continue;
       }
-      if (/^(?:-u|--user|-g|--group|-C|--chdir|-p|--prompt|-r|--role|-t|--type)$/.test(value)) {
+      if (/^(?:-u|--user|-g|--group|-C|-D|--chdir|-R|--chroot|-T|--command-timeout|-p|--prompt|-r|--role|-t|--type)$/.test(value)) {
         index += 2;
         continue;
       }
@@ -400,7 +400,7 @@ function nestedShellSubstitutions(line: string): Array<{ text: string; index: nu
           nested.push({ text: clause.text.slice(index + 2, end - 1), index: clause.index + index + 2 });
           index = end - 1;
         }
-      } else if (clause.text.startsWith("<(", index) || clause.text.startsWith(">(", index)) {
+      } else if (quote === null && (clause.text.startsWith("<(", index) || clause.text.startsWith(">(", index))) {
         let depth = 1;
         let end = index + 2;
         while (end < clause.text.length && depth > 0) {
