@@ -369,6 +369,7 @@ describe("scanLookout: briefing rules", () => {
       "command -v git push --force origin feature",
       "command -V git push --force origin feature",
       "echo 'git reset --hard'",
+      "git reset --hard -- README.md",
       "echo foo\\; git push --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
@@ -388,6 +389,8 @@ describe("scanLookout: briefing rules", () => {
       "env -C /repo git push --force origin feature",
       "FOO=\"a b\" git push --force origin feature",
       "command git push --force origin feature",
+      "exec git push --force origin feature",
+      "exec -a worker git push --force origin feature",
       "if git push --force origin feature; then continue",
       "Please run git push --force origin feature",
       "git push \"/tmp/remote repo.git\" --force HEAD:main",
@@ -403,6 +406,8 @@ describe("scanLookout: briefing rules", () => {
       "git push --force-with-lease --no-force origin feature",
       "git clean -n --no-dry-run -f",
       "git -c clean.requireForce=false clean",
+      "git -c clean.requireForce=0 clean",
+      "git -c CLEAN.REQUIREFORCE=FALSE clean",
       "rm -v -rf build",
       "git push -v --force origin feature",
       "> git push --force origin feature",
@@ -538,6 +543,8 @@ describe("scanLookout: briefing rules", () => {
       "Push the Docker image to production",
       "Push metrics to production cluster",
       "Push the Docker image to main registry",
+      "Merge the configuration into the main config",
+      "Merge the release notes into the production documentation",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");

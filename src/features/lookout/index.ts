@@ -308,7 +308,7 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
           if (
             rule.id === "lookout.brief.protected-branch" &&
             /\b(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)\b/i.test(snippet) &&
-            !/\b(?:git|branch|ref(?:spec)?|remote|commit|merge|pr)\b/i.test(line)
+            !/\b(?:git|branch|ref(?:spec)?|remote|commit|pr)\b/i.test(line)
           ) {
             continue;
           }

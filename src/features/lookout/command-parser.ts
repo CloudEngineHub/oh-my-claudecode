@@ -201,7 +201,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
     const wrapper = tokens[prefixIndex]?.value.toLowerCase();
-    if (index === prefixIndex && /^(?:run|sudo|env|command|if|while|until)$/.test(wrapper ?? "")) {
+    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
@@ -257,6 +257,16 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     if (wrapper === "command" && /^-p$/.test(value)) {
       index += 1;
       continue;
+    }
+    if (wrapper === "exec") {
+      if (value === "-a") {
+        index += 2;
+        continue;
+      }
+      if (value === "-c" || value === "-l") {
+        index += 1;
+        continue;
+      }
     }
     return -1;
   }
@@ -423,7 +433,8 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
       /^(?:-h|--help|-v|--version|--html-path|--man-path|--info-path)$/.test(value)
     ) return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
-      if (value === "-c" && tokens[index + 1]?.value === "clean.requireForce=false") {
+      const config = tokens[index + 1]?.value.match(/^clean\.requireforce=(.+)$/i);
+      if (value === "-c" && config && /^(?:false|0|no|off)$/i.test(config[1])) {
         cleanRequireForceDisabled = true;
       }
       index += 2;
@@ -453,7 +464,8 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       const resetOptions = terminator < 0 ? resetArgs : resetArgs.slice(0, terminator);
       if (resetOptions.some((token) => /^(?:-h|--help|-v|--version)$/.test(token.value))) continue;
       const hard = resetOptions.find((token) => token.value === "--hard");
-      if (hard) {
+      const hasPathspec = terminator >= 0 && resetArgs.slice(terminator + 1).length > 0;
+      if (hard && !hasPathspec) {
         addMatch(hits, "git reset --hard", clause.index + tokens[reset.gitIndex].index);
       }
     }
