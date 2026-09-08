@@ -76,7 +76,10 @@ export interface LookoutReport {
 }
 
 export class LookoutError extends Error {
-  constructor(message: string, readonly exitCode = 1) {
+  constructor(
+    message: string,
+    readonly exitCode = 1,
+  ) {
     super(message);
     this.name = "LookoutError";
   }
@@ -88,7 +91,7 @@ const GATE_ADVICE =
   "step waits for explicit human approval.";
 
 const CHECKPOINT_ADVICE =
-  "Snapshot the workspace first: `omc checkpoint create --label \"before <task>\"` " +
+  'Snapshot the workspace first: `omc checkpoint create --label "before <task>"` ' +
   "so any bad outcome is one `omc checkpoint rollback <id>` away from undone.";
 
 interface BriefRule {
@@ -97,12 +100,6 @@ interface BriefRule {
   severity: Extract<LookoutSeverity, "high" | "medium" | "low">;
   pattern: RegExp;
   advice: string;
-  /**
-   * Lines matching this pattern are skipped before the rule runs — for
-   * example dry-run demonstrations, which cannot perform the operation
-   * they name and must not produce high-severity findings.
-   */
-  excludedPattern?: RegExp;
   /**
    * Optional code-level scanner for signals a single regex cannot express
    * (e.g. inspecting every refspec of a push command, not just the first).
@@ -116,18 +113,36 @@ interface BriefRule {
  * Bounded negation handling: a briefing that *forbids* a dangerous action
  * ("Do not skip tests", "Never run git reset --hard") must not be flagged
  * for requesting it. A match is ignored when a negation cue appears within
- * 48 characters before it on the same line — close enough to be a
- * prohibition, far enough that unrelated mentions don't mask real ones.
+ * 48 characters before it on the same clause. Clause boundaries prevent a
+ * prohibition from masking a separate requested operation later in a line.
  */
-const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|without|prohibited)\b/gi;
+const NEGATION_CUE =
+  /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|without|prohibited)\b/gi;
+const NEGATION_BOUNDARY =
+  /[;,.!?]|&&|\|\||\b(?:but|however|except|instead)\b/gi;
 
 function isNegated(line: string, matchIndex: number): boolean {
+  let cueIndex = -1;
   for (const cue of line.matchAll(NEGATION_CUE)) {
-    if (cue.index !== undefined && matchIndex >= cue.index && matchIndex - cue.index < 48) {
-      return true;
+    if (
+      cue.index !== undefined &&
+      cue.index <= matchIndex &&
+      matchIndex - cue.index < 48
+    ) {
+      cueIndex = cue.index;
     }
   }
-  return false;
+  if (cueIndex < 0) return false;
+  for (const boundary of line.matchAll(NEGATION_BOUNDARY)) {
+    if (
+      boundary.index !== undefined &&
+      boundary.index > cueIndex &&
+      boundary.index < matchIndex
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -142,14 +157,18 @@ function isNegated(line: string, matchIndex: number): boolean {
  * a clause connector, so trailing prose ("... origin feature, then update
  * main docs") cannot turn prose into a refspec.
  */
-const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
+const PROTECTED_BRANCH_NAME =
+  /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
+/** Git global options that consume the following token as a value. */
+const GIT_GLOBAL_VALUE_OPTION =
+  /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
 const PUSH_VALUE_OPTION = /^(?:-o|--push-option|--repo)$/;
-const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
-const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
+const PUSH_INLINE_VALUE_OPTION = /^(?:-o.+|--push-option=.+|--repo=.+)$/;
 /** Words that typically begin trailing prose after a command. */
-const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
+const CLAUSE_CONNECTOR =
+  /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
 
 interface ParsedPush {
   /** Genuine flags — option values never land here. */
@@ -160,10 +179,53 @@ interface ParsedPush {
   refspecs: string[];
 }
 
+function normalizeCommandToken(token: string): string {
+  let value = token;
+  while (
+    value.length >= 2 &&
+    ((value.startsWith("'") && value.endsWith("'")) ||
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("`") && value.endsWith("`")))
+  ) {
+    value = value.slice(1, -1);
+  }
+  return value;
+}
+
+function tokenizeCommand(segment: string): string[] {
+  return segment
+    .replace(/`/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(normalizeCommandToken);
+}
+
+function pushArguments(segment: string): string[] | null {
+  const tokens = tokenizeCommand(segment);
+  const gitIndex = tokens.findIndex(
+    (token) => token === "git" || token.endsWith("/git"),
+  );
+  if (gitIndex < 0) return null;
+
+  let index = gitIndex + 1;
+  while (index < tokens.length) {
+    const token = tokens[index];
+    index += 1;
+    if (token === "push") return tokens.slice(index);
+    if (token === "--") return null;
+    if (GIT_GLOBAL_VALUE_OPTION.test(token)) {
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("-")) continue;
+    return null;
+  }
+  return null;
+}
+
 function parsePushCommand(segment: string): ParsedPush | null {
-  const push = /\bgit\s+push\b/.exec(segment);
-  if (!push) return null;
-  const tokens = segment.slice((push.index ?? 0) + push[0].length).split(/\s+/).filter(Boolean);
+  const tokens = pushArguments(segment);
+  if (!tokens) return null;
   const parsed: ParsedPush = { flags: [], repo: null, refspecs: [] };
   let i = 0;
   while (i < tokens.length) {
@@ -171,7 +233,9 @@ function parsePushCommand(segment: string): ParsedPush | null {
     i += 1;
     if (!COMMAND_WORD.test(token)) break; // prose begins here
     if (token.startsWith("-")) {
-      if (PUSH_VALUE_OPTION.test(token)) i += 1; // consume the option value
+      if (PUSH_VALUE_OPTION.test(token))
+        i += 1; // consume the option value
+      else if (PUSH_INLINE_VALUE_OPTION.test(token)) continue;
       else parsed.flags.push(token);
       continue;
     }
@@ -183,7 +247,25 @@ function parsePushCommand(segment: string): ParsedPush | null {
 }
 
 function isPushDryRun(parsed: ParsedPush): boolean {
-  return parsed.flags.some((flag) => PUSH_DRY_RUN_FLAG.test(flag));
+  return parsed.flags.some(
+    (flag) =>
+      flag === "--dry-run" ||
+      (flag.startsWith("-") &&
+        !flag.startsWith("--") &&
+        flag.slice(1).includes("n")),
+  );
+}
+
+function isPushForceFlag(flag: string): boolean {
+  return (
+    flag === "--force" ||
+    flag === "--mirror" ||
+    flag.startsWith("--force-with-lease=") ||
+    flag === "--force-with-lease" ||
+    (flag.startsWith("-") &&
+      !flag.startsWith("--") &&
+      flag.slice(1).includes("f"))
+  );
 }
 
 /** Force/mirror pushes and `+`-prefixed refspecs, as evidence snippets. */
@@ -194,7 +276,7 @@ function collectPushForceOps(line: string): string[] {
     const parsed = parsePushCommand(segment);
     if (!parsed || isPushDryRun(parsed)) continue;
     for (const flag of parsed.flags) {
-      if (PUSH_FORCE_FLAG.test(flag)) {
+      if (isPushForceFlag(flag)) {
         hits.push(flag);
         break;
       }
@@ -209,6 +291,42 @@ function collectPushForceOps(line: string): string[] {
   return hits;
 }
 
+function collectRmForceOps(line: string): string[] {
+  const hits: string[] = [];
+  for (const segment of line.split(/;|&&|\|\|/)) {
+    const tokens = tokenizeCommand(segment);
+    const rmIndex = tokens.findIndex(
+      (token) => token === "rm" || token.endsWith("/rm"),
+    );
+    if (rmIndex < 0) continue;
+
+    let recursive = false;
+    let force = false;
+    const optionTokens: string[] = [];
+    for (const token of tokens.slice(rmIndex + 1)) {
+      if (CLAUSE_CONNECTOR.test(token)) break;
+      if (token === "--") break;
+      if (token === "--recursive" || token === "--force") {
+        optionTokens.push(token);
+        recursive ||= token === "--recursive";
+        force ||= token === "--force";
+      } else if (/^-[^-][A-Za-z]*$/.test(token)) {
+        const options = token.slice(1).toLowerCase();
+        if (options.includes("r")) recursive = true;
+        if (options.includes("f")) force = true;
+        if (options.includes("r") || options.includes("f"))
+          optionTokens.push(token);
+      }
+    }
+    if (recursive && force) hits.push(`rm ${optionTokens.join(" ")}`);
+  }
+  return hits;
+}
+
+function collectForceOps(line: string): string[] {
+  return [...collectPushForceOps(line), ...collectRmForceOps(line)];
+}
+
 function collectProtectedPushDests(line: string): string[] {
   const hits: string[] = [];
   for (const segment of line.split(/;|&&|\|\|/)) {
@@ -218,10 +336,9 @@ function collectProtectedPushDests(line: string): string[] {
       // Refspec: [+][src:]dst — destination is the side after the last
       // colon, with an optional refs/heads/ prefix.
       const bare = refspec.replace(/^\+/, "");
-      const dest = (bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare).replace(
-        /^refs\/heads\//,
-        "",
-      );
+      const dest = (
+        bare.includes(":") ? bare.slice(bare.lastIndexOf(":") + 1) : bare
+      ).replace(/^refs\/heads\//, "");
       if (PROTECTED_BRANCH_NAME.test(dest)) hits.push(refspec);
     }
   }
@@ -242,15 +359,12 @@ const BRIEF_RULES: BriefRule[] = [
     // operand parser (collect below), because a bare regex cannot tell a
     // force flag from a push-option value (`git push -o -f origin feature`).
     pattern:
-      /\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
+      /\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-(?![\w-]*n)[\w]*f[\w]*\b|\bgit\s+clean\b[^;\n]*\s(?:-f(?![\w-])|--force(?![\w-]))\b/gi,
     advice: GATE_ADVICE,
-    // Dry runs cannot perform the operation they name. `-n` only counts for
-    // git clean here — a push's `-n` may be a push-option value, which the
-    // operand parser resolves.
-    excludedPattern: /\bgit\s+clean\b[^;\n]*\s-n(?![\w-])|\bgit\b[^;\n]*--dry-run\b/i,
-    // Command-shaped pushes: force flags, --mirror, and `+`-prefixed
-    // refspecs, with push-option values and dry runs handled by the parser.
-    collect: collectPushForceOps,
+    // Command-shaped pushes and rm invocations are parsed below so option
+    // values, dry runs, mixed spellings, and clause boundaries are handled
+    // without a regex guessing at token roles.
+    collect: collectForceOps,
   },
   {
     id: "lookout.brief.db-destructive",
@@ -296,10 +410,11 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing touches secret material (.env, keys, credentials)",
     severity: "medium",
     pattern:
-      /\.env(?!\.(?:example|sample|template|dist))\b|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
+      /\.env(?![\w-])(?!(?:\.[\w-]+)*\.(?:example|sample|template|dist)\b)(?:\.[\w-]+)*|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
     advice:
       "Secret surfaces are easy to leak and hard to un-leak. If the task " +
-      "really needs to read or change them, " + GATE_ADVICE,
+      "really needs to read or change them, " +
+      GATE_ADVICE,
   },
   {
     id: "lookout.brief.ci-touch",
@@ -337,8 +452,13 @@ interface GitFailure {
  */
 function sanitizedGitEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
-  for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[key];
+  for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"])
+    delete env[key];
   return env;
+}
+
+function gitArgs(args: string[]): string[] {
+  return ["-c", "core.fsmonitor=false", "--no-optional-locks", ...args];
 }
 
 function runGit(args: string[], cwd: string): string {
@@ -347,7 +467,7 @@ function runGit(args: string[], cwd: string): string {
     // otherwise refresh and rewrite .git/index (and can take the index
     // lock during concurrent automation). Same approach as the HUD
     // status reader (src/hud/elements/git.ts).
-    return execFileSync("git", ["--no-optional-locks", ...args], {
+    return execFileSync("git", gitArgs(args), {
       cwd,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
@@ -359,7 +479,10 @@ function runGit(args: string[], cwd: string): string {
   } catch (error) {
     const failure = error as GitFailure;
     const stderr = String(failure.stderr ?? "");
-    throw new LookoutError(`git ${args[0]} failed in ${cwd}: ${stderr.trim() || "unknown error"}`, 2);
+    throw new LookoutError(
+      `git ${args[0]} failed in ${cwd}: ${stderr.trim() || "unknown error"}`,
+      2,
+    );
   }
 }
 
@@ -391,7 +514,7 @@ function hasGitEntry(dir: string): boolean {
 function repoRoot(repoArg: string): string | null {
   let top: string;
   try {
-    top = execFileSync("git", ["--no-optional-locks", "rev-parse", "--show-toplevel"], {
+    top = execFileSync("git", gitArgs(["rev-parse", "--show-toplevel"]), {
       cwd: repoArg,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
@@ -418,7 +541,10 @@ function repoRoot(repoArg: string): string | null {
         2,
       );
     }
-    throw new LookoutError(`git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`, 2);
+    throw new LookoutError(
+      `git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`,
+      2,
+    );
   }
   return top.trim();
 }
@@ -430,7 +556,7 @@ function repoRoot(repoArg: string): string | null {
  * permanent false positive in every repo that tracks one.
  */
 const SECRETS_PATH =
-  /(?:^|\/)\.env(?!\.(?:example|sample|template|dist)\b)(?:\..+)?$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
+  /(?:^|\/)\.env(?![\w-])(?!(?:\.[\w-]+)*\.(?:example|sample|template|dist)\b)(?:\.[\w-]+)*$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
 
 function scanWorkspace(root: string): LookoutFinding[] {
   const findings: LookoutFinding[] = [];
@@ -452,7 +578,8 @@ function scanWorkspace(root: string): LookoutFinding[] {
         evidence: secretPaths,
         advice:
           "Agents can read these by default. Keep the task away from them, or " +
-          "if the run must touch them, " + GATE_ADVICE,
+          "if the run must touch them, " +
+          GATE_ADVICE,
       });
     }
   }
@@ -520,10 +647,10 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
     for (const rule of BRIEF_RULES) {
       const evidence: string[] = [];
       for (const line of brief.split("\n")) {
-        if (rule.excludedPattern?.test(line)) continue;
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
-          if (match.index !== undefined && isNegated(line, match.index)) continue;
+          if (match.index !== undefined && isNegated(line, match.index))
+            continue;
           const snippet = match[0].replace(/\s+/g, " ").trim();
           if (snippet && !evidence.includes(snippet)) evidence.push(snippet);
           if (evidence.length >= 3) break;
@@ -565,14 +692,22 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
 }
 
 /** Loads a briefing from `@path` (or returns inline text unchanged). */
-export function resolveBriefArg(briefArg: string): { text: string; source: LookoutReport["briefSource"] } {
+export function resolveBriefArg(briefArg: string): {
+  text: string;
+  source: LookoutReport["briefSource"];
+} {
   if (!briefArg.startsWith("@")) return { text: briefArg, source: "flag" };
-  const path = isAbsolute(briefArg.slice(1)) ? briefArg.slice(1) : join(resolve(process.cwd()), briefArg.slice(1));
+  const path = isAbsolute(briefArg.slice(1))
+    ? briefArg.slice(1)
+    : join(resolve(process.cwd()), briefArg.slice(1));
   let text: string;
   try {
     text = readFileSync(path, "utf8");
   } catch (error) {
-    throw new LookoutError(`Cannot read briefing file ${path}: ${error instanceof Error ? error.message : String(error)}`, 2);
+    throw new LookoutError(
+      `Cannot read briefing file ${path}: ${error instanceof Error ? error.message : String(error)}`,
+      2,
+    );
   }
   return { text, source: "file" };
 }
