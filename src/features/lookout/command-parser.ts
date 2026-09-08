@@ -28,6 +28,15 @@ function isValidRmBundle(value: string): boolean {
   return /^-[^-][A-Za-z]*$/.test(value) && [...value.slice(1)].every((character) => /[fFiIrRdv]/.test(character));
 }
 
+function isValidCleanBundle(value: string): boolean {
+  if (!BUNDLED_SHORT_FLAGS.test(value)) return true;
+  for (const character of value.slice(1)) {
+    if (character === "e") return true;
+    if (!/[dfinqxX]/.test(character)) return false;
+  }
+  return true;
+}
+
 
 /**
  * Force/mirror classification for one flag token, including parameterized
@@ -222,6 +231,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   const prefixIndex = index;
   let wrapper = tokens[prefixIndex]?.value.toLowerCase();
   let timeoutDurationConsumed = false;
+  let timeoutOptionValuePending = false;
   while (index < tokens.length) {
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
@@ -235,6 +245,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     ) {
       wrapper = value.toLowerCase();
       timeoutDurationConsumed = false;
+      timeoutOptionValuePending = false;
       index += 1;
       continue;
     }
@@ -302,7 +313,13 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       }
     }
     if (wrapper === "timeout") {
+      if (timeoutOptionValuePending) {
+        timeoutOptionValuePending = false;
+        index += 1;
+        continue;
+      }
       if (value.startsWith("-")) {
+        if (/^(?:-k|--kill-after|-s|--signal)$/.test(value)) timeoutOptionValuePending = true;
         index += 1;
         continue;
       }
@@ -362,6 +379,32 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
   return nested;
 }
 
+function findSubstitutionEnd(text: string, start: number): number {
+  let depth = 1;
+  let quote: "'" | '"' | null = null;
+  for (let index = start + 2; index < text.length; index += 1) {
+    const character = text[index] ?? "";
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (quote !== null) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === "'" || character === '"') {
+      quote = character;
+      continue;
+    }
+    if (character === "(") depth += 1;
+    else if (character === ")") {
+      depth -= 1;
+      if (depth === 0) return index;
+    }
+  }
+  return -1;
+}
+
 function nestedShellSubstitutions(line: string): Array<{ text: string; index: number }> {
   const nested: Array<{ text: string; index: number }> = [];
   for (const clause of splitCommandClauses(line)) {
@@ -389,28 +432,16 @@ function nestedShellSubstitutions(line: string): Array<{ text: string; index: nu
         continue;
       }
       if (clause.text.startsWith("$(", index)) {
-        let depth = 1;
-        let end = index + 2;
-        while (end < clause.text.length && depth > 0) {
-          if (clause.text.startsWith("$(", end)) depth += 1;
-          else if (clause.text[end] === ")") depth -= 1;
-          end += 1;
-        }
-        if (depth === 0) {
-          nested.push({ text: clause.text.slice(index + 2, end - 1), index: clause.index + index + 2 });
-          index = end - 1;
+        const end = findSubstitutionEnd(clause.text, index);
+        if (end >= 0) {
+          nested.push({ text: clause.text.slice(index + 2, end), index: clause.index + index + 2 });
+          index = end;
         }
       } else if (quote === null && (clause.text.startsWith("<(", index) || clause.text.startsWith(">(", index))) {
-        let depth = 1;
-        let end = index + 2;
-        while (end < clause.text.length && depth > 0) {
-          if (clause.text[end] === "(") depth += 1;
-          else if (clause.text[end] === ")") depth -= 1;
-          end += 1;
-        }
-        if (depth === 0) {
-          nested.push({ text: clause.text.slice(index + 2, end - 1), index: clause.index + index + 2 });
-          index = end - 1;
+        const end = findSubstitutionEnd(clause.text, index);
+        if (end >= 0) {
+          nested.push({ text: clause.text.slice(index + 2, end), index: clause.index + index + 2 });
+          index = end;
         }
       } else if (character === "`") {
         const end = clause.text.indexOf("`", index + 1);
@@ -661,6 +692,10 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       const value = cleanArgs[index].value;
       if (value === "--") break;
       if (/^(?:-h|--help|--version)$/.test(value)) {
+        help = true;
+        break;
+      }
+      if (BUNDLED_SHORT_FLAGS.test(value) && !isValidCleanBundle(value)) {
         help = true;
         break;
       }
