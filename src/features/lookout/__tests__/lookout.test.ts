@@ -341,6 +341,25 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
+  it("joins shell continuations and ignores printed or help commands", () => {
+    for (const brief of [
+      "git push \\\n+  --force origin feature",
+      "git push origin \\\n+  main",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(report.findings.some((finding) => finding.id.startsWith("lookout.brief."))).toBe(true);
+    }
+    for (const brief of [
+      "echo git push --force origin feature",
+      "echo rm -rf directory",
+      "git --help push --force origin feature",
+      "git --version push --force origin feature",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(report.findings).toEqual([]);
+    }
+  });
+
   it("flags direct conventional test paths", () => {
     for (const brief of [
       "Delete src/auth.test.ts",
@@ -592,6 +611,17 @@ describe("scanLookout: workspace rules", () => {
     const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     expect(report.repo).toBeNull();
     expect(report.findings).toEqual([]);
+  });
+
+  it("preserves a repository root that ends with whitespace", () => {
+    const parent = mkdtempSync(join(tmpdir(), "omc-lookout-root-"));
+    tempDirs.push(parent);
+    const dir = join(parent, "repo ");
+    mkdirSync(dir);
+    git(dir, ["init", "-q"]);
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "--allow-empty", "-q", "-m", "init"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(report.repo).toBe(dir);
   });
 
   it("fails closed on a broken repository instead of reporting clear", () => {

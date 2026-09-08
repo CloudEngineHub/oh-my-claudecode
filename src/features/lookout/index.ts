@@ -212,7 +212,7 @@ interface CommandToken {
 
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
-  value = value.replace(/[.,!?;:]+$/, "");
+  value = value.replace(/[.,!?;]+$/, "");
   while (
     value.length >= 2 &&
     ((value.startsWith("'") && value.endsWith("'")) ||
@@ -221,7 +221,7 @@ function normalizeCommandToken(token: string): string {
   ) {
     value = value.slice(1, -1);
   }
-  value = value.replace(/[.,!?;:]+$/, "");
+  value = value.replace(/[.,!?;]+$/, "");
   return value;
 }
 
@@ -302,9 +302,40 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
   return clauses;
 }
 
+function findExecutableIndex(tokens: CommandToken[], executable: string): number {
+  if (/^(?:echo|printf|print|cat)$/i.test(tokens[0]?.value ?? "")) return -1;
+  const proseCommand = tokens.findIndex(
+    (token, index) =>
+      index > 0 &&
+      /[:;]$/.test(token.value) &&
+      (tokens[index + 1]?.value === executable || tokens[index + 1]?.value.endsWith(`/${executable}`)),
+  );
+  if (proseCommand >= 0) return proseCommand + 1;
+
+  let index = 0;
+  while (index < tokens.length) {
+    const value = tokens[index].value;
+    if (value === executable || value.endsWith(`/${executable}`)) return index;
+    if (index === 0 && /^(?:run|sudo|env)$/i.test(value)) {
+      index += 1;
+      continue;
+    }
+    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(value)) {
+      index += 1;
+      continue;
+    }
+    if (index === 1 && /^(?:-[A-Za-z]+|--[\w-]+)$/.test(value) && tokens[0]?.value === "sudo") {
+      index += 1;
+      continue;
+    }
+    return -1;
+  }
+  return -1;
+}
+
 function parsePushCommand(segment: string): ParsedPush | null {
   const tokens = tokenizeCommand(segment);
-  const gitIndex = tokens.findIndex((token) => token.value === "git" || token.value.endsWith("/git"));
+  const gitIndex = findExecutableIndex(tokens, "git");
   if (gitIndex < 0) return null;
 
   let index = gitIndex + 1;
@@ -312,7 +343,7 @@ function parsePushCommand(segment: string): ParsedPush | null {
     const token = tokens[index].value;
     index += 1;
     if (token === "push") break;
-    if (token === "--") return null;
+    if (token === "--" || /^(?:-h|--help|-v|--version)$/.test(token)) return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(token)) {
       index += 1;
       continue;
@@ -328,6 +359,7 @@ function parsePushCommand(segment: string): ParsedPush | null {
     const token = tokens[i];
     const value = token.value;
     i += 1;
+    if (/^(?:-h|--help|-v|--version)$/.test(value)) return null;
     if (value.length === 0 || !COMMAND_WORD.test(value)) break; // prose begins here
     if (value.startsWith("-")) {
       if (PUSH_REPO_OPTION.test(value)) {
@@ -387,33 +419,32 @@ function collectRmForceOps(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
     const tokens = tokenizeCommand(clause.text);
-    for (let rmIndex = 0; rmIndex < tokens.length; rmIndex += 1) {
-      const rm = tokens[rmIndex];
-      if (rm.value !== "rm" && !rm.value.endsWith("/rm")) continue;
+    const rmIndex = findExecutableIndex(tokens, "rm");
+    if (rmIndex < 0) continue;
+    const rm = tokens[rmIndex];
 
-      let destructive = false;
-      const optionTokens: CommandToken[] = [];
-      for (const token of tokens.slice(rmIndex + 1)) {
-        if (token.value === "--") break;
-        if (token.value === "rm" || token.value.endsWith("/rm")) break;
-        if (token.value === "--recursive" || token.value === "--force") {
+    let destructive = false;
+    const optionTokens: CommandToken[] = [];
+    for (const token of tokens.slice(rmIndex + 1)) {
+      if (token.value === "--") break;
+      if (token.value === "rm" || token.value.endsWith("/rm")) break;
+      if (token.value === "--recursive" || token.value === "--force") {
+        optionTokens.push(token);
+        destructive = true;
+      } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
+        const options = token.value.slice(1).toLowerCase();
+        if (options.includes("r") || options.includes("f")) {
           optionTokens.push(token);
           destructive = true;
-        } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
-          const options = token.value.slice(1).toLowerCase();
-          if (options.includes("r") || options.includes("f")) {
-            optionTokens.push(token);
-            destructive = true;
-          }
         }
       }
-      if (destructive) {
-        addMatch(
-          hits,
-          `rm ${optionTokens.map((token) => token.value).join(" ")}`,
-          clause.index + rm.index,
-        );
-      }
+    }
+    if (destructive) {
+      addMatch(
+        hits,
+        `rm ${optionTokens.map((token) => token.value).join(" ")}`,
+        clause.index + rm.index,
+      );
     }
   }
   return hits;
@@ -425,13 +456,14 @@ interface GitSubcommand {
 }
 
 function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcommand | null {
-  const gitIndex = tokens.findIndex((token) => token.value === "git" || token.value.endsWith("/git"));
+  const gitIndex = findExecutableIndex(tokens, "git");
   if (gitIndex < 0) return null;
 
   let index = gitIndex + 1;
   while (index < tokens.length) {
     const value = tokens[index].value;
     if (value === command) return { gitIndex, commandIndex: index };
+    if (value === "--" || /^(?:-h|--help|-v|--version)$/.test(value)) return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
       index += 2;
       continue;
@@ -458,6 +490,7 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       const resetArgs = tokens.slice(reset.commandIndex + 1);
       const terminator = resetArgs.findIndex((token) => token.value === "--");
       const resetOptions = terminator < 0 ? resetArgs : resetArgs.slice(0, terminator);
+      if (resetOptions.some((token) => /^(?:-h|--help|-v|--version)$/.test(token.value))) continue;
       const hard = resetOptions.find((token) => token.value === "--hard");
       if (hard) {
         addMatch(hits, "git reset --hard", clause.index + tokens[reset.gitIndex].index);
@@ -468,10 +501,15 @@ function collectGitForceOps(line: string): CollectedMatch[] {
     if (!clean) continue;
     let force = false;
     let dryRun = false;
+    let help = false;
     const cleanArgs = tokens.slice(clean.commandIndex + 1);
     for (let index = 0; index < cleanArgs.length; index += 1) {
       const value = cleanArgs[index].value;
       if (value === "--") break;
+      if (/^(?:-h|--help|-v|--version)$/.test(value)) {
+        help = true;
+        break;
+      }
       if (CLEAN_VALUE_OPTION.test(value)) {
         index += 1;
         continue;
@@ -480,7 +518,7 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       if (value === "--force" || isBundledFlag(value, "f")) force = true;
       if (value === "--dry-run" || isBundledFlag(value, "n")) dryRun = true;
     }
-    if (force && !dryRun) addMatch(hits, "git clean", clause.index + tokens[clean.gitIndex].index);
+    if (!help && force && !dryRun) addMatch(hits, "git clean", clause.index + tokens[clean.gitIndex].index);
   }
   return hits;
 }
@@ -760,7 +798,7 @@ function repoRoot(repoArg: string): string | null {
     }
     throw new LookoutError(`git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`, 2);
   }
-  return top.trim();
+  return top.replace(/\r?\n$/, "");
 }
 
 /**
@@ -856,13 +894,14 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
 
   const brief = options.brief;
   if (brief !== undefined) {
+    const scanBrief = brief.replace(/\\\r?\n[ \t]*/g, " ");
     // Rules evaluate line by line while command collectors split clauses so
-    // a dry run or prohibition cannot hide a separate operation later in the
+    // a dry run or prohibition cannot hide a separate requested operation later in the
     // same line.
     for (const rule of BRIEF_RULES) {
       const evidence: string[] = [];
       const inputLines =
-        rule.id === "lookout.brief.db-destructive" ? [brief] : brief.split("\n");
+        rule.id === "lookout.brief.db-destructive" ? [scanBrief] : scanBrief.split("\n");
       for (const line of inputLines) {
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
