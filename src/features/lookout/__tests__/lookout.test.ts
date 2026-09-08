@@ -68,10 +68,28 @@ describe("scanLookout: briefing rules", () => {
       "git push origin main --force",
       "git push -u origin main --force-with-lease",
       "git push --force origin main",
+      "git push -f origin main",
+      "git push origin main -f",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
     }
+  });
+
+  it("flags raw git push commands targeting protected branches", () => {
+    for (const brief of [
+      "git push origin main",
+      "git push -u upstream release",
+      "git push origin HEAD:main",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
+    }
+  });
+
+  it("does not flag pushes to ordinary branches", () => {
+    const report = scanLookout({ ...base(), brief: "git push origin feature/billing-v2" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
   });
 
   it("flags destructive database operations", () => {
@@ -110,6 +128,11 @@ describe("scanLookout: briefing rules", () => {
   it("flags CI configuration changes as medium", () => {
     const report = scanLookout({ ...base(), brief: "Tighten the CI pipeline timeouts" });
     expect(ids(report.findings)).toContain("lookout.brief.ci-touch");
+  });
+
+  it("does not flag environment template mentions as secrets", () => {
+    const report = scanLookout({ ...base(), brief: "Update .env.example placeholders and .env.template docs" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.secrets-touch");
   });
 
   it("stays silent on routine wording (anti false-positive contract)", () => {

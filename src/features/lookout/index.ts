@@ -103,7 +103,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\b[^;\n]*\s(?:--force\b|--force-with-lease\b|\s-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-rf\b|\bgit\s+clean\s+-[a-z]*f[a-z]*d[a-z]*\b/gi,
+      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease\b|--force\b|-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-rf\b|\bgit\s+clean\s+-[a-z]*f[a-z]*d[a-z]*\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -127,7 +127,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing targets a protected branch directly",
     severity: "high",
     pattern:
-      /\b(?:push|merge|force-merge|squash-merge|rebase)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b/gi,
+      /\b(?:push|merge|force-merge|squash-merge|rebase)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+\S+){0,3}?\s+(?:origin|upstream)\s+(?:\S*[:/])?(?:main|master|release|production|develop)\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -135,7 +135,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing touches secret material (.env, keys, credentials)",
     severity: "medium",
     pattern:
-      /\.env\b|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
+      /\.env(?!\.(?:example|sample|template|dist))\b|\bapi[-_ ]?keys?\b|\bprivate[-_ ]?keys?\b|\bcredentials?\b|\bsecrets?\b/gi,
     advice:
       "Secret surfaces are easy to leak and hard to un-leak. If the task " +
       "really needs to read or change them, " + GATE_ADVICE,
@@ -181,11 +181,16 @@ interface GitFailure {
 
 function runGit(args: string[], cwd: string): string {
   try {
-    return execFileSync("git", args, {
+    // --no-optional-locks keeps the scan read-only: `git status` would
+    // otherwise refresh and rewrite .git/index (and can take the index
+    // lock during concurrent automation). Same approach as the HUD
+    // status reader (src/hud/elements/git.ts).
+    return execFileSync("git", ["--no-optional-locks", ...args], {
       cwd,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
       stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
     });
   } catch (error) {
     const failure = error as GitFailure;
@@ -203,11 +208,12 @@ function runGit(args: string[], cwd: string): string {
 function repoRoot(repoArg: string): string | null {
   let top: string;
   try {
-    top = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+    top = execFileSync("git", ["--no-optional-locks", "rev-parse", "--show-toplevel"], {
       cwd: repoArg,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
       stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
     });
   } catch (error) {
     const failure = error as GitFailure;
