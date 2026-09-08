@@ -314,11 +314,16 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
       .filter((index) => index >= 0)
       .sort((left, right) => left - right)[0] ?? -1;
     if (shellIndex < 0) continue;
-    const commandIndex = tokens.findIndex(
-      (token, index) =>
-        index > shellIndex &&
-        (token.value === "-c" || token.value === "--command" || /^-[^-]*c$/.test(token.value)),
-    );
+    let commandIndex = -1;
+    for (let index = shellIndex + 1; index < tokens.length; index += 1) {
+      const value = tokens[index].value;
+      if (value === "--") break;
+      if (value === "-c" || value === "--command" || /^-[^-]*c$/.test(value)) {
+        commandIndex = index;
+        break;
+      }
+      if (!value.startsWith("-")) break;
+    }
     const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
     if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
 

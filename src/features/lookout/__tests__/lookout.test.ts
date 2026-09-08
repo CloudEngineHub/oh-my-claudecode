@@ -386,6 +386,7 @@ describe("scanLookout: briefing rules", () => {
       "git reset --hard -- README.md",
       "echo foo\\; git push --force origin feature",
       "Prohibited: git push https://github.com/x/y.git --force origin feature",
+      "bash harmless.sh -c 'rm -rf build'",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -454,6 +455,8 @@ describe("scanLookout: briefing rules", () => {
       "skip src/auth.test.ts for now",
       "skip the failing test",
       "disable this test",
+      "disable this test case",
+      "skip the test suite",
       "remove the failing test",
     ]) {
       const report = scanLookout({ ...base(), brief });
