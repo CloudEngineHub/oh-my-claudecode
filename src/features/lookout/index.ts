@@ -156,6 +156,8 @@ const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z]+$/i;
+const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
+const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 
 /**
  * Force/mirror classification for one flag token, including parameterized
@@ -405,9 +407,16 @@ function collectGitForceOps(line: string): CollectedMatch[] {
     if (!clean) continue;
     let force = false;
     let dryRun = false;
-    for (const token of tokens.slice(clean.commandIndex + 1)) {
-      if (token.value === "--force" || isBundledFlag(token.value, "f")) force = true;
-      if (token.value === "--dry-run" || isBundledFlag(token.value, "n")) dryRun = true;
+    const cleanArgs = tokens.slice(clean.commandIndex + 1);
+    for (let index = 0; index < cleanArgs.length; index += 1) {
+      const value = cleanArgs[index].value;
+      if (CLEAN_VALUE_OPTION.test(value)) {
+        index += 1;
+        continue;
+      }
+      if (CLEAN_INLINE_VALUE_OPTION.test(value)) continue;
+      if (value === "--force" || isBundledFlag(value, "f")) force = true;
+      if (value === "--dry-run" || isBundledFlag(value, "n")) dryRun = true;
     }
     if (force && !dryRun) addMatch(hits, "git clean", clause.index + tokens[clean.gitIndex].index);
   }
@@ -438,7 +447,7 @@ function collectProtectedPushDests(line: string): CollectedMatch[] {
 }
 
 const SQL_CONTEXT_PATTERN =
-  /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/gi;
+  /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/gi;
 
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
   const before = line.slice(0, start);
@@ -489,7 +498,7 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+[A-Za-z_][\w.]*\b|\bDROP\s+COLUMN\s+[A-Za-z_][\w.]*\b|\bDELETE\s+FROM\s+[A-Za-z_][\w.]*\b|\bTRUNCATE\s+(?:TABLE|ONLY)\s+(?:IF\s+EXISTS\s+)?[A-Za-z_][\w.]*\b/g,
+      /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/g,
     collect: collectSqlDestructive,
   },
   {

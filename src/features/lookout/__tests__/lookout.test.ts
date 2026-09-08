@@ -104,7 +104,12 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(deleted.findings)).toContain("lookout.brief.db-destructive");
     const prose = scanLookout({ ...base(), brief: "copy the records, delete from memory afterwards" });
     expect(ids(prose.findings)).not.toContain("lookout.brief.db-destructive");
-    for (const brief of ["Run `drop table users`;", "drop table users;", "TRUNCATE users;"]) {
+    for (const brief of [
+      "Run `drop table users`;",
+      "drop table users;",
+      "TRUNCATE users;",
+      'DELETE FROM "production_users";',
+    ]) {
       const contextual = scanLookout({ ...base(), brief });
       expect(ids(contextual.findings)).toContain("lookout.brief.db-destructive");
     }
@@ -178,6 +183,8 @@ describe("scanLookout: briefing rules", () => {
     }
     const mixedClauses = scanLookout({ ...base(), brief: "git clean --dry-run; git reset --hard HEAD~1" });
     expect(ids(mixedClauses.findings)).toContain("lookout.brief.force-op");
+    const excludeValue = scanLookout({ ...base(), brief: "git clean -e -n -f" });
+    expect(ids(excludeValue.findings)).toContain("lookout.brief.force-op");
     for (const brief of ["git -C /repo reset --hard HEAD~1", "git reset -q --hard HEAD~1"]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.force-op");
