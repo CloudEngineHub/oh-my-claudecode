@@ -14,7 +14,7 @@ const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
-const SHELL_WRAPPER = /^(?:bash|sh|dash|zsh|ksh)$/;
+const SHELL_WRAPPER = /(?:^|\/)(?:bash|sh|dash|zsh|ksh)$/;
 
 /**
  * Force/mirror classification for one flag token, including parameterized
@@ -398,6 +398,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
 
     let destructive = false;
     let help = false;
+    let hasOperand = false;
     const optionTokens: CommandToken[] = [];
     for (const token of tokens.slice(rmIndex + 1)) {
       if (token.value === "--") break;
@@ -415,9 +416,11 @@ function collectRmForceOps(line: string): CollectedMatch[] {
           optionTokens.push(token);
           destructive = true;
         }
+      } else {
+        hasOperand = true;
       }
     }
-    if (destructive && !help) {
+    if (destructive && hasOperand && !help) {
       addMatch(
         hits,
         `rm ${optionTokens.map((token) => token.value).join(" ")}`,
