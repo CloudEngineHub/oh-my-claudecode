@@ -110,7 +110,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease\b|--force\b|-f\b)|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-[a-z]*[fd][a-z]*[fd][a-z]*\b|\bgit\s+clean\b[^;\n]*\s-f\b[^;\n]*\s-d\b|\bgit\s+clean\b[^;\n]*\s-d\b[^;\n]*\s-f\b/gi,
+      /\bgit\s+push\b[^;\n]*?(?:^|[^-\w])(?:--force-with-lease(?![\w-])|--force(?![\w-])|-f(?![\w-]))|\bgit\s+push\b[^;\n]*\s\+\S+|\bgit\s+push\b[^;\n]*\s--mirror(?![\w-])|\bgit\s+reset\s+--hard\b|\brm\s+-[a-z]*[rf][a-z]*[rf][a-z]*\b|\brm\b[^;\n]*\s-r\b[^;\n]*\s-f\b|\brm\b[^;\n]*\s-f\b[^;\n]*\s-r\b|\brm\b[^;\n]*--(?:recursive|force)\b[^;\n]*--(?:recursive|force)\b|\bgit\s+clean\s+-[a-z]*[fd][a-z]*[fd][a-z]*\b|\bgit\s+clean\b[^;\n]*\s-f\b[^;\n]*\s-d\b|\bgit\s+clean\b[^;\n]*\s-d\b[^;\n]*\s-f\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -134,7 +134,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing targets a protected branch directly",
     severity: "high",
     pattern:
-      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+--?\S+){0,2}\s+(?:\S+\s+)?(?:\S*[:/])?(?:main|master|release|production|develop)(?![\w-])/gi,
+      /\b(?:push|merge|force-merge|squash-merge)\s+(?:\w+\s+){0,3}?(?:to|into|on|against|onto)\s+(?:the\s+)?(?:main|master|release|production|develop)\b|\bdirect(?:ly)?\s+(?:push|commit|merge)\w*\s+(?:\w+\s+){0,2}?(?:to|into|on)\s+(?:the\s+)?(?:main|master|release|production)\b|\bgit\s+push\b(?:\s+--?\S+){0,2}\s+(?:\S+\s+)?(?:[\w./+-]+:)?(?:main|master|release|production|develop)(?![\w:-])(?:\/[\w./-]+)?(?=[\s;]|$)/gi,
     advice: GATE_ADVICE,
   },
   {

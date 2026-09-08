@@ -121,6 +121,25 @@ describe("scanLookout: briefing rules", () => {
     }
   });
 
+  it("flags mirror pushes as destructive", () => {
+    const report = scanLookout({ ...base(), brief: "git push --mirror origin" });
+    expect(ids(report.findings)).toContain("lookout.brief.force-op");
+  });
+
+  it("does not flag the --force-if-includes option as a force push", () => {
+    const report = scanLookout({ ...base(), brief: "git push --force-if-includes origin feature" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.force-op");
+  });
+
+  it("inspects only the refspec destination for protected-branch pushes", () => {
+    // main is the *source* here; the destination (feature) is not protected.
+    const report = scanLookout({ ...base(), brief: "git push origin main:feature" });
+    expect(ids(report.findings)).not.toContain("lookout.brief.protected-branch");
+    // inverse of the existing HEAD:main case still holds
+    const report2 = scanLookout({ ...base(), brief: "git push origin HEAD:main" });
+    expect(ids(report2.findings)).toContain("lookout.brief.protected-branch");
+  });
+
   it("flags test deletion and test skipping", () => {
     const report = scanLookout({
       ...base(),
