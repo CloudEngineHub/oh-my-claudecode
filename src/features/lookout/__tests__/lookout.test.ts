@@ -86,10 +86,16 @@ describe("scanLookout: briefing rules", () => {
       "git push origin 'refs/heads/*:refs/heads/*'",
       "git push origin 'refs/heads/*:refs/heads/release/*'",
       "git push origin 'refs/heads/m*:refs/heads/m*'",
+      "git push origin refs/heads/*:refs/heads/*",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
     }
+  });
+
+  it("flags explicit force-push prose targeting protected branches", () => {
+    const report = scanLookout({ ...base(), brief: "force push to main" });
+    expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
   });
 
   it("does not flag pushes to ordinary branches", () => {
@@ -121,6 +127,8 @@ describe("scanLookout: briefing rules", () => {
       "DROP SCHEMA production",
       "sqlite3 db.sqlite 'drop view active_users'",
       "sqlite3 db.sqlite 'drop index users_email_idx'",
+      "sudo -u postgres psql -c 'drop table users'",
+      "env PGDATABASE=app psql -c 'drop table users'",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
     ]) {
@@ -429,6 +437,11 @@ describe("scanLookout: briefing rules", () => {
       "/usr/bin/bash -c 'git push --force origin feature'",
       "sudo bash -c 'git push --force origin feature'",
       "sh -c 'rm -rf build'",
+      "bash --rcfile /dev/null -c 'rm -rf build'",
+      "bash --init-file /dev/null -c 'rm -rf build'",
+      "bash -o pipefail -c 'git push --force origin feature'",
+      "bash -O extglob -c 'git push --force origin feature'",
+      String.raw`echo "quoted\\"; rm -rf build`,
       "env -S 'git push --force origin feature'",
       "REMOTE=origin git push $REMOTE --force main",
       "nohup git push --force origin feature",
@@ -487,6 +500,9 @@ describe("scanLookout: briefing rules", () => {
       "disable this test case",
       "skip the test suite",
       "remove the failing test",
+      "delete the auth tests",
+      "remove payment tests",
+      "skip the auth tests",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.test-deletion");
@@ -508,6 +524,13 @@ describe("scanLookout: briefing rules", () => {
 
   it("keeps repeated negation lookup bounded", () => {
     const brief = Array.from({ length: 30_000 }, () => "never skip tests").join("; ");
+    const started = performance.now();
+    scanLookout({ ...base(), brief });
+    expect(performance.now() - started).toBeLessThan(3_000);
+  });
+
+  it("bounds deeply nested substitution scanning", () => {
+    const brief = `${"$(".repeat(5_000)}printf ok${")".repeat(5_000)}`;
     const started = performance.now();
     scanLookout({ ...base(), brief });
     expect(performance.now() - started).toBeLessThan(3_000);

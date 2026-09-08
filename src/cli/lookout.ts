@@ -117,7 +117,7 @@ export function lookoutCommand(): Command {
           process.exitCode = 1;
         }
       } catch (error) {
-        fail(errorMessage(error), error instanceof LookoutError ? error.exitCode : 1);
+        fail(errorMessage(error), error instanceof LookoutError ? error.exitCode : 2);
       }
     });
 

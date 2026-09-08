@@ -1,8 +1,10 @@
 /** Quote-aware shell/Git command parsing for lookout briefing rules. */
 
+import { findNestedSubstitutions } from "./substitution-parser.js";
+
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const PROTECTED_BRANCH_SAMPLES = ["main", "master", "develop", "release/example", "production/example"];
-const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-$]+$/;
+const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-*$]+$/;
 /** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
@@ -15,6 +17,7 @@ const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
+const MAX_NESTED_SCAN_DEPTH = 64;
 
 function isValidPushBundle(value: string): boolean {
   if (!BUNDLED_SHORT_FLAGS.test(value)) return true;
@@ -102,6 +105,12 @@ interface CommandToken {
   raw: string;
 }
 
+function isEscapedByOddBackslashes(text: string, index: number): boolean {
+  let count = 0;
+  for (let cursor = index - 1; cursor >= 0 && text[cursor] === "\\"; cursor -= 1) count += 1;
+  return count % 2 === 1;
+}
+
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
   if (value === "!") return value;
@@ -135,7 +144,7 @@ function tokenizeCommand(segment: string): CommandToken[] {
         raw += character;
       if (quote === "'") {
         if (character === "'") quote = null;
-      } else if (character === '"' && segment[index - 1] !== "\\") {
+      } else if (character === '"' && !isEscapedByOddBackslashes(segment, index)) {
         quote = null;
       }
         index += 1;
@@ -178,7 +187,7 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
     if (quote !== null) {
       if (quote === "'") {
         if (character === "'") quote = null;
-      } else if (character === '"' && line[index - 1] !== "\\") {
+      } else if (character === '"' && !isEscapedByOddBackslashes(line, index)) {
         quote = null;
       }
       index += 1;
@@ -390,6 +399,11 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
     for (let index = shellIndex + 1; index < tokens.length; index += 1) {
       const value = tokens[index].value;
       if (value === "--") break;
+      if (/^(?:--rcfile|--init-file|-O|-o)$/.test(value)) {
+        index += 1;
+        continue;
+      }
+      if (/^(?:--rcfile|--init-file|-O|-o)=/.test(value) || /^-[Oo].+/.test(value)) continue;
       if (value === "-c" || value === "--command" || /^-[^-]*c$/.test(value)) {
         commandIndex = index;
         break;
@@ -403,88 +417,8 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
   return nested;
 }
 
-function findSubstitutionEnd(text: string, start: number): number {
-  let depth = 1;
-  let quote: "'" | '"' | null = null;
-  for (let index = start + 2; index < text.length; index += 1) {
-    const character = text[index] ?? "";
-    if (quote === "'") {
-      if (character === "'") quote = null;
-      continue;
-    }
-    if (quote === '"') {
-      if (character === "\\") {
-        index += 1;
-        continue;
-      }
-      if (character === '"') quote = null;
-      continue;
-    }
-    if (character === "\\") {
-      index += 1;
-      continue;
-    }
-    if (character === "'" || character === '"') {
-      quote = character;
-      continue;
-    }
-    if (character === "(") depth += 1;
-    else if (character === ")") {
-      depth -= 1;
-      if (depth === 0) return index;
-    }
-  }
-  return -1;
-}
-
 function nestedShellSubstitutions(line: string): Array<{ text: string; index: number }> {
-  const nested: Array<{ text: string; index: number }> = [];
-  for (const clause of splitCommandClauses(line)) {
-    let quote: "'" | '"' | null = null;
-    for (let index = 0; index < clause.text.length; index += 1) {
-      const character = clause.text[index] ?? "";
-      if (quote === "'") {
-        if (character === "'" && clause.text[index - 1] !== "\\") quote = null;
-        continue;
-      }
-      if (quote === '"') {
-        if (character === "\\") {
-          index += 1;
-          continue;
-        }
-        if (character === '"' && clause.text[index - 1] !== "\\") quote = null;
-      } else if (character === "'") {
-        quote = "'";
-      } else if (character === '"') {
-        quote = '"';
-      }
-      if (quote === "'") continue;
-      if (character === "\\") {
-        index += 1;
-        continue;
-      }
-      if (clause.text.startsWith("$(", index)) {
-        const end = findSubstitutionEnd(clause.text, index);
-        if (end >= 0) {
-          nested.push({ text: clause.text.slice(index + 2, end), index: clause.index + index + 2 });
-          index = end;
-        }
-      } else if (quote === null && (clause.text.startsWith("<(", index) || clause.text.startsWith(">(", index))) {
-        const end = findSubstitutionEnd(clause.text, index);
-        if (end >= 0) {
-          nested.push({ text: clause.text.slice(index + 2, end), index: clause.index + index + 2 });
-          index = end;
-        }
-      } else if (character === "`") {
-        const end = clause.text.indexOf("`", index + 1);
-        if (end >= 0) {
-          nested.push({ text: clause.text.slice(index + 1, end), index: clause.index + index + 1 });
-          index = end;
-        }
-      }
-    }
-  }
-  return nested;
+  return findNestedSubstitutions(splitCommandClauses(line));
 }
 
 function parsePushCommand(segment: string): ParsedPush | null {
@@ -754,22 +688,23 @@ function collectGitForceOps(line: string): CollectedMatch[] {
   return hits;
 }
 
-export function collectForceOps(line: string): CollectedMatch[] {
+export function collectForceOps(line: string, depth = 0): CollectedMatch[] {
   const hits = [...collectGitForceOps(line), ...collectPushForceOps(line), ...collectRmForceOps(line)];
+  if (depth >= MAX_NESTED_SCAN_DEPTH) return hits;
   for (const nested of nestedShellCommands(line)) {
-    for (const match of collectForceOps(nested.text)) {
+    for (const match of collectForceOps(nested.text, depth + 1)) {
       addMatch(hits, match.snippet, nested.index + match.index);
     }
   }
   for (const nested of nestedShellSubstitutions(line)) {
-    for (const match of collectForceOps(nested.text)) {
+    for (const match of collectForceOps(nested.text, depth + 1)) {
       addMatch(hits, match.snippet, nested.index + match.index);
     }
   }
   return hits;
 }
 
-export function collectProtectedPushDests(line: string): CollectedMatch[] {
+export function collectProtectedPushDests(line: string, depth = 0): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
     const parsed = parsePushCommand(clause.text);
@@ -806,13 +741,14 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
       }
     }
   }
+  if (depth >= MAX_NESTED_SCAN_DEPTH) return hits;
   for (const nested of nestedShellCommands(line)) {
-    for (const match of collectProtectedPushDests(nested.text)) {
+    for (const match of collectProtectedPushDests(nested.text, depth + 1)) {
       addMatch(hits, match.snippet, nested.index + match.index);
     }
   }
   for (const nested of nestedShellSubstitutions(line)) {
-    for (const match of collectProtectedPushDests(nested.text)) {
+    for (const match of collectProtectedPushDests(nested.text, depth + 1)) {
       addMatch(hits, match.snippet, nested.index + match.index);
     }
   }

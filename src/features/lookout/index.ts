@@ -192,7 +192,42 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
 
 function hasSqlClientCommandContext(before: string): boolean {
   const segment = before.split(/[;&|]/).at(-1) ?? before;
-  return /^\s*(?:[-*>]\s*)*(?:(?:sudo|env)\s+)*(?:sqlite3|psql|mysql|mariadb|sqlcmd)\b/i.test(segment);
+  const tokens = segment.trim().split(/\s+/).filter(Boolean);
+  let index = 0;
+  while (index < tokens.length) {
+    const value = tokens[index].replace(/^[-*>]+/, "");
+    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(value)) {
+      index += 1;
+      continue;
+    }
+    if (/^(?:sudo|env)$/i.test(value)) {
+      const wrapper = value.toLowerCase();
+      index += 1;
+      while (index < tokens.length) {
+        const option = tokens[index];
+        if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(option)) {
+          index += 1;
+          continue;
+        }
+        if (wrapper === "sudo" && /^(?:-u|--user|-g|--group|-D|-R|-T|--chdir|--chroot|--command-timeout)$/.test(option)) {
+          index += 2;
+          continue;
+        }
+        if (wrapper === "env" && /^(?:-C|--chdir|-u|--unset)$/.test(option)) {
+          index += 2;
+          continue;
+        }
+        if (option.startsWith("-")) {
+          index += 1;
+          continue;
+        }
+        break;
+      }
+      continue;
+    }
+    return /^(?:sqlite3|psql|mysql|mariadb|sqlcmd)$/i.test(value);
+  }
+  return false;
 }
 
 function hasOpenShellQuote(text: string): boolean {
@@ -264,7 +299,7 @@ const BRIEF_RULES: BriefRule[] = [
     // Covers plural "tests", "test files/suites/cases" phrases, and direct
     // conventional test paths (src/auth.test.ts, tests/auth.spec.ts).
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|directory|folder|account|environment|database|server|user|record|table|branch|helper|hook)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:the\s+)?(?:[\w./-]+\s+){1,2}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|directory|folder|account|environment|database|server|user|record|table|branch|helper|hook)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -370,7 +405,7 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
           if (
             rule.id === "lookout.brief.protected-branch" &&
             /\b(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)\b/i.test(snippet) &&
-            !/\b(?:git|branch|ref(?:spec)?|remote|commit|pr)\b/i.test(line)
+            !/\b(?:git|branch|ref(?:spec)?|remote|commit|pr|force\s+push)\b/i.test(line)
           ) {
             continue;
           }
