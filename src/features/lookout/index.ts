@@ -114,7 +114,7 @@ interface BriefRule {
  * prohibition from masking a separate requested operation later in a line.
  */
 const NEGATION_CUE = /\b(?:do\s+not|don't|dont|never|avoid|must\s+not|prohibited)\b/gi;
-const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[.!?]/g;
+const NEGATION_HARD_BOUNDARY = /;|&&|\|\||[.!?]|\r?\n/g;
 const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
 function isNegated(line: string, matchIndex: number): boolean {
@@ -221,6 +221,7 @@ function normalizeCommandToken(token: string): string {
   ) {
     value = value.slice(1, -1);
   }
+  value = value.replace(/\\([\s'"\\])/g, "$1");
   value = value.replace(/[.,!?;]+$/, "");
   return value;
 }
@@ -253,6 +254,11 @@ function tokenizeCommand(segment: string): CommandToken[] {
         index += 1;
         continue;
       }
+      if (character === "\\" && index + 1 < segment.length) {
+        raw += character + (segment[index + 1] ?? "");
+        index += 2;
+        continue;
+      }
       if (/\s/.test(character)) break;
       raw += character;
       index += 1;
@@ -265,7 +271,7 @@ function tokenizeCommand(segment: string): CommandToken[] {
 function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
   const clauses: Array<{ text: string; index: number }> = [];
   let start = 0;
-  let quote: "'" | '"' | "`" | null = null;
+  let quote: "'" | '"' | null = null;
   let index = 0;
   while (index < line.length) {
     const character = line[index] ?? "";
@@ -274,7 +280,7 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
       index += 1;
       continue;
     }
-    if (character === "'" || character === '"' || character === "`") {
+    if (character === "'" || character === '"') {
       quote = character;
       index += 1;
       continue;
@@ -313,10 +319,12 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   if (proseCommand >= 0) return proseCommand + 1;
 
   let index = 0;
+  if (/^(?:-|\*|\d+)$/.test(tokens[0]?.value ?? "")) index = 1;
+  const prefixIndex = index;
   while (index < tokens.length) {
     const value = tokens[index].value;
     if (value === executable || value.endsWith(`/${executable}`)) return index;
-    if (index === 0 && /^(?:run|sudo|env)$/i.test(value)) {
+    if (index === prefixIndex && /^(?:run|sudo|env)$/i.test(value)) {
       index += 1;
       continue;
     }
@@ -324,7 +332,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       index += 1;
       continue;
     }
-    if (index === 1 && /^(?:-[A-Za-z]+|--[\w-]+)$/.test(value) && tokens[0]?.value === "sudo") {
+    if (index === prefixIndex + 1 && /^(?:-[A-Za-z]+|--[\w-]+)$/.test(value) && tokens[prefixIndex]?.value === "sudo") {
       index += 1;
       continue;
     }
@@ -424,10 +432,15 @@ function collectRmForceOps(line: string): CollectedMatch[] {
     const rm = tokens[rmIndex];
 
     let destructive = false;
+    let help = false;
     const optionTokens: CommandToken[] = [];
     for (const token of tokens.slice(rmIndex + 1)) {
       if (token.value === "--") break;
       if (token.value === "rm" || token.value.endsWith("/rm")) break;
+      if (/^(?:-h|--help|-v|--version)$/.test(token.value)) {
+        help = true;
+        break;
+      }
       if (token.value === "--recursive" || token.value === "--force") {
         optionTokens.push(token);
         destructive = true;
@@ -439,7 +452,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
         }
       }
     }
-    if (destructive) {
+    if (destructive && !help) {
       addMatch(
         hits,
         `rm ${optionTokens.map((token) => token.value).join(" ")}`,
@@ -840,8 +853,9 @@ function scanWorkspace(root: string): LookoutFinding[] {
   // -uall overrides a repository-local status.showUntrackedFiles=no, which
   // would otherwise hide untracked files and report a clean workspace.
   const status = runGit(["status", "--porcelain", "-uall", "--ignore-submodules=none"], root);
-  if (status && status.trim().length > 0) {
-    const lines = status.trim().split("\n").slice(0, 5);
+  const statusRecords = status.replace(/\r?\n$/, "");
+  if (statusRecords.length > 0) {
+    const lines = statusRecords.split("\n").slice(0, 5);
     findings.push({
       id: "lookout.ws.dirty-worktree",
       title: "Working tree has uncommitted changes",

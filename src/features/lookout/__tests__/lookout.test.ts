@@ -104,6 +104,8 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(deleted.findings)).toContain("lookout.brief.db-destructive");
     const prose = scanLookout({ ...base(), brief: "copy the records, delete from memory afterwards" });
     expect(ids(prose.findings)).not.toContain("lookout.brief.db-destructive");
+    const separateLine = scanLookout({ ...base(), brief: "Do not update docs\nDELETE FROM users;" });
+    expect(ids(separateLine.findings)).toContain("lookout.brief.db-destructive");
     for (const brief of [
       "Run `drop table users`;",
       "drop table users;",
@@ -360,6 +362,23 @@ describe("scanLookout: briefing rules", () => {
     }
   });
 
+  it("handles Markdown command lists, code spans, and escaped option values", () => {
+    for (const brief of [
+      "- git push --force origin feature",
+      "* rm -rf build",
+      "1. git push origin main",
+      "Run `git status; git push --force origin feature`.",
+      "git push -o one\\ and\\ two --force origin feature",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(report.findings.some((finding) => finding.id === "lookout.brief.force-op" || finding.id === "lookout.brief.protected-branch")).toBe(true);
+    }
+    for (const brief of ["rm --help -rf /tmp/x", "rm --version -rf /tmp/x"]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(report.findings).toEqual([]);
+    }
+  });
+
   it("flags direct conventional test paths", () => {
     for (const brief of [
       "Delete src/auth.test.ts",
@@ -538,6 +557,7 @@ describe("scanLookout: workspace rules", () => {
     const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
     const finding = report.findings.find((f) => f.id === "lookout.ws.dirty-worktree");
     expect(finding?.severity).toBe("low");
+    expect(finding?.evidence).toContain(" M base.txt");
     expect(finding?.advice).toContain("omc checkpoint create");
     expect(report.summary.verdict).toBe("advisory"); // low findings are not "clear"
   });
