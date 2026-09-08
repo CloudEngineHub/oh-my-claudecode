@@ -383,6 +383,8 @@ describe("scanLookout: briefing rules", () => {
       "git push -o one\\ and\\ two --force origin feature",
       "git push --receive-pack evil --force origin feature",
       "git push --exec=evil --force origin feature",
+      "git push -4f origin feature",
+      "git push -n --no-dry-run --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings.some((finding) => finding.id === "lookout.brief.force-op" || finding.id === "lookout.brief.protected-branch")).toBe(true);
@@ -409,6 +411,10 @@ describe("scanLookout: briefing rules", () => {
     // non-deletion work on a test file stays silent
     const report = scanLookout({ ...base(), brief: "refactor the helpers in src/auth.test.ts" });
     expect(ids(report.findings)).not.toContain("lookout.brief.test-deletion");
+    for (const brief of ["remove the test account", "delete the test environment", "disable the test database"]) {
+      const falsePositive = scanLookout({ ...base(), brief });
+      expect(ids(falsePositive.findings)).not.toContain("lookout.brief.test-deletion");
+    }
   });
 
   it("honors explicit negation in briefings", () => {
@@ -420,6 +426,10 @@ describe("scanLookout: briefing rules", () => {
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
+    }
+    for (const brief of ["Don't forget to git push --force origin feature", "Don't hesitate to rm -rf build"]) {
+      const reminder = scanLookout({ ...base(), brief });
+      expect(reminder.findings.length).toBeGreaterThan(0);
     }
   });
 

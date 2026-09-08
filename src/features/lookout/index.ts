@@ -119,12 +119,15 @@ const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
 function isNegated(line: string, matchIndex: number): boolean {
   let cueIndex = -1;
+  let cueEnd = -1;
   for (const cue of line.matchAll(NEGATION_CUE)) {
     if (cue.index !== undefined && cue.index <= matchIndex && matchIndex - cue.index < 48) {
       cueIndex = cue.index;
+      cueEnd = cue.index + cue[0].length;
     }
   }
   if (cueIndex < 0) return false;
+  if (/^\s+(?:forget|hesitate)\b/i.test(line.slice(cueEnd))) return false;
   for (const boundary of line.matchAll(NEGATION_HARD_BOUNDARY)) {
     if (boundary.index !== undefined && boundary.index > cueIndex && boundary.index < matchIndex) {
       return false;
@@ -168,7 +171,7 @@ const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--
 const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
-const BUNDLED_SHORT_FLAGS = /^-[a-z]+$/;
+const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 
@@ -245,7 +248,7 @@ function tokenizeCommand(segment: string): CommandToken[] {
         index += 1;
         continue;
       }
-      if (character === "'" || character === '"') {
+      if ((character === "'" || character === '"') && raw.length === 0) {
         quote = character;
         raw += character;
         index += 1;
@@ -323,6 +326,13 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       (tokens[index + 1]?.value === executable || tokens[index + 1]?.value.endsWith(`/${executable}`)),
   );
   if (proseCommand >= 0) return proseCommand + 1;
+  const reminderCommand = tokens.findIndex(
+    (token, index) =>
+      token.value.toLowerCase() === "to" &&
+      /^(?:forget|hesitate|remember)$/i.test(tokens[index - 1]?.value ?? "") &&
+      (tokens[index + 1]?.value === executable || tokens[index + 1]?.value.endsWith(`/${executable}`)),
+  );
+  if (reminderCommand >= 0) return reminderCommand + 1;
 
   let index = 0;
   if (/^(?:-|\*|\d+)$/.test(tokens[0]?.value ?? "")) index = 1;
@@ -443,8 +453,12 @@ function parsePushCommand(segment: string): ParsedPush | null {
 }
 
 function isPushDryRun(parsed: ParsedPush): boolean {
-  // A bundled -nf is a dry run first: git would not perform the push.
-  return parsed.flags.some((flag) => isPushDryRunFlag(flag.snippet));
+  let dryRun = false;
+  for (const flag of parsed.flags) {
+    if (flag.snippet === "--no-dry-run") dryRun = false;
+    else if (isPushDryRunFlag(flag.snippet)) dryRun = true;
+  }
+  return dryRun;
 }
 
 function addMatch(hits: CollectedMatch[], snippet: string, index: number): void {
@@ -687,7 +701,7 @@ const BRIEF_RULES: BriefRule[] = [
     // Covers plural "tests", "test files/suites/cases" phrases, and direct
     // conventional test paths (src/auth.test.ts, tests/auth.spec.ts).
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|files?|suites?|cases?|directory|folder)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|files?|suites?|cases?|directory|folder|account|environment|database|server|user|record|table|branch)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
     advice: GATE_ADVICE,
   },
   {
