@@ -114,6 +114,7 @@ describe("scanLookout: briefing rules", () => {
       "delete from users where inactive = true;",
       "drop table users cascade;",
       "DROP SCHEMA production CASCADE;",
+      "DROP SCHEMA production",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
     ]) {
@@ -373,6 +374,8 @@ describe("scanLookout: briefing rules", () => {
       "sudo -u root git push --force origin feature",
       "Run `git status; git push --force origin feature`.",
       "git push -o one\\ and\\ two --force origin feature",
+      "git push --receive-pack evil --force origin feature",
+      "git push --exec=evil --force origin feature",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings.some((finding) => finding.id === "lookout.brief.force-op" || finding.id === "lookout.brief.protected-branch")).toBe(true);

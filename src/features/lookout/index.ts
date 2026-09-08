@@ -162,9 +162,9 @@ const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=-]+$/;
 /** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
-const PUSH_OPTION_VALUE = /^(?:-o|--push-option)$/;
+const PUSH_OPTION_VALUE = /^(?:-o|--push-option|--receive-pack|--exec|--no-exec)$/;
 const PUSH_REPO_OPTION = /^--repo$/;
-const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+)$/;
+const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--exec=.+|--no-exec=.+)$/;
 const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
@@ -608,7 +608,8 @@ function collectSqlDestructive(line: string): CollectedMatch[] {
   for (const pattern of [SQL_CONTEXT_PATTERN, SQL_SCHEMA_PATTERN]) {
     for (const match of line.matchAll(pattern)) {
       const index = match.index ?? 0;
-      if (isExplicitSqlContext(line, index + match[0].length, index)) {
+      const uppercaseSchema = pattern === SQL_SCHEMA_PATTERN && /^DROP\s+SCHEMA\b/.test(match[0]);
+      if (uppercaseSchema || isExplicitSqlContext(line, index + match[0].length, index)) {
         addMatch(hits, match[0].replace(/\s+/g, " ").trim(), index);
       }
     }
