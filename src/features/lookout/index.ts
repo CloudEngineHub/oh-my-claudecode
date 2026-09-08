@@ -411,7 +411,10 @@ function parsePushCommand(segment: string): ParsedPush | null {
     const token = tokens[index].value;
     index += 1;
     if (token === "push") break;
-    if (token === "--" || /^(?:-h|--help|-v|--version)$/.test(token)) return null;
+    if (
+      token === "--" ||
+      /^(?:-h|--help|-v|--version|--html-path|--man-path|--info-path)$/.test(token)
+    ) return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(token)) {
       index += 1;
       continue;
@@ -471,12 +474,14 @@ function collectPushForceOps(line: string): CollectedMatch[] {
   for (const clause of splitCommandClauses(line)) {
     const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
+    let forceSnippet: CollectedMatch | null = null;
     for (const flag of parsed.flags) {
-      if (isPushForceFlag(flag.snippet)) {
-        addMatch(hits, flag.snippet, clause.index + flag.index);
-        break;
+      if (flag.snippet === "--no-force") forceSnippet = null;
+      else if (isPushForceFlag(flag.snippet)) {
+        forceSnippet = { snippet: flag.snippet, index: clause.index + flag.index };
       }
     }
+    if (forceSnippet) addMatch(hits, forceSnippet.snippet, forceSnippet.index);
     for (const refspec of parsed.refspecs) {
       if (refspec.snippet.startsWith("+")) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
@@ -540,7 +545,10 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
   while (index < tokens.length) {
     const value = tokens[index].value;
     if (value === command) return { gitIndex, commandIndex: index };
-    if (value === "--" || /^(?:-h|--help|-v|--version)$/.test(value)) return null;
+    if (
+      value === "--" ||
+      /^(?:-h|--help|-v|--version|--html-path|--man-path|--info-path)$/.test(value)
+    ) return null;
     if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
       index += 2;
       continue;
@@ -593,7 +601,8 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       }
       if (CLEAN_INLINE_VALUE_OPTION.test(value)) continue;
       if (value === "--force" || isBundledFlag(value, "f")) force = true;
-      if (value === "--dry-run" || isBundledFlag(value, "n")) dryRun = true;
+      if (value === "--no-dry-run") dryRun = false;
+      else if (value === "--dry-run" || isBundledFlag(value, "n")) dryRun = true;
     }
     if (!help && force && !dryRun) addMatch(hits, "git clean", clause.index + tokens[clean.gitIndex].index);
   }
@@ -993,8 +1002,8 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
           const snippet = match[0].replace(/\s+/g, " ").trim();
           if (
             rule.id === "lookout.brief.protected-branch" &&
-            /\bproduction(?:\/[\w./-]+)?\b/i.test(snippet) &&
-            !/\b(?:git|branch|ref(?:spec)?|remote|commit|merge)\b/i.test(line)
+            /\b(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)\b/i.test(snippet) &&
+            !/\b(?:git|branch|ref(?:spec)?|remote|commit|merge|pr)\b/i.test(line)
           ) {
             continue;
           }
