@@ -85,6 +85,7 @@ describe("scanLookout: briefing rules", () => {
       "git push --all origin",
       "git push origin 'refs/heads/*:refs/heads/*'",
       "git push origin 'refs/heads/*:refs/heads/release/*'",
+      "git push origin 'refs/heads/m*:refs/heads/m*'",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
@@ -387,6 +388,7 @@ describe("scanLookout: briefing rules", () => {
       "git push -xf origin feature",
       "git clean --force --no-force",
       "git clean -zf",
+      "git clean -ef",
       "rm -rf",
       "git -c clean.requireForce=false -c clean.requireForce=true clean",
       "command -v git push --force origin feature",
@@ -434,6 +436,7 @@ describe("scanLookout: briefing rules", () => {
       "timeout -k 1s 30s rm -rf build",
       "timeout -s TERM 30s git push --force origin feature",
       "echo \"$(printf ')'; rm -rf build)\"",
+      String.raw`echo "$(printf '\'; rm -rf build)"`,
       "! git push --force origin feature",
       "! rm -rf build",
       "echo $(git push --force origin feature)",
@@ -456,6 +459,7 @@ describe("scanLookout: briefing rules", () => {
       "git push --force-with-lease --no-force origin feature",
       "git clean -n --no-dry-run -f",
       "git -c clean.requireForce=false clean",
+      "CLEAN_FORCE=false git --config-env=clean.requireForce=CLEAN_FORCE clean -d",
       "git -c clean.requireForce=0 clean",
       "git -c CLEAN.REQUIREFORCE=FALSE clean",
       "rm -v -rf build",

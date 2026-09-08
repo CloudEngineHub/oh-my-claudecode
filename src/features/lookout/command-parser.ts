@@ -1,6 +1,7 @@
 /** Quote-aware shell/Git command parsing for lookout briefing rules. */
 
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
+const PROTECTED_BRANCH_SAMPLES = ["main", "master", "develop", "release/example", "production/example"];
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-$]+$/;
 /** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
@@ -24,6 +25,13 @@ function isValidPushBundle(value: string): boolean {
   return true;
 }
 
+function wildcardCanMatchProtectedBranch(pattern: string): boolean {
+  if (!pattern.includes("*")) return false;
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  const matcher = new RegExp(`^${escaped}$`);
+  return PROTECTED_BRANCH_SAMPLES.some((branch) => matcher.test(branch));
+}
+
 function isValidRmBundle(value: string): boolean {
   return /^-[^-][A-Za-z]*$/.test(value) && [...value.slice(1)].every((character) => /[fFiIrRdv]/.test(character));
 }
@@ -35,6 +43,14 @@ function isValidCleanBundle(value: string): boolean {
     if (!/[dfinqxX]/.test(character)) return false;
   }
   return true;
+}
+
+function bundledCleanHasFlag(value: string, wanted: string): boolean {
+  for (const character of value.slice(1)) {
+    if (character === "e") return false;
+    if (character === wanted) return true;
+  }
+  return false;
 }
 
 
@@ -117,7 +133,11 @@ function tokenizeCommand(segment: string): CommandToken[] {
       const character = segment[index] ?? "";
       if (quote !== null) {
         raw += character;
-        if (character === quote && segment[index - 1] !== "\\") quote = null;
+      if (quote === "'") {
+        if (character === "'") quote = null;
+      } else if (character === '"' && segment[index - 1] !== "\\") {
+        quote = null;
+      }
         index += 1;
         continue;
       }
@@ -156,7 +176,11 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
   while (index < line.length) {
     const character = line[index] ?? "";
     if (quote !== null) {
-      if (character === quote && line[index - 1] !== "\\") quote = null;
+      if (quote === "'") {
+        if (character === "'") quote = null;
+      } else if (character === '"' && line[index - 1] !== "\\") {
+        quote = null;
+      }
       index += 1;
       continue;
     }
@@ -384,12 +408,20 @@ function findSubstitutionEnd(text: string, start: number): number {
   let quote: "'" | '"' | null = null;
   for (let index = start + 2; index < text.length; index += 1) {
     const character = text[index] ?? "";
-    if (character === "\\") {
-      index += 1;
+    if (quote === "'") {
+      if (character === "'") quote = null;
       continue;
     }
-    if (quote !== null) {
-      if (character === quote) quote = null;
+    if (quote === '"') {
+      if (character === "\\") {
+        index += 1;
+        continue;
+      }
+      if (character === '"') quote = null;
+      continue;
+    }
+    if (character === "\\") {
+      index += 1;
       continue;
     }
     if (character === "'" || character === '"') {
@@ -621,6 +653,11 @@ interface GitSubcommand {
 function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcommand | null {
   const gitIndex = findExecutableIndex(tokens, "git");
   if (gitIndex < 0) return null;
+  const commandEnv: Record<string, string> = {};
+  for (const token of tokens.slice(0, gitIndex)) {
+    const assignment = token.value.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (assignment) commandEnv[assignment[1]] = assignment[2];
+  }
 
   let index = gitIndex + 1;
   let cleanRequireForceDisabled = false;
@@ -636,7 +673,7 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
       inlineConfig &&
       inlineConfig[1].toLowerCase() === "clean.requireforce"
     ) {
-      cleanRequireForceDisabled = isFalseGitBoolean(process.env[inlineConfig[2]]);
+      cleanRequireForceDisabled = isFalseGitBoolean(commandEnv[inlineConfig[2]] ?? process.env[inlineConfig[2]]);
       index += 1;
       continue;
     }
@@ -657,9 +694,6 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
   return null;
 }
 
-function isBundledFlag(value: string, letter: string): boolean {
-  return BUNDLED_SHORT_FLAGS.test(value) && value.slice(1).includes(letter);
-}
 
 function isFalseGitBoolean(value: string | undefined): boolean {
   return /^(?:false|0|no|off)$/i.test(value ?? "");
@@ -705,9 +739,9 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       }
       if (CLEAN_INLINE_VALUE_OPTION.test(value)) continue;
       if (value === "--no-force") force = false;
-      else if (value === "--force" || isBundledFlag(value, "f")) force = true;
+      else if (value === "--force" || (BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "f"))) force = true;
       if (value === "--no-dry-run") dryRun = false;
-      else if (value === "--dry-run" || isBundledFlag(value, "n")) dryRun = true;
+      else if (value === "--dry-run" || (BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "n"))) dryRun = true;
     }
     if (!help && !dryRun && (force || clean.cleanRequireForceDisabled)) {
       addMatch(
@@ -766,7 +800,7 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
       const broadBranchWildcard =
         dest === "*" ||
         rawDestination === "refs/*" ||
-        (wildcard >= 0 && PROTECTED_BRANCH_NAME.test(`${dest.slice(0, wildcard)}placeholder`));
+        (wildcard >= 0 && wildcardCanMatchProtectedBranch(dest));
       if (broadBranchWildcard || PROTECTED_BRANCH_NAME.test(dest)) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
       }
