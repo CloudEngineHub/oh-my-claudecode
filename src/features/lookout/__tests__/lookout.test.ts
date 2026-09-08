@@ -102,6 +102,8 @@ describe("scanLookout: briefing rules", () => {
     expect(ids(mixed.findings)).toContain("lookout.brief.db-destructive");
     const deleted = scanLookout({ ...base(), brief: "DELETE FROM production_users WHERE disabled = true;" });
     expect(ids(deleted.findings)).toContain("lookout.brief.db-destructive");
+    const prose = scanLookout({ ...base(), brief: "copy the records, delete from memory afterwards" });
+    expect(ids(prose.findings)).not.toContain("lookout.brief.db-destructive");
     const incomplete = scanLookout({ ...base(), brief: "DROP TABLE" });
     expect(ids(incomplete.findings)).not.toContain("lookout.brief.db-destructive");
   });
