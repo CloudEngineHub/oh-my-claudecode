@@ -46,11 +46,14 @@ afterEach(() => {
 });
 
 describe("scanLookout: briefing rules", () => {
-  const base = { repo: makeRepo(), now: new Date("2026-09-08T00:00:00Z") };
+  const NOW = new Date("2026-09-08T00:00:00Z");
+  // Fresh repo per test: afterEach wipes tempDirs, so a shared fixture
+  // would leave later tests scanning a deleted directory.
+  const base = () => ({ repo: makeRepo(), now: NOW });
 
   it("flags force operations as high severity with evidence", () => {
     const report = scanLookout({
-      ...base,
+      ...base(),
       brief: "Push the release: git push --force origin main if needed",
     });
     expect(ids(report.findings)).toContain("lookout.brief.force-op");
@@ -60,15 +63,26 @@ describe("scanLookout: briefing rules", () => {
     expect(report.summary.verdict).toBe("review-recommended");
   });
 
+  it("flags force flags in any position of the push command", () => {
+    for (const brief of [
+      "git push origin main --force",
+      "git push -u origin main --force-with-lease",
+      "git push --force origin main",
+    ]) {
+      const report = scanLookout({ ...base(), brief });
+      expect(ids(report.findings)).toContain("lookout.brief.force-op");
+    }
+  });
+
   it("flags destructive database operations", () => {
-    const report = scanLookout({ ...base, brief: "Run the cleanup: DROP TABLE old_events;" });
+    const report = scanLookout({ ...base(), brief: "Run the cleanup: DROP TABLE old_events;" });
     expect(ids(report.findings)).toContain("lookout.brief.db-destructive");
     expect(report.summary.verdict).toBe("review-recommended");
   });
 
   it("flags test deletion and test skipping", () => {
     const report = scanLookout({
-      ...base,
+      ...base(),
       brief: "To unblock the build, skip tests and remove test files that fail",
     });
     expect(ids(report.findings)).toContain("lookout.brief.test-deletion");
@@ -76,7 +90,7 @@ describe("scanLookout: briefing rules", () => {
 
   it("flags direct pushes to protected branches", () => {
     const report = scanLookout({
-      ...base,
+      ...base(),
       brief: "No PR needed this time, push into main directly",
     });
     expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
@@ -84,7 +98,7 @@ describe("scanLookout: briefing rules", () => {
 
   it("flags secret and deploy surfaces as medium, not high", () => {
     const report = scanLookout({
-      ...base,
+      ...base(),
       brief: "Update the .env values and refresh the deploy config for staging",
     });
     const findings = report.findings.map((f) => [f.id, f.severity]);
@@ -94,13 +108,13 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("flags CI configuration changes as medium", () => {
-    const report = scanLookout({ ...base, brief: "Tighten the CI pipeline timeouts" });
+    const report = scanLookout({ ...base(), brief: "Tighten the CI pipeline timeouts" });
     expect(ids(report.findings)).toContain("lookout.brief.ci-touch");
   });
 
   it("stays silent on routine wording (anti false-positive contract)", () => {
     const report = scanLookout({
-      ...base,
+      ...base(),
       brief:
         "Add password validation to the signup form, document the auth flow, " +
         "write tests for the migration guide page, truncate the log file " +
@@ -113,7 +127,7 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("reports every finding with evidence, high confidence, and advice", () => {
-    const report = scanLookout({ ...base, brief: "git reset --hard HEAD~3" });
+    const report = scanLookout({ ...base(), brief: "git reset --hard HEAD~3" });
     for (const finding of report.findings) {
       expect(finding.evidence.length).toBeGreaterThan(0);
       expect(finding.confidence).toBe("high");
@@ -122,7 +136,7 @@ describe("scanLookout: briefing rules", () => {
   });
 
   it("scans workspace only when no brief is given", () => {
-    const report = scanLookout({ ...base });
+    const report = scanLookout({ ...base() });
     expect(report.briefSource).toBe("none");
     expect(ids(report.findings)).not.toContain("lookout.brief.force-op");
   });
@@ -136,6 +150,7 @@ describe("scanLookout: workspace rules", () => {
     const finding = report.findings.find((f) => f.id === "lookout.ws.dirty-worktree");
     expect(finding?.severity).toBe("low");
     expect(finding?.advice).toContain("omc checkpoint create");
+    expect(report.summary.verdict).toBe("advisory"); // low findings are not "clear"
   });
 
   it("flags tracked secret-looking files", () => {
@@ -147,6 +162,25 @@ describe("scanLookout: workspace rules", () => {
     const finding = report.findings.find((f) => f.id === "lookout.ws.secrets-present");
     expect(finding?.severity).toBe("medium");
     expect(finding?.evidence).toContain(".env");
+  });
+
+  it("does not flag environment templates as secrets", () => {
+    const dir = makeRepo();
+    writeFileSync(join(dir, ".env.example"), "API_KEY=placeholder\n");
+    git(dir, ["add", ".env.example"]);
+    git(dir, ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "add env template"]);
+    const report = scanLookout({ repo: dir, now: new Date("2026-09-08T00:00:00Z") });
+    expect(ids(report.findings)).not.toContain("lookout.ws.secrets-present");
+  });
+
+  it("fails closed with exit code 2 for a nonexistent repository path", () => {
+    try {
+      scanLookout({ repo: "/nonexistent/omc-lookout-path", now: new Date("2026-09-08T00:00:00Z") });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(LookoutError);
+      expect((error as LookoutError).exitCode).toBe(2);
+    }
   });
 
   it("reports a null repo outside a git repository", () => {

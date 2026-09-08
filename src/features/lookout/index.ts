@@ -103,7 +103,7 @@ const BRIEF_RULES: BriefRule[] = [
     title: "Briefing asks for a destructive git/file operation",
     severity: "high",
     pattern:
-      /\bgit\s+push\s+(?:--force\b|--force-with-lease\b|-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-rf\b|\bgit\s+clean\s+-[a-z]*f[a-z]*d[a-z]*\b/gi,
+      /\bgit\s+push\b[^;\n]*\s(?:--force\b|--force-with-lease\b|\s-f\b)|\bgit\s+reset\s+--hard\b|\brm\s+-rf\b|\bgit\s+clean\s+-[a-z]*f[a-z]*d[a-z]*\b/gi,
     advice: GATE_ADVICE,
   },
   {
@@ -174,26 +174,64 @@ function collectMatches(text: string, pattern: RegExp, limit = 3): string[] {
   return out;
 }
 
-function runGit(args: string[], cwd: string): string | null {
+interface GitFailure {
+  stderr: string;
+  code?: string | number;
+}
+
+function runGit(args: string[], cwd: string): string {
   try {
     return execFileSync("git", args, {
       cwd,
       encoding: "utf8",
       timeout: GIT_TIMEOUT_MS,
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
     });
-  } catch {
-    return null;
+  } catch (error) {
+    const failure = error as GitFailure;
+    const stderr = String(failure.stderr ?? "");
+    throw new LookoutError(`git ${args[0]} failed in ${cwd}: ${stderr.trim() || "unknown error"}`, 2);
   }
 }
 
+/**
+ * Returns the repository root, or null when the directory is simply not a
+ * git repository. Any other git failure (missing binary, unreadable path,
+ * timeout) is a scan error and fails closed with exit code 2 instead of
+ * masquerading as a finding-free scan.
+ */
 function repoRoot(repoArg: string): string | null {
-  const top = runGit(["rev-parse", "--show-toplevel"], repoArg);
-  return top ? top.trim() : null;
+  let top: string;
+  try {
+    top = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: repoArg,
+      encoding: "utf8",
+      timeout: GIT_TIMEOUT_MS,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (error) {
+    const failure = error as GitFailure;
+    const stderr = String(failure.stderr ?? "");
+    if (/not a git repository/i.test(stderr)) return null;
+    if (failure.code === "ENOENT") {
+      throw new LookoutError(
+        `Cannot scan "${repoArg}": the directory does not exist (or the git executable is unavailable).`,
+        2,
+      );
+    }
+    throw new LookoutError(`git rev-parse failed in ${repoArg}: ${stderr.trim() || "unknown error"}`, 2);
+  }
+  return top.trim();
 }
 
+/**
+ * Tracked secret-looking files. Environment *templates* (.env.example and
+ * friends) hold placeholders by convention, not secrets, so they are
+ * excluded — lookout has no ignore mechanism, and a template would be a
+ * permanent false positive in every repo that tracks one.
+ */
 const SECRETS_PATH =
-  /(?:^|\/)\.env(?:\..+)?$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
+  /(?:^|\/)\.env(?!\.(?:example|sample|template|dist)\b)(?:\..+)?$|(?:^|\/)secrets?\.(?:json|ya?ml|txt)$|(?:^|\/)secrets?\//i;
 
 function scanWorkspace(root: string): LookoutFinding[] {
   const findings: LookoutFinding[] = [];
@@ -246,7 +284,11 @@ function computeSummary(findings: LookoutFinding[]): LookoutReport["summary"] {
   };
   for (const finding of findings) counts[finding.severity] += 1;
   const verdict: LookoutVerdict =
-    counts.high > 0 ? "review-recommended" : counts.medium > 0 ? "advisory" : "clear";
+    counts.high > 0
+      ? "review-recommended"
+      : counts.medium > 0 || counts.low > 0
+        ? "advisory"
+        : "clear";
   return { counts, verdict };
 }
 
