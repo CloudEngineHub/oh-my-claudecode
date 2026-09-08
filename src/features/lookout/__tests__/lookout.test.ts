@@ -82,6 +82,8 @@ describe("scanLookout: briefing rules", () => {
       "git push origin main",
       "git push -u upstream release",
       "git push origin HEAD:main",
+      "git push --all origin",
+      "git push origin 'refs/heads/*:refs/heads/*'",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
@@ -115,6 +117,7 @@ describe("scanLookout: briefing rules", () => {
       "drop table users cascade;",
       "DROP SCHEMA production CASCADE;",
       "DROP SCHEMA production",
+      "sqlite3 db.sqlite 'drop view active_users'",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
     ]) {
@@ -377,6 +380,8 @@ describe("scanLookout: briefing rules", () => {
       "git --info-path push --force origin feature",
       "git push -F origin feature",
       "git push --force --no-force origin feature",
+      "git push --recurse-submodules check main feature",
+      "git push -xf origin feature",
       "git clean --force --no-force",
       "rm -rf",
       "git -c clean.requireForce=false -c clean.requireForce=true clean",
@@ -475,6 +480,13 @@ describe("scanLookout: briefing rules", () => {
       const falsePositive = scanLookout({ ...base(), brief });
       expect(ids(falsePositive.findings)).not.toContain("lookout.brief.test-deletion");
     }
+  });
+
+  it("keeps repeated negation lookup bounded", () => {
+    const brief = Array.from({ length: 30_000 }, () => "never skip tests").join("; ");
+    const started = performance.now();
+    scanLookout({ ...base(), brief });
+    expect(performance.now() - started).toBeLessThan(3_000);
   });
 
   it("honors explicit negation in briefings", () => {

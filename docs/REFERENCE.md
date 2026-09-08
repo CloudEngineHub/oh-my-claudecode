@@ -640,7 +640,7 @@ omc lookout scan --strict   # exit 1 when review is recommended (for scripts)
 - Briefing rules flag the dangerous operation itself — force operations, destructive SQL, test deletion/skipping, direct pushes to protected branches (high severity); secret, CI, and deployment surfaces (medium severity)
 - Workspace rules flag tracked secret-looking files and a dirty worktree; `repo` is `null` outside a git repository
 - Every finding carries `id`, `severity`, `confidence`, `actionable`, `evidence`, and `advice` — the same vocabulary drydock's `--check` audit documents, so a structured contract can be shared by both surfaces
-- `--json` emits the full report; exit codes: `0` no high-severity findings, `1` `--strict` with a review-recommended verdict, `2` usage/scan error
+- `--json` emits the full report; exit codes: `0` for every successful non-strict scan and for strict scans without a review-recommended verdict, `1` for `--strict` with a review-recommended verdict, `2` for a usage/scan error
 - High-risk verdicts pair with approval gates and checkpoints: `omc graph run --approval-mode remote --checkpoint`, `omc checkpoint create`
 
 ### Graph approval gates (remote approvals)

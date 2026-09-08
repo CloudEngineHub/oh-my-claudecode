@@ -88,52 +88,72 @@ const NEGATION_WORD_BOUNDARY = /\b(?:then|and|but|however|except|instead)\b/gi;
 
 interface NegationContext {
   cues: Array<{ index: number; end: number }>;
+  cueIndexes: number[];
   hardBoundaries: number[];
-  wordBoundaries: Array<{ index: number; length: number }>;
+  wordBoundaries: number[];
   commas: number[];
 }
 
+function lastIndexAtMost(values: number[], target: number): number {
+  let low = 0;
+  let high = values.length - 1;
+  let result = -1;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    if (values[middle] <= target) {
+      result = middle;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+  return result;
+}
+
+function hasIndexBetween(values: number[], start: number, end: number): boolean {
+  const first = lastIndexAtMost(values, start) + 1;
+  return first < values.length && values[first] < end;
+}
+
 function buildNegationContext(line: string): NegationContext {
-  return {
-    cues: [...line.matchAll(NEGATION_CUE)].flatMap((match) =>
+  const cues = [...line.matchAll(NEGATION_CUE)].flatMap((match) =>
       match.index === undefined ? [] : [{ index: match.index, end: match.index + match[0].length }],
-    ),
+    );
+  return {
+    cues,
+    cueIndexes: cues.map((cue) => cue.index),
     hardBoundaries: [...line.matchAll(NEGATION_HARD_BOUNDARY)].flatMap((match) =>
       match.index === undefined ? [] : [match.index],
     ),
-    wordBoundaries: [...line.matchAll(NEGATION_WORD_BOUNDARY)].flatMap((match) =>
-      match.index === undefined ? [] : [{ index: match.index, length: match[0].length }],
-    ),
-    commas: [...line.matchAll(/,/g)].flatMap((match) =>
-      match.index === undefined ? [] : [match.index],
-    ),
+    wordBoundaries: [...line.matchAll(NEGATION_WORD_BOUNDARY)].flatMap((match) => {
+      if (match.index === undefined) return [];
+      const before = match.index > 0 ? line[match.index - 1] : "";
+      const after = line[match.index + match[0].length] ?? "";
+      return (before === "" || /\s/.test(before)) && (after === "" || /\s/.test(after))
+        ? [match.index]
+        : [];
+    }),
+    commas: [...line.matchAll(/,/g)].flatMap((match) => {
+      if (match.index === undefined) return [];
+      return /^\s*(?:then|and|but|however|except|instead)\b/i.test(line.slice(match.index + 1))
+        ? [match.index]
+        : [];
+    }),
   };
 }
 
 function isNegated(line: string, matchIndex: number, context = buildNegationContext(line)): boolean {
-  let cueIndex = -1;
-  let cueEnd = -1;
-  for (const cue of context.cues) {
-    if (cue.index <= matchIndex && matchIndex - cue.index < 48) {
-      cueIndex = cue.index;
-      cueEnd = cue.end;
-    }
-  }
-  if (cueIndex < 0) return false;
+  const cuePosition = lastIndexAtMost(context.cueIndexes, matchIndex);
+  const cue = cuePosition >= 0 ? context.cues[cuePosition] : undefined;
+  if (!cue || matchIndex - cue.index >= 48) return false;
+  const cueIndex = cue.index;
+  const cueEnd = cue.end;
   if (/^\s+(?:forget|hesitate)\b/i.test(line.slice(cueEnd))) return false;
-  if (context.hardBoundaries.some((index) => index > cueIndex && index < matchIndex)) return false;
-  for (const boundary of context.wordBoundaries) {
-    const index = boundary.index;
-    if (index <= cueIndex || index >= matchIndex) continue;
-    const before = index > 0 ? line[index - 1] : "";
-    const after = line[index + boundary.length] ?? "";
-    if ((before === "" || /\s/.test(before)) && (after === "" || /\s/.test(after))) return false;
-  }
-  for (const index of context.commas) {
-    if (index <= cueIndex || index >= matchIndex) continue;
-    if (/^\s*(?:then|and|but|however|except|instead)\b/i.test(line.slice(index + 1))) return false;
-  }
-  return true;
+  return (
+    !hasIndexBetween(context.hardBoundaries, cueIndex, matchIndex) &&
+    !hasIndexBetween(context.wordBoundaries, cueIndex, matchIndex) &&
+    !hasIndexBetween(context.commas, cueIndex, matchIndex)
+  );
 }
 
 /**
@@ -149,8 +169,8 @@ function isNegated(line: string, matchIndex: number, context = buildNegationCont
  * main docs") cannot turn prose into a refspec.
  */
 const SQL_CONTEXT_PATTERN =
-  /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/gi;
-const SQL_SCHEMA_PATTERN = /\bDROP\s+SCHEMA(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/gi;
+  /\bDROP\s+(?:TABLE|DATABASE|VIEW)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
+const SQL_SCHEMA_PATTERN = /\bDROP\s+SCHEMA(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
 
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
   const before = line.slice(0, start);
@@ -213,7 +233,7 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`])/g,
+      /\bDROP\s+(?:TABLE|DATABASE|VIEW)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/g,
     collect: collectSqlDestructive,
   },
   {

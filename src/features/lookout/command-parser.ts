@@ -5,15 +5,24 @@ const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-$]+$/;
 /** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
 /** Push options that consume the following token as a value. */
-const PUSH_OPTION_VALUE = /^(?:-o|--push-option|--receive-pack|--exec)$/;
+const PUSH_OPTION_VALUE = /^(?:-o|--push-option|--receive-pack|--exec|--recurse-submodules)$/;
 const PUSH_REPO_OPTION = /^--repo$/;
-const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--exec=.+)$/;
+const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--exec=.+|--recurse-submodules=.+)$/;
 const PUSH_INLINE_REPO_OPTION = /^--repo=(.+)$/;
 const PUSH_DRY_RUN_FLAG = /^(?:-n|--dry-run)$/;
 const PUSH_FORCE_FLAG = /^(?:-f|--force|--force-with-lease|--mirror)$/;
 const BUNDLED_SHORT_FLAGS = /^-[a-z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
+
+function isValidPushBundle(value: string): boolean {
+  if (!BUNDLED_SHORT_FLAGS.test(value)) return true;
+  for (const character of value.slice(1)) {
+    if (character === "o") return true;
+    if (!/[46dnfquv]/.test(character)) return false;
+  }
+  return true;
+}
 
 
 /**
@@ -380,6 +389,7 @@ function parsePushCommand(segment: string): ParsedPush | null {
     if (/^(?:-h|--help|--version)$/.test(value)) return null;
     if (value.length === 0 || (!COMMAND_WORD.test(value) && !token.quoted)) break; // prose begins here
     if (value.startsWith("-")) {
+      if (!isValidPushBundle(value)) return null;
       if (PUSH_REPO_OPTION.test(value)) {
         const repoToken = tokens[i];
         if (repoToken && parsed.repo === null) parsed.repo = repoToken.value;
@@ -618,6 +628,8 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
   for (const clause of splitCommandClauses(line)) {
     const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
+    const allBranches = parsed.flags.find((flag) => flag.snippet === "--all" || flag.snippet === "--branches");
+    if (allBranches) addMatch(hits, allBranches.snippet, clause.index + allBranches.index);
     for (let refspecIndex = 0; refspecIndex < parsed.refspecs.length; refspecIndex += 1) {
       const refspec = parsed.refspecs[refspecIndex];
       if (refspec.snippet === "tag" && parsed.refspecs[refspecIndex + 1]) {
@@ -632,7 +644,8 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
       if (rawDestination.startsWith("refs/tags/") || rawDestination.startsWith("refs/remotes/")) continue;
       if (source?.startsWith("refs/tags/") && !explicitDestination) continue;
       const dest = rawDestination.replace(/^refs\/heads\//, "");
-      if (PROTECTED_BRANCH_NAME.test(dest)) {
+      const broadBranchWildcard = dest === "*" || rawDestination === "refs/*";
+      if (broadBranchWildcard || PROTECTED_BRANCH_NAME.test(dest)) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
       }
     }
