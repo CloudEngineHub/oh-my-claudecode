@@ -223,7 +223,9 @@ function tokenizeCommand(segment: string): CommandToken[] {
 function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
   const clauses: Array<{ text: string; index: number }> = [];
   let start = 0;
-  for (const separator of line.matchAll(/;|&&|\|\|/g)) {
+  for (const separator of line.matchAll(
+    /;|&&|\|\||\b(?:then|and|but|however|except|instead)\b/gi,
+  )) {
     const index = separator.index ?? 0;
     clauses.push({ text: line.slice(start, index), index: start });
     start = index + separator[0].length;
@@ -317,31 +319,33 @@ function collectRmForceOps(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
     const tokens = tokenizeCommand(clause.text);
-    const rmIndex = tokens.findIndex((token) => token.value === "rm" || token.value.endsWith("/rm"));
-    if (rmIndex < 0) continue;
+    for (let rmIndex = 0; rmIndex < tokens.length; rmIndex += 1) {
+      const rm = tokens[rmIndex];
+      if (rm.value !== "rm" && !rm.value.endsWith("/rm")) continue;
 
-    let destructive = false;
-    const optionTokens: CommandToken[] = [];
-    for (const token of tokens.slice(rmIndex + 1)) {
-      if (CLAUSE_CONNECTOR.test(token.value) || token.value === "--") break;
-      if (token.value === "--recursive" || token.value === "--force") {
-        optionTokens.push(token);
-        destructive = true;
-      } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
-        const options = token.value.slice(1).toLowerCase();
-        if (options.includes("r") || options.includes("f")) {
+      let destructive = false;
+      const optionTokens: CommandToken[] = [];
+      for (const token of tokens.slice(rmIndex + 1)) {
+        if (token.value === "--") break;
+        if (token.value === "rm" || token.value.endsWith("/rm")) break;
+        if (token.value === "--recursive" || token.value === "--force") {
           optionTokens.push(token);
           destructive = true;
+        } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
+          const options = token.value.slice(1).toLowerCase();
+          if (options.includes("r") || options.includes("f")) {
+            optionTokens.push(token);
+            destructive = true;
+          }
         }
       }
-    }
-    if (destructive) {
-      const first = tokens[rmIndex];
-      addMatch(
-        hits,
-        `rm ${optionTokens.map((token) => token.value).join(" ")}`,
-        clause.index + first.index,
-      );
+      if (destructive) {
+        addMatch(
+          hits,
+          `rm ${optionTokens.map((token) => token.value).join(" ")}`,
+          clause.index + rm.index,
+        );
+      }
     }
   }
   return hits;

@@ -327,7 +327,7 @@ describe("scanLookout: briefing rules", () => {
     const repeated = scanLookout({
       ...base(),
       brief:
-        "Never run git push --force origin feature; after approval run git push --force origin feature",
+        "Never run git push --force origin feature then run git push --force origin feature",
     });
     expect(ids(repeated.findings)).toContain("lookout.brief.force-op");
   });
@@ -335,7 +335,7 @@ describe("scanLookout: briefing rules", () => {
   it("does not flag prohibited rm operations but flags later requested ones", () => {
     const report = scanLookout({
       ...base(),
-      brief: "Do not rm -f file.txt; then rm -f file.txt",
+      brief: "Do not rm -f file.txt then rm -f file.txt",
     });
     expect(ids(report.findings)).toContain("lookout.brief.force-op");
   });
