@@ -176,7 +176,12 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
   const before = line.slice(0, start);
   const backticks = (before.match(/`/g) ?? []).length;
   if (backticks % 2 === 1) return true;
-  if (/(?:^|\s)(?:sqlite3|psql|mysql|mariadb|sqlcmd)\b[^;\r\n]*['"][^'"]*$/i.test(before)) return true;
+  if (
+    /\b(?:sqlite3|psql|mysql|mariadb|sqlcmd)\b/i.test(before) &&
+    hasOpenShellQuote(before)
+  ) {
+    return true;
+  }
   const rest = line.slice(end);
   if (/^\s*;/.test(rest)) return true;
   const semicolon = rest.indexOf(";");
@@ -186,6 +191,20 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
       rest.slice(0, semicolon),
     )
   );
+}
+
+function hasOpenShellQuote(text: string): boolean {
+  let quote: "'" | '"' | null = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index] ?? "";
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (quote === null && (character === "'" || character === '"')) quote = character;
+    else if (quote === character) quote = null;
+  }
+  return quote !== null;
 }
 
 function collectSqlDestructive(line: string): CollectedMatch[] {

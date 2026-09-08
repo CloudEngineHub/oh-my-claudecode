@@ -75,6 +75,7 @@ interface CommandToken {
 
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
+  if (value === "!") return value;
   value = value.replace(/[.,!?;]+$/, "");
   while (
     value.length >= 2 &&
@@ -206,7 +207,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   if (reminderCommand >= 0) return reminderCommand + 1;
 
   let index = 0;
-  while (/^(?:-|\*|>|\d+)$/.test(tokens[index]?.value ?? "")) index += 1;
+  while (/^(?:!|-|\*|>|\d+)$/.test(tokens[index]?.value ?? "")) index += 1;
   if (
     index > 0 &&
     tokens[index]?.value === "[" &&
@@ -322,20 +323,6 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
       .map((shell) => findExecutableIndex(tokens, shell))
       .filter((index) => index >= 0)
       .sort((left, right) => left - right)[0] ?? -1;
-    if (shellIndex < 0) continue;
-    let commandIndex = -1;
-    for (let index = shellIndex + 1; index < tokens.length; index += 1) {
-      const value = tokens[index].value;
-      if (value === "--") break;
-      if (value === "-c" || value === "--command" || /^-[^-]*c$/.test(value)) {
-        commandIndex = index;
-        break;
-      }
-      if (!value.startsWith("-")) break;
-    }
-    const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
-    if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
-
     const envIndex = findExecutableIndex(tokens, "env");
     if (envIndex >= 0) {
       const splitIndex = tokens.findIndex(
@@ -351,6 +338,62 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
           text: inlineSplit.value.slice("--split-string=".length),
           index: clause.index + inlineSplit.index,
         });
+      }
+    }
+    if (shellIndex < 0) continue;
+    let commandIndex = -1;
+    for (let index = shellIndex + 1; index < tokens.length; index += 1) {
+      const value = tokens[index].value;
+      if (value === "--") break;
+      if (value === "-c" || value === "--command" || /^-[^-]*c$/.test(value)) {
+        commandIndex = index;
+        break;
+      }
+      if (!value.startsWith("-")) break;
+    }
+    const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
+    if (command?.quoted) nested.push({ text: command.value, index: clause.index + command.index });
+
+  }
+  return nested;
+}
+
+function nestedShellSubstitutions(line: string): Array<{ text: string; index: number }> {
+  const nested: Array<{ text: string; index: number }> = [];
+  for (const clause of splitCommandClauses(line)) {
+    let quote: "'" | '"' | null = null;
+    for (let index = 0; index < clause.text.length; index += 1) {
+      const character = clause.text[index] ?? "";
+      if (quote === "'") {
+        if (character === "'" && clause.text[index - 1] !== "\\") quote = null;
+        continue;
+      }
+      if (quote === '"') {
+        if (character === '"' && clause.text[index - 1] !== "\\") quote = null;
+      } else if (character === "'") {
+        quote = "'";
+      } else if (character === '"') {
+        quote = '"';
+      }
+      if (quote === "'") continue;
+      if (clause.text.startsWith("$(", index)) {
+        let depth = 1;
+        let end = index + 2;
+        while (end < clause.text.length && depth > 0) {
+          if (clause.text.startsWith("$(", end)) depth += 1;
+          else if (clause.text[end] === ")") depth -= 1;
+          end += 1;
+        }
+        if (depth === 0) {
+          nested.push({ text: clause.text.slice(index + 2, end - 1), index: clause.index + index + 2 });
+          index = end - 1;
+        }
+      } else if (character === "`") {
+        const end = clause.text.indexOf("`", index + 1);
+        if (end >= 0) {
+          nested.push({ text: clause.text.slice(index + 1, end), index: clause.index + index + 1 });
+          index = end;
+        }
       }
     }
   }
@@ -620,6 +663,11 @@ export function collectForceOps(line: string): CollectedMatch[] {
       addMatch(hits, match.snippet, nested.index + match.index);
     }
   }
+  for (const nested of nestedShellSubstitutions(line)) {
+    for (const match of collectForceOps(nested.text)) {
+      addMatch(hits, match.snippet, nested.index + match.index);
+    }
+  }
   return hits;
 }
 
@@ -628,7 +676,13 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
   for (const clause of splitCommandClauses(line)) {
     const parsed = parsePushCommand(clause.text);
     if (!parsed || isPushDryRun(parsed)) continue;
-    const allBranches = parsed.flags.find((flag) => flag.snippet === "--all" || flag.snippet === "--branches");
+    let allBranches: CollectedMatch | null = null;
+    for (const flag of parsed.flags) {
+      if (flag.snippet === "--no-all" || flag.snippet === "--no-branches") allBranches = null;
+      else if (flag.snippet === "--all" || flag.snippet === "--branches") {
+        allBranches = flag;
+      }
+    }
     if (allBranches) addMatch(hits, allBranches.snippet, clause.index + allBranches.index);
     for (let refspecIndex = 0; refspecIndex < parsed.refspecs.length; refspecIndex += 1) {
       const refspec = parsed.refspecs[refspecIndex];
@@ -644,13 +698,22 @@ export function collectProtectedPushDests(line: string): CollectedMatch[] {
       if (rawDestination.startsWith("refs/tags/") || rawDestination.startsWith("refs/remotes/")) continue;
       if (source?.startsWith("refs/tags/") && !explicitDestination) continue;
       const dest = rawDestination.replace(/^refs\/heads\//, "");
-      const broadBranchWildcard = dest === "*" || rawDestination === "refs/*";
+      const wildcard = dest.indexOf("*");
+      const broadBranchWildcard =
+        dest === "*" ||
+        rawDestination === "refs/*" ||
+        (wildcard >= 0 && PROTECTED_BRANCH_NAME.test(`${dest.slice(0, wildcard)}placeholder`));
       if (broadBranchWildcard || PROTECTED_BRANCH_NAME.test(dest)) {
         addMatch(hits, refspec.snippet, clause.index + refspec.index);
       }
     }
   }
   for (const nested of nestedShellCommands(line)) {
+    for (const match of collectProtectedPushDests(nested.text)) {
+      addMatch(hits, match.snippet, nested.index + match.index);
+    }
+  }
+  for (const nested of nestedShellSubstitutions(line)) {
     for (const match of collectProtectedPushDests(nested.text)) {
       addMatch(hits, match.snippet, nested.index + match.index);
     }

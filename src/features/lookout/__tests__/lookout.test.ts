@@ -84,6 +84,7 @@ describe("scanLookout: briefing rules", () => {
       "git push origin HEAD:main",
       "git push --all origin",
       "git push origin 'refs/heads/*:refs/heads/*'",
+      "git push origin 'refs/heads/*:refs/heads/release/*'",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(ids(report.findings)).toContain("lookout.brief.protected-branch");
@@ -381,6 +382,7 @@ describe("scanLookout: briefing rules", () => {
       "git push -F origin feature",
       "git push --force --no-force origin feature",
       "git push --recurse-submodules check main feature",
+      "git push --all --no-all origin feature",
       "git push -xf origin feature",
       "git clean --force --no-force",
       "rm -rf",
@@ -392,6 +394,7 @@ describe("scanLookout: briefing rules", () => {
       "echo foo\\; git push --force origin feature",
       "Prohibited: git push https://github.com/x/y.git --force origin feature",
       "bash harmless.sh -c 'rm -rf build'",
+      "First run psql -c 'select 1'. Then drop table borders on mobile",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -417,9 +420,14 @@ describe("scanLookout: briefing rules", () => {
       "/usr/bin/bash -c 'git push --force origin feature'",
       "sudo bash -c 'git push --force origin feature'",
       "sh -c 'rm -rf build'",
+      "env -S 'git push --force origin feature'",
       "REMOTE=origin git push $REMOTE --force main",
       "nohup git push --force origin feature",
       "timeout 30 git push --force origin feature",
+      "! git push --force origin feature",
+      "! rm -rf build",
+      "echo $(git push --force origin feature)",
+      "printf '%s\\n' \"$(rm -rf build)\"",
       "git push -von origin HEAD:main",
       "if git push --force origin feature; then continue",
       "Please run git push --force origin feature",
