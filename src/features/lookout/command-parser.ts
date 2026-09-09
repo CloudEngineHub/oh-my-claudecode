@@ -56,13 +56,11 @@ function bundledCleanHasFlag(value: string, wanted: string): boolean {
   }
   return false;
 }
-/** Force/mirror classification, including leases and bundled short options. */
 function isPushForceFlag(flag: string): boolean {
   if (PUSH_FORCE_FLAG.test(flag)) return true;
   if (/^--force(?:-with-lease)?=/.test(flag)) return true;
   return BUNDLED_SHORT_FLAGS.test(flag) && bundledPushHasFlag(flag, "f");
 }
-
 function isPushDryRunFlag(flag: string): boolean {
   if (PUSH_DRY_RUN_FLAG.test(flag)) return true;
   return BUNDLED_SHORT_FLAGS.test(flag) && bundledPushHasFlag(flag, "n");
@@ -74,7 +72,6 @@ function bundledPushHasFlag(flag: string, wanted: string): boolean {
   }
   return false;
 }
-/** Words that typically begin trailing prose after a command. */
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
 interface ParsedPush {
   /** Genuine flags — option values never land here. */
@@ -253,7 +250,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   if (reminderCommand >= 0) return reminderCommand + 1;
 
   let index = 0;
-  while (/^(?:!|-|\*|>|\d+|[({])$/.test(tokens[index]?.value ?? "")) index += 1;
+  while (/^(?:!|-|\*|>|\d+|[({]|do)$/.test(tokens[index]?.value ?? "")) index += 1;
   if (
     index > 0 &&
     tokens[index]?.value === "[" &&
@@ -284,6 +281,10 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       continue;
     }
     if (/^(?:if|while|until)$/.test(wrapper ?? "") && value === "!") {
+      index += 1;
+      continue;
+    }
+    if (/^(?:do|then|else)$/.test(value) && /^(?:if|while|until)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
@@ -522,7 +523,6 @@ export function addMatch(hits: CollectedMatch[], snippet: string, index: number)
   if (snippet) hits.push({ snippet, index });
 }
 
-/** Force/mirror pushes and `+`-prefixed refspecs, as evidence snippets. */
 function collectPushForceOps(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {

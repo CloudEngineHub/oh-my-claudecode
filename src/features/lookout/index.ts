@@ -41,6 +41,7 @@ import { repoRoot, scanWorkspace } from "./workspace.js";
 import { addMatch, collectForceOps, collectProtectedPushDests } from "./command-parser.js";
 import type { CollectedMatch } from "./command-parser.js";
 import { collectRmTestArtifacts } from "./test-artifact-parser.js";
+import { findNestedSubstitutions } from "./substitution-parser.js";
 
 export { LookoutError } from "./types.js";
 export type {
@@ -392,21 +393,30 @@ function isInertTestDeletionText(line: string, index: number): boolean {
 function isInertOutputText(line: string, index: number): boolean {
   const prefix = line.slice(0, index);
   const commandPrefix = prefix.split(/[;&|]/).at(-1) ?? prefix;
+  if (/\|\s*(?:[\w./-]*\/)?(?:sqlite3|psql|mysql|mariadb|sqlcmd)\b/i.test(line.slice(index))) return false;
   return /^\s*(?:echo|printf|print|cat)\b/i.test(commandPrefix);
 }
 
 function maskCatHereDocBody(brief: string): string[] {
   const lines = brief.split("\n");
-  let delimiter: string | null = null;
+  let delimiter: { name: string; quoted: boolean } | null = null;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
     if (delimiter !== null) {
-      if (line.trim() === delimiter) delimiter = null;
-      lines[index] = "";
+      if (line.trim() === delimiter.name) {
+        delimiter = null;
+        lines[index] = "";
+      } else if (delimiter.quoted) {
+        lines[index] = "";
+      } else {
+        lines[index] = findNestedSubstitutions([{ text: line, index: 0 }])
+          .map((substitution) => substitution.text)
+          .join(" ");
+      }
       continue;
     }
     const match = line.match(/^\s*cat\b.*<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1\s*$/i);
-    if (match) delimiter = match[2];
+    if (match) delimiter = { name: match[2], quoted: match[1] !== "" };
   }
   return lines;
 }
