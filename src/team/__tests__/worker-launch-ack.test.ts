@@ -40,6 +40,7 @@ import {
 import { getOmcRoot } from '../../lib/worktree-paths.js';
 
 let cwd = '';
+const disposableProviders = new Set<ReturnType<typeof spawn>>();
 let fixtureEnvCaptured = false;
 let originalHome: string | undefined;
 let originalUserProfile: string | undefined;
@@ -78,6 +79,7 @@ function restoreFixtureEnv(): void {
 }
 
 afterEach(async () => {
+  for (const child of [...disposableProviders]) await stopDisposableProvider(child).catch(() => undefined);
   restoreFixtureEnv();
   if (cwd) await rm(cwd, { recursive: true, force: true });
   cwd = '';
@@ -93,6 +95,60 @@ async function attempt() {
     provider: 'codex',
     runtimeCliPath: '/runtime-cli.cjs',
   });
+}
+
+async function spawnDisposableProvider(): Promise<{
+  child: ReturnType<typeof spawn>;
+  pid: number;
+  processStartIdentity: string;
+  processGroupId: number;
+}> {
+  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+    stdio: 'ignore',
+    detached: process.platform !== 'win32',
+  });
+  await new Promise<void>((resolve, reject) => {
+    child.once('spawn', () => resolve());
+    child.once('error', reject);
+  });
+  const pid = child.pid;
+  if (!pid) throw new Error('disposable_provider_pid_missing');
+  const processStartIdentity = await getProcessStartIdentity(pid);
+  const ownedGroup = captureOwnedProcessGroup(pid);
+  if (!processStartIdentity || (process.platform !== 'win32' && !ownedGroup)) {
+    child.kill('SIGKILL');
+    throw new Error('disposable_provider_identity_missing');
+  }
+  child.unref();
+  disposableProviders.add(child);
+  return {
+    child,
+    pid,
+    processStartIdentity,
+    processGroupId: ownedGroup?.processGroupId ?? 1,
+  };
+}
+
+async function stopDisposableProvider(child: ReturnType<typeof spawn>): Promise<void> {
+  try {
+    if (child.exitCode === null && child.signalCode === null) {
+      try { child.kill('SIGKILL'); } catch { /* already exited */ }
+    }
+    await new Promise<void>(resolve => {
+      if (child.exitCode !== null || child.signalCode !== null) {
+        resolve();
+        return;
+      }
+      const timer = setTimeout(resolve, 500);
+      timer.unref();
+      child.once('exit', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  } finally {
+    disposableProviders.delete(child);
+  }
 }
 
 describe('worker launch acknowledgement', () => {
@@ -547,6 +603,441 @@ describe('worker launch acknowledgement', () => {
     await expect(terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(false);
   });
 
+  it.runIf(process.platform !== 'win32')('signals only a live provider when no terminal evidence exists', async () => {
+    vi.resetModules();
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('identity-mismatch');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    let disposable: Awaited<ReturnType<typeof spawnDisposableProvider>> | undefined;
+    try {
+      const launchAttempt = await attempt();
+      const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+      disposable = await spawnDisposableProvider();
+      await writeFile(launchAttempt.startedPath, JSON.stringify({
+        ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+        process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+        written_at: new Date().toISOString(),
+      }), 'utf8');
+
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(false);
+      expect(terminateSpy).toHaveBeenCalledOnce();
+    } finally {
+      if (disposable) await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('accepts verified terminal cleanup without signaling its provider PID', async () => {
+    vi.resetModules();
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('terminated');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    let disposable: Awaited<ReturnType<typeof spawnDisposableProvider>> | undefined;
+    try {
+      const launchAttempt = await attempt();
+      const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+      disposable = await spawnDisposableProvider();
+      const started = {
+        ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+        process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+        written_at: new Date().toISOString(),
+      };
+      await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+      await writeFile(`${launchAttempt.startedPath}.terminal`, JSON.stringify({
+        ...started, kind: 'worker_launch_provider_terminal', outcome: 'exit', cleanup_verified: true,
+        child_reaped: true,
+      }), 'utf8');
+
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(true);
+      expect(terminateSpy).not.toHaveBeenCalled();
+    } finally {
+      if (disposable) await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32').each([
+    ['malformed terminal', 'malformed'] as const,
+    ['null terminal', 'null'] as const,
+    ['unreadable terminal', 'unreadable'] as const,
+    ['wrong-identity terminal', 'wrong-identity'] as const,
+    ['unbound live terminal', 'unbound-live'] as const,
+  ])('fails closed without signaling for a %s', async (_name, terminalKind) => {
+    vi.resetModules();
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('terminated');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    let disposable: Awaited<ReturnType<typeof spawnDisposableProvider>> | undefined;
+    try {
+      const launchAttempt = await attempt();
+      const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+      disposable = await spawnDisposableProvider();
+      const started = {
+        ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+        process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+        written_at: new Date().toISOString(),
+      };
+      await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+      const terminalPath = `${launchAttempt.startedPath}.terminal`;
+      if (terminalKind === 'malformed') {
+        await writeFile(terminalPath, '{not-json', 'utf8');
+      } else if (terminalKind === 'null') {
+        await writeFile(terminalPath, 'null', 'utf8');
+      } else if (terminalKind === 'unreadable') {
+        await mkdir(terminalPath);
+      } else if (terminalKind === 'wrong-identity') {
+        await writeFile(terminalPath, JSON.stringify({
+          ...started, attempt_id: '00000000-0000-4000-8000-000000000000',
+          kind: 'worker_launch_provider_terminal', outcome: 'exit', cleanup_verified: true,
+        }), 'utf8');
+      } else {
+        await writeFile(terminalPath, JSON.stringify({
+          ...started, kind: 'worker_launch_provider_terminal',
+          outcome: 'cleanup_unverified', cleanup_verified: false, child_reaped: false,
+        }), 'utf8');
+        const terminal = JSON.parse(await readFile(terminalPath, 'utf8')) as Record<string, unknown>;
+        delete terminal.process_group_id;
+        await writeFile(terminalPath, JSON.stringify(terminal), 'utf8');
+      }
+
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(false);
+      expect(terminateSpy).not.toHaveBeenCalled();
+    } finally {
+      if (disposable) await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('retries a matching live-unreaped cleanup terminal with its bound group', async () => {
+    vi.resetModules();
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const nativeTerminate = dynamicProcessUtils.terminateOwnedProcessGroup;
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockImplementation(options => nativeTerminate(options));
+    const workerLaunch = await import('../worker-launch-ack.js');
+    let disposable: Awaited<ReturnType<typeof spawnDisposableProvider>> | undefined;
+    try {
+      const launchAttempt = await attempt();
+      const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+      disposable = await spawnDisposableProvider();
+      const started = {
+        ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+        process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+        written_at: new Date().toISOString(),
+      };
+      await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+      await writeFile(`${launchAttempt.startedPath}.terminal`, JSON.stringify({
+        ...started, kind: 'worker_launch_provider_terminal',
+        outcome: 'cleanup_unverified', cleanup_verified: false, child_reaped: false,
+      }), 'utf8');
+
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 2_000)).resolves.toBe(true);
+      expect(terminateSpy).toHaveBeenCalledOnce();
+      await expect(readFile(`${launchAttempt.startedPath}.termination-complete`, 'utf8')).resolves.toContain(
+        'worker_launch_termination_complete',
+      );
+    } finally {
+      if (disposable) await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32').each([
+    ['already-dead', 'verified/reaped', true],
+    ['already-dead', 'absent', false],
+    ['already-dead', 'unverified', false],
+    ['already-dead', 'wrong-bound', false],
+    ['identity-mismatch', 'verified/reaped', true],
+    ['identity-mismatch', 'absent', false],
+    ['identity-mismatch', 'unverified', false],
+    ['identity-mismatch', 'wrong-bound', false],
+  ] as const)(
+    're-reads cleanup proof after %s and accepts only a %s terminal',
+    async (terminationResult, proofKind, expectedResult) => {
+      vi.resetModules();
+      const dynamicProcessUtils = await import('../../platform/process-utils.js');
+      let disposable: Awaited<ReturnType<typeof spawnDisposableProvider>> | undefined;
+      let terminateSpy: { mockRestore: () => void } | undefined;
+      try {
+        const launchAttempt = await attempt();
+        const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+        disposable = await spawnDisposableProvider();
+        const started = {
+          ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+          process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+          written_at: new Date().toISOString(),
+        };
+        await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+        const terminalPath = `${launchAttempt.startedPath}.terminal`;
+        await writeFile(terminalPath, JSON.stringify({
+          ...started, kind: 'worker_launch_provider_terminal',
+          outcome: 'cleanup_unverified', cleanup_verified: false, child_reaped: false,
+        }), 'utf8');
+
+        terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+          .mockImplementation(async () => {
+            if (proofKind === 'absent') {
+              await rm(terminalPath, { force: true });
+            } else {
+              await writeFile(terminalPath, JSON.stringify({
+                ...started,
+                kind: 'worker_launch_provider_terminal',
+                outcome: proofKind === 'verified/reaped' ? 'exit' : 'cleanup_unverified',
+                cleanup_verified: proofKind === 'verified/reaped',
+                child_reaped: true,
+                ...(proofKind === 'wrong-bound'
+                  ? { process_group_id: disposable!.processGroupId + 1 }
+                  : {}),
+              }), 'utf8');
+            }
+            return terminationResult;
+          });
+        const workerLaunch = await import('../worker-launch-ack.js');
+
+        await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(expectedResult);
+        expect(terminateSpy).toHaveBeenCalledOnce();
+        await expect(readFile(`${launchAttempt.startedPath}.termination-complete`, 'utf8'))
+          .rejects.toMatchObject({ code: 'ENOENT' });
+      } finally {
+        if (disposable) await stopDisposableProvider(disposable.child);
+        terminateSpy?.mockRestore();
+        vi.resetModules();
+      }
+    },
+  );
+
+  it.runIf(process.platform !== 'win32')('rechecks terminal evidence before signaling after the request read', async () => {
+    const launchAttempt = await attempt();
+    const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+    const disposable = await spawnDisposableProvider();
+    const started = {
+      ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+      process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+      written_at: new Date().toISOString(),
+    };
+    await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+    const terminalPath = `${launchAttempt.startedPath}.terminal`;
+    const terminationRequestPath = `${launchAttempt.startedPath}.termination-request`;
+    let terminalInjected = false;
+
+    vi.resetModules();
+    const actualFsPromises = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    vi.doMock('node:fs/promises', () => ({
+      ...actualFsPromises,
+      readFile: async (path: string, encoding?: BufferEncoding) => {
+        try {
+          return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+        } catch (error) {
+          if (!terminalInjected && path === terminalPath
+            && existsSync(terminationRequestPath)
+            && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+            terminalInjected = true;
+            await actualFsPromises.writeFile(terminalPath, JSON.stringify({
+              ...started, kind: 'worker_launch_provider_terminal',
+              outcome: 'cleanup_unverified', cleanup_verified: false, child_reaped: true,
+            }), 'utf8');
+            return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+          }
+          throw error;
+        }
+      },
+    }));
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('terminated');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    try {
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(false);
+      expect(terminalInjected).toBe(true);
+      expect(terminateSpy).not.toHaveBeenCalled();
+      expect(isProcessAlive(disposable.pid)).toBe(true);
+      await expect(readFile(`${launchAttempt.startedPath}.termination-complete`, 'utf8'))
+        .rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.doUnmock('node:fs/promises');
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('returns a verified terminal that arrives at the first recovery gate', async () => {
+    const launchAttempt = await attempt();
+    const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+    const disposable = await spawnDisposableProvider();
+    const started = {
+      ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+      process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+      written_at: new Date().toISOString(),
+    };
+    await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+    const terminalPath = `${launchAttempt.startedPath}.terminal`;
+    const terminationRequestPath = `${launchAttempt.startedPath}.termination-request`;
+    let terminalReadCount = 0;
+    const terminalReadPhases: string[] = [];
+
+    vi.resetModules();
+    const actualFsPromises = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    vi.doMock('node:fs/promises', () => ({
+      ...actualFsPromises,
+      readFile: async (path: string, encoding?: BufferEncoding) => {
+        try {
+          return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+        } catch (error) {
+          if (path === terminalPath
+            && !existsSync(terminationRequestPath)
+            && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+            terminalReadCount++;
+            if (terminalReadCount === 1) {
+              terminalReadPhases.push('initial-proof-absent');
+            } else if (terminalReadCount === 2) {
+              terminalReadPhases.push('first-gate-inject');
+              await actualFsPromises.writeFile(terminalPath, JSON.stringify({
+                ...started, kind: 'worker_launch_provider_terminal',
+                outcome: 'exit', cleanup_verified: true, child_reaped: true,
+              }), 'utf8');
+              return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+            }
+          }
+          throw error;
+        }
+      },
+    }));
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('terminated');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    try {
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(true);
+      expect(terminalReadPhases).toEqual(['initial-proof-absent', 'first-gate-inject']);
+      expect(terminateSpy).not.toHaveBeenCalled();
+      await expect(readFile(terminationRequestPath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.doUnmock('node:fs/promises');
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('returns an unverified reaped terminal at the first recovery gate without signaling', async () => {
+    const launchAttempt = await attempt();
+    const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+    const disposable = await spawnDisposableProvider();
+    const started = {
+      ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+      process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+      written_at: new Date().toISOString(),
+    };
+    await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+    const terminalPath = `${launchAttempt.startedPath}.terminal`;
+    const terminationRequestPath = `${launchAttempt.startedPath}.termination-request`;
+    let terminalReadCount = 0;
+    const terminalReadPhases: string[] = [];
+
+    vi.resetModules();
+    const actualFsPromises = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    vi.doMock('node:fs/promises', () => ({
+      ...actualFsPromises,
+      readFile: async (path: string, encoding?: BufferEncoding) => {
+        try {
+          return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+        } catch (error) {
+          if (path === terminalPath
+            && !existsSync(terminationRequestPath)
+            && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+            terminalReadCount++;
+            if (terminalReadCount === 1) {
+              terminalReadPhases.push('initial-proof-absent');
+            } else if (terminalReadCount === 2) {
+              terminalReadPhases.push('first-gate-inject');
+              await actualFsPromises.writeFile(terminalPath, JSON.stringify({
+                ...started, kind: 'worker_launch_provider_terminal',
+                outcome: 'cleanup_unverified', cleanup_verified: false, child_reaped: true,
+              }), 'utf8');
+              return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+            }
+          }
+          throw error;
+        }
+      },
+    }));
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('terminated');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    try {
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(false);
+      expect(terminalReadPhases).toEqual(['initial-proof-absent', 'first-gate-inject']);
+      expect(terminateSpy).not.toHaveBeenCalled();
+      await expect(readFile(terminationRequestPath, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.doUnmock('node:fs/promises');
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('returns a verified terminal that arrives at the signal gate', async () => {
+    const launchAttempt = await attempt();
+    const expected = JSON.parse(await readFile(launchAttempt.expectedPath, 'utf8'));
+    const disposable = await spawnDisposableProvider();
+    const started = {
+      ...expected, kind: 'worker_launch_provider_started', pid: disposable.pid,
+      process_start_identity: disposable.processStartIdentity, process_group_id: disposable.processGroupId,
+      written_at: new Date().toISOString(),
+    };
+    await writeFile(launchAttempt.startedPath, JSON.stringify(started), 'utf8');
+    const terminalPath = `${launchAttempt.startedPath}.terminal`;
+    const terminationRequestPath = `${launchAttempt.startedPath}.termination-request`;
+    let terminalInjected = false;
+
+    vi.resetModules();
+    const actualFsPromises = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    vi.doMock('node:fs/promises', () => ({
+      ...actualFsPromises,
+      readFile: async (path: string, encoding?: BufferEncoding) => {
+        try {
+          return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+        } catch (error) {
+          if (!terminalInjected && path === terminalPath
+            && existsSync(terminationRequestPath)
+            && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+            terminalInjected = true;
+            await actualFsPromises.writeFile(terminalPath, JSON.stringify({
+              ...started, kind: 'worker_launch_provider_terminal',
+              outcome: 'exit', cleanup_verified: true, child_reaped: true,
+            }), 'utf8');
+            return await actualFsPromises.readFile(path, encoding ?? 'utf8');
+          }
+          throw error;
+        }
+      },
+    }));
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('terminated');
+    const workerLaunch = await import('../worker-launch-ack.js');
+    try {
+      await expect(workerLaunch.terminateWorkerLaunchProvider(launchAttempt, 100)).resolves.toBe(true);
+      expect(terminalInjected).toBe(true);
+      expect(terminateSpy).not.toHaveBeenCalled();
+    } finally {
+      await stopDisposableProvider(disposable.child);
+      terminateSpy.mockRestore();
+      vi.doUnmock('node:fs/promises');
+      vi.resetModules();
+    }
+  });
+
   it('rejects replay when the acknowledgement path is already owned', async () => {
     const launchAttempt = await attempt();
     const spec = buildWorkerLaunchBootstrapSpec(
@@ -957,6 +1448,7 @@ describe('worker launch acknowledgement', () => {
         expect(terminal).toMatchObject({
           outcome: 'cleanup_unverified',
           cleanup_verified: false,
+          child_reaped: true,
           signal: 'SIGKILL',
         });
       }, { timeout: 2_000, interval: 5 });
@@ -969,6 +1461,87 @@ describe('worker launch acknowledgement', () => {
       if (providerGroupId) {
         try { process.kill(-providerGroupId, 'SIGKILL'); } catch { /* group already absent */ }
       }
+      await bootstrap?.catch(() => undefined);
+      terminateSpy.mockRestore();
+      vi.doUnmock('node:child_process');
+      vi.resetModules();
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('upgrades a live timer terminal to reaped evidence after the supervisor exits', async () => {
+    vi.resetModules();
+    const actualChildProcess = await vi.importActual<typeof import('node:child_process')>('node:child_process');
+    const dynamicProcessUtils = await import('../../platform/process-utils.js');
+    const terminateSpy = vi.spyOn(dynamicProcessUtils, 'terminateOwnedProcessGroup')
+      .mockResolvedValue('unknown');
+    let supervisor: ReturnType<typeof spawn> | undefined;
+    const spawnMock = vi.fn((
+      command: string,
+      args: string[],
+      options: Parameters<typeof spawn>[2],
+    ) => {
+      const child = actualChildProcess.spawn(command, args, options);
+      supervisor = child;
+      return child;
+    });
+    vi.doMock('node:child_process', () => ({ ...actualChildProcess, spawn: spawnMock }));
+    let bootstrap: ReturnType<typeof runWorkerLaunchBootstrap> | undefined;
+    const launchAttempt = await attempt();
+    const descendantPidPath = join(cwd, 'timer-transition-descendant.pid');
+    let providerGroupId: number | undefined;
+    try {
+      const workerLaunch = await import('../worker-launch-ack.js');
+      bootstrap = workerLaunch.runWorkerLaunchBootstrap(buildWorkerLaunchBootstrapSpec(
+        launchAttempt,
+        [process.execPath, '-e', [
+          "const fs=require('node:fs'),cp=require('node:child_process')",
+          "const descendant=cp.spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore'})",
+          'descendant.unref()',
+          `fs.writeFileSync(${JSON.stringify(descendantPidPath)},String(descendant.pid))`,
+          'process.exit(0)',
+        ].join(';')],
+        cwd,
+        { releaseAfterSpawn: true },
+      ));
+      await expect(awaitWorkerLaunchAcknowledgement(launchAttempt, {
+        timeoutMs: 2_000,
+        pollIntervalMs: 5,
+      })).resolves.toEqual({ ok: true });
+      await expect(awaitWorkerLaunchProviderStarted(launchAttempt, {
+        timeoutMs: 2_000,
+        pollIntervalMs: 5,
+      })).resolves.toBe(true);
+      const started = JSON.parse(await readFile(launchAttempt.startedPath, 'utf8')) as {
+        process_group_id: number;
+      };
+      providerGroupId = started.process_group_id;
+      await vi.waitFor(async () => {
+        const terminal = JSON.parse(await readFile(`${launchAttempt.startedPath}.terminal`, 'utf8'));
+        expect(terminal).toMatchObject({
+          outcome: 'cleanup_unverified',
+          cleanup_verified: false,
+          child_reaped: false,
+          process_group_id: providerGroupId,
+        });
+      }, { timeout: 5_000, interval: 20 });
+      expect(supervisor).toBeDefined();
+      supervisor!.kill('SIGKILL');
+      await expect(bootstrap).resolves.toEqual({ outcome: 'provider_cleanup_unverified' });
+      expect(() => process.kill(-providerGroupId!, 0)).not.toThrow();
+      await vi.waitFor(async () => {
+        const terminal = JSON.parse(await readFile(`${launchAttempt.startedPath}.terminal`, 'utf8'));
+        expect(terminal).toMatchObject({
+          outcome: 'cleanup_unverified',
+          cleanup_verified: false,
+          child_reaped: true,
+          process_group_id: providerGroupId,
+        });
+      }, { timeout: 5_000, interval: 20 });
+    } finally {
+      try {
+        if (providerGroupId) process.kill(-providerGroupId, 'SIGKILL');
+      } catch { /* group already absent */ }
+      supervisor?.kill('SIGKILL');
       await bootstrap?.catch(() => undefined);
       terminateSpy.mockRestore();
       vi.doUnmock('node:child_process');

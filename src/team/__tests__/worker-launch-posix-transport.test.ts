@@ -12,7 +12,8 @@
  * runtime CLI its path, exactly like the native Windows path already does.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -250,6 +251,117 @@ describe('POSIX supervised worker-launch transport (issue #3655)', () => {
         killSpy?.mockRestore();
         killSpy = undefined;
       }
+    }
+  });
+
+  it.runIf(process.platform !== 'win32')('keeps the real runtime CLI alive until a failed cleanup wrapper is reaped', async () => {
+    const attempt = await makeAttempt();
+    const providerMarker = join(cwd, 'actual-runtime-cli-provider-ran');
+    const providerExitTrigger = join(cwd, 'actual-runtime-cli-provider-exit');
+    const terminationFailurePreload = join(cwd, 'fail-first-worker-termination.mjs');
+    const runtimeCliEntry = join(cwd, 'run-worker-launch-runtime-cli.mjs');
+    const runtimeCliSource = join(process.cwd(), 'src/team/runtime-cli.ts');
+    const tsxLoader = join(process.cwd(), 'node_modules/tsx/dist/loader.mjs');
+    await writeFile(terminationFailurePreload, [
+      'const nativeKill = process.kill.bind(process);',
+      'let blocked = false;',
+      'process.kill = ((pid, signal) => {',
+      "  if (!blocked && typeof pid === 'number' && pid < 0 && signal === 'SIGKILL') {",
+      '    blocked = true;',
+      "    const error = Object.assign(new Error('fixture_first_termination_failure'), { code: 'EPERM' });",
+      '    throw error;',
+      '  }',
+      '  return nativeKill(pid, signal);',
+      '});',
+      '',
+    ].join('\n'), 'utf8');
+    await writeFile(runtimeCliEntry, [
+      'globalThis.require = { main: {} };',
+      'globalThis.module = {};',
+      `const { runWorkerLaunchFromEnvironment } = await import(${JSON.stringify(runtimeCliSource)});`,
+      'await runWorkerLaunchFromEnvironment();',
+      '',
+    ].join('\n'), 'utf8');
+
+    let materialized: Awaited<ReturnType<typeof materializeWorkerLaunchTransport>> | undefined;
+    let cli: ReturnType<typeof spawn> | undefined;
+    let cliExit: Promise<{ code: number | null; signal: NodeJS.Signals | null }> | undefined;
+    try {
+      const providerScript = [
+        "require('node:fs').writeFileSync(" + JSON.stringify(providerMarker) + ",'ran')",
+        `setInterval(() => { if (require('node:fs').existsSync(${JSON.stringify(providerExitTrigger)})) process.exit(0); }, 10)`,
+      ].join(';');
+      materialized = await materializeWorkerLaunchTransport({
+        attempt,
+        providerArgv: [process.execPath, '-e', providerScript],
+        cwd,
+        releaseAfterSpawn: true,
+        windowsDelivery: false,
+      });
+      const childEnv = { ...process.env };
+      delete childEnv.OMC_WORKER_LAUNCH_SPEC;
+      delete childEnv.OMC_WORKER_LAUNCH_SPEC_B64;
+      childEnv.OMC_WORKER_LAUNCH_SPEC_FILE = materialized.bootstrapDescriptorPath;
+      cli = spawn(process.execPath, ['--import', tsxLoader, '--import', terminationFailurePreload, runtimeCliEntry], {
+        cwd: process.cwd(),
+        env: childEnv,
+        stdio: 'ignore',
+      });
+      cliExit = new Promise((resolve, reject) => {
+        cli!.once('exit', (code, signal) => resolve({ code, signal }));
+        cli!.once('error', reject);
+      });
+
+      await expect(awaitWorkerLaunchAcknowledgement(attempt, { timeoutMs: 5_000, pollIntervalMs: 5 }))
+        .resolves.toEqual({ ok: true });
+      await expect(awaitWorkerLaunchProviderStarted(attempt, { timeoutMs: 5_000, pollIntervalMs: 5 }))
+        .resolves.toBe(true);
+      await vi.waitFor(async () => {
+        expect(await readFile(providerMarker, 'utf8')).toBe('ran');
+      }, { timeout: 5_000, interval: 20 });
+
+      const started = JSON.parse(await readFile(attempt.startedPath, 'utf8')) as {
+        pid: number;
+        process_group_id: number;
+      };
+      // Enter the completion-timer path only after startup evidence has been
+      // observed; an immediate exit can instead race the startup handoff.
+      await writeFile(providerExitTrigger, 'exit', 'utf8');
+      await vi.waitFor(async () => {
+        const terminal = JSON.parse(await readFile(`${attempt.startedPath}.terminal`, 'utf8'));
+        expect(terminal).toMatchObject({
+          outcome: 'cleanup_unverified',
+          cleanup_verified: false,
+          child_reaped: false,
+          pid: started.pid,
+          process_group_id: started.process_group_id,
+        });
+      }, { timeout: 5_000, interval: 20 });
+
+      // The real runtime CLI must still own its observer while the wrapper
+      // remains live; resolving here would make runtime-cli throw/exit(1).
+      await new Promise(resolve => setTimeout(resolve, 150));
+      expect(cli.exitCode).toBeNull();
+
+      await expect(terminateWorkerLaunchProvider(attempt, 2_000)).resolves.toBe(true);
+      await expect(cliExit).resolves.toEqual({ code: 0, signal: null });
+      await vi.waitFor(async () => {
+        const terminal = JSON.parse(await readFile(`${attempt.startedPath}.terminal`, 'utf8'));
+        expect(terminal).toMatchObject({
+          outcome: 'exit',
+          cleanup_verified: true,
+          child_reaped: true,
+          pid: started.pid,
+          process_group_id: started.process_group_id,
+        });
+      }, { timeout: 5_000, interval: 20 });
+    } finally {
+      await terminateWorkerLaunchProvider(attempt, 2_000).catch(() => false);
+      if (cli && cli.exitCode === null && cli.signalCode === null) {
+        try { cli.kill('SIGKILL'); } catch { /* already exited */ }
+      }
+      await cliExit?.catch(() => undefined);
+      await cleanupWorkerLaunchTransport(attempt, 'test_cleanup_finally').catch(() => false);
     }
   });
 
