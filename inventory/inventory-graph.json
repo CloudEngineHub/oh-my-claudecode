@@ -6,14 +6,14 @@
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
     "head": "04674e35110f7050e2416be828973df8990aaa40",
-    "sourceSha256": "b3787180523f7056ec153da22dc133cb6ffe5590ed75aad2e0d21c5698866fba",
+    "sourceSha256": "eb06a1520f314b10541d1d3870c646f5eae0927c728cfe19f3632e756ed22b6e",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
   "head": "04674e35110f7050e2416be828973df8990aaa40",
-  "sourceSha256": "b3787180523f7056ec153da22dc133cb6ffe5590ed75aad2e0d21c5698866fba",
+  "sourceSha256": "eb06a1520f314b10541d1d3870c646f5eae0927c728cfe19f3632e756ed22b6e",
   "counts": {
     "public": {
       "skills": 38,
@@ -24,12 +24,12 @@
     },
     "internal": {
       "hookFiles": 295,
-      "featureFiles": 79,
+      "featureFiles": 80,
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1345,
-      "total": 1366
+      "srcFiles": 1346,
+      "total": 1367
     },
     "generated": {
       "distFiles": 4986,
@@ -487,6 +487,7 @@
       "src/features/lookout/test-artifact-parser.ts",
       "src/features/lookout/types.ts",
       "src/features/lookout/workspace.ts",
+      "src/features/lookout/wrapper-parser.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -6241,6 +6242,7 @@
       "src/features/lookout/test-artifact-parser.ts",
       "src/features/lookout/types.ts",
       "src/features/lookout/workspace.ts",
+      "src/features/lookout/wrapper-parser.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -36101,6 +36103,11 @@
         "id": "src/features/lookout/workspace.ts",
         "kind": "feature",
         "path": "src/features/lookout/workspace.ts"
+      },
+      {
+        "id": "src/features/lookout/wrapper-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/wrapper-parser.ts"
       },
       {
         "id": "src/features/magic-keywords.ts",
@@ -77996,12 +78003,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6913,
+      "nodeCount": 6914,
       "edgeCount": 7417,
       "importEdgeCount": 6106,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "773c7b771e920162f6f634b0f5b72c4967b876d64a1332a207a399e700e4bd8a",
-  "manifestSha256": "8947822d138ea603dac8ad0e6d64f583049bdda866d2ca5e5b7a96a75c8f7243"
+  "inventorySha256": "f86cfdc79146e041d78375e173a6dcbe03153691d908f85d49255913bf7e76f0",
+  "manifestSha256": "13e1f27afd3f312c7f1d1f2d238e709cbfe75c9bad441fe738ffa2bc674c3182"
 }
