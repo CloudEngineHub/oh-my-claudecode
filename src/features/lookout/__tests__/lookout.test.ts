@@ -574,6 +574,8 @@ describe("scanLookout: briefing rules", () => {
       "printf 'DROP TABLE users'",
       "printf 'git push to main'",
       "psql -c 'select 1'\ndrop table borders",
+      "Document the SQL example \"DROP TABLE users\" in README",
+      "printf 'x|rm tests/a.ts'",
     ]) {
       const falsePositive = scanLookout({ ...base(), brief });
       expect(ids(falsePositive.findings)).not.toContain("lookout.brief.test-deletion");

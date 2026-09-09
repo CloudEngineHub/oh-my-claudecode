@@ -392,13 +392,19 @@ function isInertOutputText(line: string, index: number): boolean {
   return /^\s*(?:echo|printf|print|cat)\b/i.test(commandPrefix);
 }
 
+function isDocumentationSqlExample(line: string, index: number): boolean {
+  const prefix = line.slice(0, index);
+  return /\b(?:document|write|quote|include|show|example)\b/i.test(prefix) && /["'`]/.test(prefix);
+}
+
 function maskHereDocBody(brief: string): string[] {
   const lines = brief.split("\n");
   let delimiter: { name: string; quoted: boolean } | null = null;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
     if (delimiter !== null) {
-      if (line.trim() === delimiter.name) {
+      const candidate = line.startsWith("\t") ? line.replace(/^\t+/, "") : line;
+      if (candidate === delimiter.name) {
         delimiter = null;
         lines[index] = "";
       } else if (delimiter.quoted) {
@@ -454,7 +460,7 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
           if (
             match.index !== undefined &&
             (rule.id === "lookout.brief.db-destructive" || rule.id === "lookout.brief.protected-branch") &&
-            isInertOutputText(line, match.index)
+            (isInertOutputText(line, match.index) || isDocumentationSqlExample(line, match.index))
           ) {
             continue;
           }
@@ -479,7 +485,10 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
         if (rule.collect) {
           for (const match of rule.collect(line)) {
             if (isNegated(line, match.index, negationContext)) continue;
-            if (rule.id === "lookout.brief.db-destructive" && isInertOutputText(line, match.index)) continue;
+            if (
+              rule.id === "lookout.brief.db-destructive" &&
+              (isInertOutputText(line, match.index) || isDocumentationSqlExample(line, match.index))
+            ) continue;
             if (!evidence.includes(match.snippet)) evidence.push(match.snippet);
             if (evidence.length >= 3) break;
           }

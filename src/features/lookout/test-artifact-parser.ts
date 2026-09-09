@@ -1,7 +1,7 @@
 /** Narrow parser for rm commands targeting conventional test artifacts. */
 
 import { findExecutableIndex, splitCommandClauses, tokenizeCommand } from "./command-parser.js";
-import { decodeAnsiCQuote } from "./substitution-parser.js";
+import { decodeAnsiCQuote, findNestedSubstitutions } from "./substitution-parser.js";
 
 export interface TestArtifactMatch {
   snippet: string;
@@ -25,6 +25,11 @@ function collectNestedShellBodies(line: string, depth: number): TestArtifactMatc
   };
   scan(/\b(?:bash|sh|dash|zsh|ksh)\b[^;&|\n]*\s(?:-c|--command)\s+(['"])([\s\S]*?)\1/g);
   scan(/\b(?:bash|sh|dash|zsh|ksh)\b[^;&|\n]*\s(?:-c|--command)\s+\$'((?:\\.|[^'])*)'/g, true, 1);
+  for (const substitution of findNestedSubstitutions([{ text: line, index: 0 }])) {
+    for (const nested of collectRmTestArtifacts(substitution.text, depth + 1)) {
+      matches.push({ snippet: nested.snippet, index: substitution.index + nested.index });
+    }
+  }
   return matches;
 }
 
