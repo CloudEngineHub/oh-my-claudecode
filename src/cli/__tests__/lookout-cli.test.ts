@@ -8,6 +8,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { spawnSync } from "child_process";
 
 import { lookoutCommand } from "../lookout.js";
 
@@ -31,6 +32,25 @@ afterEach(() => {
 async function run(args: string[]): Promise<void> {
   await lookoutCommand().parseAsync(args, { from: "user" });
 }
+
+function runRealCli(args: string[]): { status: number | null; stdout: string; stderr: string } {
+  const source = `
+    import { lookoutCommand } from "./src/cli/lookout.ts";
+    try {
+      await lookoutCommand().parseAsync(${JSON.stringify(args)}, { from: "user" });
+    } catch (error) {
+      process.exitCode = error && typeof error === "object" && "exitCode" in error ? Number(error.exitCode) : 2;
+    }
+  `;
+  const result = spawnSync(process.execPath, ["--import", "tsx/esm", "--eval", source], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+  });
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+}
+
+const supportsRealCliProcess =
+  Boolean(process.versions.bun) || Number(process.versions.node.split(".")[0] ?? "0") >= 20;
 
 describe("lookout CLI adapter", () => {
   it("emits the machine-readable report on --json (exit 0)", async () => {
@@ -73,6 +93,21 @@ describe("lookout CLI adapter", () => {
     await run(["scan", "--repo", "/nonexistent/omc-lookout-cli-repo"]);
     expect(process.exitCode).toBe(2);
     process.exitCode = undefined;
+  });
+
+  it.skipIf(!supportsRealCliProcess)("preserves the 0/1/2 contract in a real process", () => {
+    const repo = makeRepo();
+    const clear = runRealCli(["scan", "--brief", "hello world", "--json", "--repo", repo]);
+    expect(clear.status).toBe(0);
+    expect(JSON.parse(clear.stdout).summary.verdict).toBe("clear");
+
+    const strict = runRealCli(["scan", "--brief", "git push origin +main", "--strict", "--json", "--repo", repo]);
+    expect(strict.status).toBe(1);
+    expect(JSON.parse(strict.stdout).summary.verdict).toBe("review-recommended");
+
+    const usage = runRealCli(["scan", "--brief"]);
+    expect(usage.status).toBe(2);
+    expect(usage.stderr).toContain("argument missing");
   });
 
   it.skipIf(Boolean(process.versions.bun))("registers and runs lookout through the root CLI program", async () => {

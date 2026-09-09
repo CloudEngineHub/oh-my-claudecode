@@ -397,13 +397,104 @@ function isDocumentationSqlExample(line: string, index: number): boolean {
   return /\b(?:document|write|quote|include|show|example)\b/i.test(prefix) && /["'`]/.test(prefix);
 }
 
+interface HereDocMarker {
+  name: string;
+  quoted: boolean;
+  stripTabs: boolean;
+}
+
+function findHereDocMarker(line: string): HereDocMarker | null {
+  let quote: "'" | '"' | null = null;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index] ?? "";
+    if (quote === "'") {
+      if (character === "'") quote = null;
+      continue;
+    }
+    if (quote === '"') {
+      if (character === "\\") {
+        index += 1;
+        continue;
+      }
+      if (character === '"') quote = null;
+      continue;
+    }
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (character === "'") {
+      quote = "'";
+      continue;
+    }
+    if (character === '"') {
+      quote = '"';
+      continue;
+    }
+    if (character === "#" && (index === 0 || /\s/.test(line[index - 1] ?? ""))) return null;
+    if (!line.startsWith("<<", index)) continue;
+    let cursor = index + 2;
+    const stripTabs = line[cursor] === "-";
+    if (stripTabs) cursor += 1;
+    while (/\s/.test(line[cursor] ?? "")) cursor += 1;
+    let delimiterQuote: "'" | '"' | null = null;
+    let quoted = false;
+    let name = "";
+    while (cursor < line.length) {
+      const value = line[cursor] ?? "";
+      if (delimiterQuote === "'") {
+        if (value === "'") delimiterQuote = null;
+        else name += value;
+        cursor += 1;
+        continue;
+      }
+      if (delimiterQuote === '"') {
+        if (value === "\\" && cursor + 1 < line.length) {
+          quoted = true;
+          name += line[cursor + 1] ?? "";
+          cursor += 2;
+          continue;
+        }
+        if (value === '"') delimiterQuote = null;
+        else name += value;
+        cursor += 1;
+        continue;
+      }
+      if (value === "'") {
+        delimiterQuote = "'";
+        quoted = true;
+        cursor += 1;
+        continue;
+      }
+      if (value === '"') {
+        delimiterQuote = '"';
+        quoted = true;
+        cursor += 1;
+        continue;
+      }
+      if (value === "\\" && cursor + 1 < line.length) {
+        quoted = true;
+        name += line[cursor + 1] ?? "";
+        cursor += 2;
+        continue;
+      }
+      if (/\s|[;&|<>]/.test(value)) break;
+      name += value;
+      cursor += 1;
+    }
+    if (name && delimiterQuote === null) return { name, quoted, stripTabs };
+    return null;
+  }
+  return null;
+}
+
 function maskHereDocBody(brief: string): string[] {
   const lines = brief.split("\n");
-  let delimiter: { name: string; quoted: boolean } | null = null;
+  let delimiter: HereDocMarker | null = null;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
     if (delimiter !== null) {
-      const candidate = line.startsWith("\t") ? line.replace(/^\t+/, "") : line;
+      const candidate = delimiter.stripTabs ? line.replace(/^\t+/, "") : line;
       if (candidate === delimiter.name) {
         delimiter = null;
         lines[index] = "";
@@ -416,8 +507,7 @@ function maskHereDocBody(brief: string): string[] {
       }
       continue;
     }
-    const match = line.match(/<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1(?=\s|$)/i);
-    if (match) delimiter = { name: match[2], quoted: match[1] !== "" };
+    delimiter = findHereDocMarker(line);
   }
   return lines;
 }

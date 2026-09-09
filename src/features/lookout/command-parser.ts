@@ -1,11 +1,8 @@
 import { decodeAnsiCQuote, findNestedSubstitutions } from "./substitution-parser.js";
-
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const PROTECTED_BRANCH_SAMPLES = ["main", "master", "develop", "release/example", "production/example"];
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-*$]+$/;
-/** Git global options that consume the following token as a value. */
 const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
-/** Push options that consume the following token as a value. */
 const PUSH_OPTION_VALUE = /^(?:-o|--push-option|--receive-pack|--exec|--recurse-submodules)$/;
 const PUSH_REPO_OPTION = /^--repo$/;
 const PUSH_INLINE_OPTION_VALUE = /^(?:-o.+|--push-option=.+|--receive-pack=.+|--exec=.+|--recurse-submodules=.+)$/;
@@ -17,7 +14,6 @@ const CLEAN_BUNDLED_SHORT_FLAGS = /^-[a-zA-Z0-9]+$/;
 const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 const MAX_NESTED_SCAN_DEPTH = 64;
-
 function isValidPushBundle(value: string): boolean {
   if (!BUNDLED_SHORT_FLAGS.test(value)) return true;
   for (const character of value.slice(1)) {
@@ -72,11 +68,8 @@ function bundledPushHasFlag(flag: string, wanted: string): boolean {
 }
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
 interface ParsedPush {
-  /** Genuine flags — option values never land here. */
   flags: CollectedMatch[];
-  /** First non-flag operand, or null. */
   repo: string | null;
-  /** Refspecs: every non-flag operand after the repository. */
   refspecs: CollectedMatch[];
 }
 
@@ -367,6 +360,7 @@ export function findExecutableIndex(tokens: CommandToken[], executable: string):
       }
     }
     if (wrapper === "timeout") {
+      if (/^(?:-h|--help|-V|--version)$/.test(value)) return -1;
       if (timeoutOptionValuePending) {
         timeoutOptionValuePending = false;
         index += 1;
@@ -424,6 +418,14 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
         });
       }
     }
+    const evalIndex = findExecutableIndex(tokens, "eval");
+    if (evalIndex >= 0) {
+      const bodyTokens = tokens.slice(evalIndex + 1).filter((token) => token.quoted);
+      const body = bodyTokens.map((token) => token.value).join(" ");
+      if (body && bodyTokens[0]) {
+        nested.push({ text: body, index: clause.index + bodyTokens[0].index });
+      }
+    }
     if (shellIndex < 0) continue;
     let commandIndex = -1;
     for (let index = shellIndex + 1; index < tokens.length; index += 1) {
@@ -444,7 +446,6 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
     if (command && (command.quoted || command.raw !== command.value)) {
       nested.push({ text: command.value, index: clause.index + command.index });
     }
-
   }
   return nested;
 }
@@ -611,7 +612,6 @@ function collectRmForceOps(line: string): CollectedMatch[] {
   }
   return hits;
 }
-
 interface GitSubcommand {
   gitIndex: number;
   commandIndex: number;
@@ -680,7 +680,8 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       if (resetOptions.some((token) => /^(?:-h|--help|-v|--version)$/.test(token.value))) continue;
       const hard = resetOptions.find((token) => token.value === "--hard");
       const hasPathspec = terminator >= 0 && resetArgs.slice(terminator + 1).length > 0;
-      if (hard && !hasPathspec) {
+      const hardOperands = hard ? resetOptions.filter((token) => token !== hard && !token.value.startsWith("-")) : [];
+      if (hard && !hasPathspec && hardOperands.length <= 1) {
         addMatch(hits, "git reset --hard", clause.index + tokens[reset.gitIndex].index);
       }
     }

@@ -6,14 +6,14 @@
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
     "head": "04674e35110f7050e2416be828973df8990aaa40",
-    "sourceSha256": "4edf6de06995c69a050eca685e2a526543aaddf3c7bc740d2e2365b2c604ca60",
+    "sourceSha256": "32cd7d2215bff0c79b635dcb7f6677d75c34a985285c28783d305d0bb039c2e5",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
   "head": "04674e35110f7050e2416be828973df8990aaa40",
-  "sourceSha256": "4edf6de06995c69a050eca685e2a526543aaddf3c7bc740d2e2365b2c604ca60",
+  "sourceSha256": "32cd7d2215bff0c79b635dcb7f6677d75c34a985285c28783d305d0bb039c2e5",
   "counts": {
     "public": {
       "skills": 38,
@@ -50981,6 +50981,11 @@
       },
       {
         "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
         "to": "external:fs",
         "kind": "imports"
       },
@@ -77987,11 +77992,11 @@
     ],
     "stats": {
       "nodeCount": 6913,
-      "edgeCount": 7415,
-      "importEdgeCount": 6104,
+      "edgeCount": 7416,
+      "importEdgeCount": 6105,
       "registerEdgeCount": 59
     }
   },
   "inventorySha256": "773c7b771e920162f6f634b0f5b72c4967b876d64a1332a207a399e700e4bd8a",
-  "manifestSha256": "7fb138e2fae55d3ac6b9d3e7c473326eaf18e182d69e9cf47e2f30cfed2fe4f7"
+  "manifestSha256": "4ff07dd23604e93826af61aed82573ead24410a1ece52961cc97a2630aa96664"
 }
