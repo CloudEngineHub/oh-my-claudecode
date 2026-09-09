@@ -14,6 +14,9 @@ function isEscapedByOddBackslashes(text: string, index: number): boolean {
 function findSubstitutionEnd(text: string, start: number): number {
   let depth = 1;
   let quote: "'" | '"' | null = null;
+  let sawCase = false;
+  let casePatternPending = false;
+  let word = "";
   for (let index = start + 2; index < text.length; index += 1) {
     const character = text[index] ?? "";
     if (quote === "'") {
@@ -36,8 +39,25 @@ function findSubstitutionEnd(text: string, start: number): number {
       quote = character;
       continue;
     }
+    if (/[A-Za-z]/.test(character)) {
+      word += character;
+      continue;
+    }
+    if (word === "case") sawCase = true;
+    else if (word === "in" && sawCase) casePatternPending = true;
+    else if (word === "esac") casePatternPending = false;
+    word = "";
+    if (text.startsWith(";;", index)) {
+      if (sawCase) casePatternPending = true;
+      index += 1;
+      continue;
+    }
     if (character === "(") depth += 1;
     else if (character === ")") {
+      if (casePatternPending) {
+        casePatternPending = false;
+        continue;
+      }
       depth -= 1;
       if (depth === 0) return index;
     }

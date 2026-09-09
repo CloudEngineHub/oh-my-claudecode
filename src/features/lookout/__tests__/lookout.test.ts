@@ -130,6 +130,7 @@ describe("scanLookout: briefing rules", () => {
       "psql -c 'drop materialized view reports'",
       "sudo -u postgres psql -c 'drop table users'",
       "env PGDATABASE=app psql -c 'drop table users'",
+      "sqlite3 db drop\\ table\\ users",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
     ]) {
@@ -448,6 +449,10 @@ describe("scanLookout: briefing rules", () => {
       String.raw`env -S'rm -rf build'`,
       "git clean -i",
       "if ! rm -rf build; then :; fi",
+      "(rm -rf build)",
+      "{ rm -rf build; }",
+      "nohup -- rm -rf build",
+      "echo \"$(case x in x) rm -rf build;; esac)\"",
       String.raw`echo "quoted\\"; rm -rf build`,
       "env -S 'git push --force origin feature'",
       "REMOTE=origin git push $REMOTE --force main",
@@ -524,6 +529,8 @@ describe("scanLookout: briefing rules", () => {
       "disable the test database",
       "remove the test helper",
       "disable this test hook",
+      "echo \"skip the auth tests\"",
+      "document the phrase \"skip the auth tests\"",
     ]) {
       const falsePositive = scanLookout({ ...base(), brief });
       expect(ids(falsePositive.findings)).not.toContain("lookout.brief.test-deletion");

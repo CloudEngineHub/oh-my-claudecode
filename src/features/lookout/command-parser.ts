@@ -229,6 +229,13 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
 
 function findExecutableIndex(tokens: CommandToken[], executable: string): number {
   if (/^(?:echo|printf|print|cat)$/i.test(tokens[0]?.value ?? "")) return -1;
+  const caseBodyCommand = tokens.findIndex(
+    (token, index) =>
+      index > 0 &&
+      token.value.endsWith(")") &&
+      (tokens[index + 1]?.value === executable || tokens[index + 1]?.value.endsWith(`/${executable}`)),
+  );
+  if (caseBodyCommand >= 0) return caseBodyCommand + 1;
   const proseCommand = tokens.findIndex(
     (token, index) =>
       index > 0 &&
@@ -254,7 +261,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   if (reminderCommand >= 0) return reminderCommand + 1;
 
   let index = 0;
-  while (/^(?:!|-|\*|>|\d+)$/.test(tokens[index]?.value ?? "")) index += 1;
+  while (/^(?:!|-|\*|>|\d+|[({])$/.test(tokens[index]?.value ?? "")) index += 1;
   if (
     index > 0 &&
     tokens[index]?.value === "[" &&
@@ -268,7 +275,8 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
   let timeoutOptionValuePending = false;
   while (index < tokens.length) {
     const value = tokens[index].value;
-    if (value === executable || value.endsWith(`/${executable}`)) return index;
+    const ungroupedValue = value.replace(/^[({]/, "").replace(/[)};,]+$/, "");
+    if (ungroupedValue === executable || ungroupedValue.endsWith(`/${executable}`)) return index;
     if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
@@ -331,6 +339,12 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
         continue;
       }
       if (value.startsWith("-")) {
+        index += 1;
+        continue;
+      }
+    }
+    if (wrapper === "nohup") {
+      if (value === "--" || value.startsWith("-")) {
         index += 1;
         continue;
       }

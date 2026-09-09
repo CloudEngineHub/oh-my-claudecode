@@ -176,7 +176,7 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
   const before = line.slice(0, start);
   const backticks = (before.match(/`/g) ?? []).length;
   if (backticks % 2 === 1) return true;
-  if (hasSqlClientCommandContext(before) && hasOpenShellQuote(before)) {
+  if (hasSqlClientCommandContext(before)) {
     return true;
   }
   const rest = line.slice(end);
@@ -230,27 +230,14 @@ function hasSqlClientCommandContext(before: string): boolean {
   return false;
 }
 
-function hasOpenShellQuote(text: string): boolean {
-  let quote: "'" | '"' | null = null;
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index] ?? "";
-    if (character === "\\") {
-      index += 1;
-      continue;
-    }
-    if (quote === null && (character === "'" || character === '"')) quote = character;
-    else if (quote === character) quote = null;
-  }
-  return quote !== null;
-}
-
 function collectSqlDestructive(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
+  const normalizedLine = line.replace(/\\(?=\s)/g, " ");
   for (const pattern of [SQL_CONTEXT_PATTERN, SQL_SCHEMA_PATTERN]) {
-    for (const match of line.matchAll(pattern)) {
+    for (const match of normalizedLine.matchAll(pattern)) {
       const index = match.index ?? 0;
       const uppercaseSchema = pattern === SQL_SCHEMA_PATTERN && /^DROP\s+SCHEMA\b/.test(match[0]);
-      if (uppercaseSchema || isExplicitSqlContext(line, index + match[0].length, index)) {
+      if (uppercaseSchema || isExplicitSqlContext(normalizedLine, index + match[0].length, index)) {
         addMatch(hits, match[0].replace(/\s+/g, " ").trim(), index);
       }
     }
@@ -367,6 +354,16 @@ function computeSummary(findings: LookoutFinding[]): LookoutReport["summary"] {
   return { counts, verdict };
 }
 
+function isInertTestDeletionText(line: string, index: number): boolean {
+  const prefix = line.slice(0, index);
+  const commandPrefix = prefix.split(/[;&|]/).at(-1) ?? prefix;
+  if (/^\s*(?:echo|printf|print|cat)\b/i.test(commandPrefix)) return true;
+  return (
+    /["'`]\s*$/.test(prefix) &&
+    /\b(?:add|include|write|document|quote|show|print)\b/i.test(prefix)
+  );
+}
+
 export interface ScanLookoutOptions {
   /** Directory to scan (defaults to process.cwd() at the CLI layer). */
   repo: string;
@@ -401,6 +398,13 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
           if (match.index !== undefined && isNegated(line, match.index, negationContext)) continue;
+          if (
+            rule.id === "lookout.brief.test-deletion" &&
+            match.index !== undefined &&
+            isInertTestDeletionText(line, match.index)
+          ) {
+            continue;
+          }
           const snippet = match[0].replace(/\s+/g, " ").trim();
           if (
             rule.id === "lookout.brief.protected-branch" &&
