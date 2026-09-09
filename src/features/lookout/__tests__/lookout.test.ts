@@ -509,6 +509,8 @@ describe("scanLookout: briefing rules", () => {
       "rm --version -rf /tmp/x",
       "git clean -f -e",
       "nohup --help rm -rf build",
+      "rm --help tests/auth.test.ts",
+      "rm --version tests/auth.test.ts",
       "cat > README.md <<'EOF'\nrm -rf build\nEOF",
     ]) {
       const report = scanLookout({ ...base(), brief });
@@ -528,6 +530,7 @@ describe("scanLookout: briefing rules", () => {
       "skip the test suite",
       "remove the failing test",
       "rm tests/auth.test.ts",
+      "rm ./tests/auth.ts",
       "command rm tests/auth.ts",
       "env rm tests/auth.ts",
       "sudo rm tests/auth.ts",

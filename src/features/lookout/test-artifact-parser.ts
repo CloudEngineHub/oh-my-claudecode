@@ -17,9 +17,13 @@ export function collectRmTestArtifacts(line: string): TestArtifactMatch[] {
     const leading = clause.match(/^\s*[({]?\s*(?:(?:command|exec)\s+|env\s+(?:[A-Za-z_]\w*=\S+\s+)*|sudo\s+)*(?:[\w.-]+\/)?rm\b/i);
     if (leading) {
       const rest = clause.slice(leading[0].length).trim();
+      if (/(?:^|\s)(?:-h|--help|--version)(?:\s|$)/.test(rest)) {
+        clauseStart = index + 1;
+        continue;
+      }
       for (const operand of rest.split(/\s+/)) {
         if (operand === "--" || /^-[A-Za-z]+$/.test(operand)) continue;
-        const path = operand.replace(/^['"]|['"]$/g, "");
+        const path = operand.replace(/^['"]|['"]$/g, "").replace(/^(?:\.\/)+/, "");
         if (TEST_ARTIFACT.test(path)) {
           matches.push({ snippet: `rm ${path}`, index: clauseStart + clause.indexOf(operand) });
         }
