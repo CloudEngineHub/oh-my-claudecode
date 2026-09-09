@@ -15,6 +15,7 @@ const NAVIGATOR = readFileSync(join(ROOT, 'skills', 'ask-navigator', 'SKILL.md')
 const LOFT = readFileSync(join(ROOT, 'skills', 'loft', 'SKILL.md'), 'utf-8');
 const HARBOR = readFileSync(join(ROOT, 'skills', 'harbor', 'SKILL.md'), 'utf-8');
 const SHIPYARD_DOC = readFileSync(join(ROOT, 'docs', 'shipyard.md'), 'utf-8');
+const DISCIPLINE = readFileSync(join(ROOT, 'skills', 'agent-doc-discipline', 'SKILL.md'), 'utf-8');
 const PLUGIN = JSON.parse(readFileSync(join(ROOT, '.claude-plugin', 'plugin.json'), 'utf-8'));
 
 function frontmatter(src: string): Record<string, string> {
@@ -153,6 +154,27 @@ describe('shipyard skills — behavior & packaging contract', () => {
     expect(NAVIGATOR).toContain('| `loft` |');
     expect(NAVIGATOR).not.toContain('`prototype`');
     expect(NAVIGATOR).toContain('Call the Skill tool with "loft"');
+  });
+
+  it('agent-doc-discipline ships as advisory and is wired at its two mandatory call sites', () => {
+    // The document-side companion of minimal-code-discipline: advisory skill,
+    // never a gate; mandatory exactly at drydock seeds and launch C5 sediment.
+    expect(existsSync(join(ROOT, 'skills', 'agent-doc-discipline', 'SKILL.md'))).toBe(true);
+    const fm = frontmatter(DISCIPLINE);
+    expect(fm.name).toBe('agent-doc-discipline');
+    expect(DISCIPLINE).toContain('Mandatory when: drydock generates surface seeds, the launch C5 sediment pass');
+    expect(DISCIPLINE).toContain('**Every rule checkable and carrying a why.**');
+    expect(DISCIPLINE).toContain('stale or redundant material found during the edit is gone');
+    expect(PLUGIN.skills as string[]).toContain('./skills/agent-doc-discipline/');
+    expect(LAUNCH).toContain('call the Skill tool with `agent-doc-discipline`');
+    expect(DRYDOCK).toContain('call the Skill tool with `agent-doc-discipline`');
+    expect(LAUNCH).toContain('**Two-axis review gate.**');
+    expect(LAUNCH).toContain('**Standards axis**');
+    expect(LAUNCH).toContain('**Spec axis**');
+    expect(LAUNCH).toContain('*this ticket\'s* acceptance criteria');
+    expect(LAUNCH).toContain('reported separately');
+    expect(LAUNCH).toContain('never merged or cross-ranked');
+    expect(LAUNCH).toContain('reviewer fails the ticket when either axis fails');
   });
 
   it('harbor speaks plain language on the tracker (no methodology metaphors leak)', () => {
