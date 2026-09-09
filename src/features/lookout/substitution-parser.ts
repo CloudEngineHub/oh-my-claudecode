@@ -5,6 +5,13 @@ export interface SubstitutionClause {
   index: number;
 }
 
+export function decodeAnsiCQuote(value: string): string {
+  return value
+    .replace(/\\x([0-9a-fA-F]{2})/g, (_, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)))
+    .replace(/\\([0-7]{1,3})/g, (_, octal: string) => String.fromCharCode(Number.parseInt(octal, 8)))
+    .replace(/\\([nrt\\'])/g, (_, escape: string) => ({ n: "\n", r: "\r", t: "\t", "\\": "\\", "'": "'" })[escape] ?? escape);
+}
+
 function isEscapedByOddBackslashes(text: string, index: number): boolean {
   let count = 0;
   for (let cursor = index - 1; cursor >= 0 && text[cursor] === "\\"; cursor -= 1) count += 1;

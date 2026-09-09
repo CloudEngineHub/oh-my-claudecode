@@ -1,6 +1,6 @@
 /** Quote-aware shell/Git command parsing for lookout briefing rules. */
 
-import { findNestedSubstitutions } from "./substitution-parser.js";
+import { decodeAnsiCQuote, findNestedSubstitutions } from "./substitution-parser.js";
 
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const PROTECTED_BRANCH_SAMPLES = ["main", "master", "develop", "release/example", "production/example"];
@@ -106,7 +106,7 @@ function isEscapedByOddBackslashes(text: string, index: number): boolean {
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
   if (value === "!") return value;
-  if (value.startsWith("$'") && value.endsWith("'")) value = value.slice(2, -1);
+  if (value.startsWith("$'") && value.endsWith("'")) value = decodeAnsiCQuote(value.slice(2, -1));
   value = value.replace(/[.,!?;]+$/, "");
   while (
     value.length >= 2 &&
@@ -336,6 +336,7 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       }
     }
     if (wrapper === "nohup") {
+      if (/^(?:-h|--help|-V|--version)$/.test(value)) return -1;
       if (value === "--" || value.startsWith("-")) {
         index += 1;
         continue;
