@@ -130,6 +130,7 @@ describe("scanLookout: briefing rules", () => {
       "psql -c 'drop materialized view reports'",
       "psql -c 'drop type mood'",
       "psql -c 'drop sequence order_ids'",
+      "sqlite3 db 'drop trigger trg'",
       "echo 'DROP TABLE users' | sqlite3 db",
       "sudo -u postgres psql -c 'drop table users'",
       "env PGDATABASE=app psql -c 'drop table users'",
@@ -517,6 +518,7 @@ describe("scanLookout: briefing rules", () => {
       "rm --help tests/auth.test.ts",
       "rm --version tests/auth.test.ts",
       "cat > README.md <<'EOF'\nrm -rf build\nEOF",
+      "tee README.md <<'EOF'\nrm -rf build\nEOF",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -537,6 +539,7 @@ describe("scanLookout: briefing rules", () => {
       "rm tests/auth.test.ts",
       "rm ./tests/auth.ts",
       "command rm tests/auth.ts",
+      "bash -c 'rm tests/auth.ts'",
       "env rm tests/auth.ts",
       "sudo rm tests/auth.ts",
       "delete the auth tests",

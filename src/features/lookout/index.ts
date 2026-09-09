@@ -171,7 +171,7 @@ function isNegated(line: string, matchIndex: number, context = buildNegationCont
  * main docs") cannot turn prose into a refspec.
  */
 const SQL_CONTEXT_PATTERN =
-  /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX|TYPE|SEQUENCE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
+  /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX|TYPE|SEQUENCE|TRIGGER)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
 const SQL_SCHEMA_PATTERN = /\bDROP\s+SCHEMA(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
 
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
@@ -301,7 +301,7 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX|TYPE|SEQUENCE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/g,
+      /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX|TYPE|SEQUENCE|TRIGGER)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/g,
     collect: collectSqlDestructive,
   },
   {
@@ -397,7 +397,7 @@ function isInertOutputText(line: string, index: number): boolean {
   return /^\s*(?:echo|printf|print|cat)\b/i.test(commandPrefix);
 }
 
-function maskCatHereDocBody(brief: string): string[] {
+function maskHereDocBody(brief: string): string[] {
   const lines = brief.split("\n");
   let delimiter: { name: string; quoted: boolean } | null = null;
   for (let index = 0; index < lines.length; index += 1) {
@@ -415,7 +415,7 @@ function maskCatHereDocBody(brief: string): string[] {
       }
       continue;
     }
-    const match = line.match(/^\s*cat\b.*<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1\s*$/i);
+    const match = line.match(/<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1\s*$/i);
     if (match) delimiter = { name: match[2], quoted: match[1] !== "" };
   }
   return lines;
@@ -443,7 +443,7 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
   const brief = options.brief;
   if (brief !== undefined) {
     const scanBrief = brief.replace(/\\\r?\n[ \t]*/g, " ");
-    const scanLines = maskCatHereDocBody(scanBrief);
+    const scanLines = maskHereDocBody(scanBrief);
     // Rules evaluate line by line while command collectors split clauses so
     // a dry run or prohibition cannot hide a separate requested operation later in the
     // same line.

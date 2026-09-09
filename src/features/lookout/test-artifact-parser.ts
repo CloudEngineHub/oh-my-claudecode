@@ -7,7 +7,7 @@ export interface TestArtifactMatch {
 
 const TEST_ARTIFACT = /^(?:tests?\/|__tests__\/|.+\.(?:test|spec)\.[cm]?[jt]sx?$)/i;
 
-export function collectRmTestArtifacts(line: string): TestArtifactMatch[] {
+export function collectRmTestArtifacts(line: string, depth = 0): TestArtifactMatch[] {
   const matches: TestArtifactMatch[] = [];
   let clauseStart = 0;
   for (let index = 0; index <= line.length; index += 1) {
@@ -30,6 +30,16 @@ export function collectRmTestArtifacts(line: string): TestArtifactMatch[] {
       }
     }
     clauseStart = index + 1;
+  }
+  if (depth < 8) {
+    const shell = /\b(?:bash|sh|dash|zsh|ksh)\b[^;&|\n]*\s(?:-c|--command)\s+(['"])([\s\S]*?)\1/g;
+    for (const match of line.matchAll(shell)) {
+      const body = match[2] ?? "";
+      const bodyIndex = (match.index ?? 0) + (match[0]?.indexOf(body) ?? 0);
+      for (const nested of collectRmTestArtifacts(body, depth + 1)) {
+        matches.push({ snippet: nested.snippet, index: bodyIndex + nested.index });
+      }
+    }
   }
   return matches;
 }
