@@ -149,7 +149,7 @@ function isNegated(line: string, matchIndex: number, context = buildNegationCont
   if (!cue || matchIndex - cue.index >= 48) return false;
   const cueIndex = cue.index;
   const cueEnd = cue.end;
-  if (/^\s+(?:forget|hesitate)\b/i.test(line.slice(cueEnd))) return false;
+  if (/^\s+(?:forget|hesitate|mind)\b/i.test(line.slice(cueEnd))) return false;
   return (
     !hasIndexBetween(context.hardBoundaries, cueIndex, matchIndex) &&
     !hasIndexBetween(context.wordBoundaries, cueIndex, matchIndex) &&
@@ -395,6 +395,22 @@ function isInertOutputText(line: string, index: number): boolean {
   return /^\s*(?:echo|printf|print|cat)\b/i.test(commandPrefix);
 }
 
+function maskCatHereDocBody(brief: string): string[] {
+  const lines = brief.split("\n");
+  let delimiter: string | null = null;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    if (delimiter !== null) {
+      if (line.trim() === delimiter) delimiter = null;
+      lines[index] = "";
+      continue;
+    }
+    const match = line.match(/^\s*cat\b.*<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1\s*$/i);
+    if (match) delimiter = match[2];
+  }
+  return lines;
+}
+
 export interface ScanLookoutOptions {
   /** Directory to scan (defaults to process.cwd() at the CLI layer). */
   repo: string;
@@ -417,13 +433,14 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
   const brief = options.brief;
   if (brief !== undefined) {
     const scanBrief = brief.replace(/\\\r?\n[ \t]*/g, " ");
+    const scanLines = maskCatHereDocBody(scanBrief);
     // Rules evaluate line by line while command collectors split clauses so
     // a dry run or prohibition cannot hide a separate requested operation later in the
     // same line.
     for (const rule of BRIEF_RULES) {
       const evidence: string[] = [];
       const inputLines =
-        rule.id === "lookout.brief.db-destructive" ? [scanBrief] : scanBrief.split("\n");
+        rule.id === "lookout.brief.db-destructive" ? [scanBrief] : scanLines;
       for (const line of inputLines) {
         const negationContext = buildNegationContext(line);
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);

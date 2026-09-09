@@ -470,6 +470,7 @@ describe("scanLookout: briefing rules", () => {
       String.raw`echo "$(printf '\'; rm -rf build)"`,
       "! git push --force origin feature",
       "! rm -rf build",
+      "Never mind, rm -rf build",
       "echo $(git push --force origin feature)",
       "printf '%s\\n' \"$(rm -rf build)\"",
       "cat <(rm -rf build)",
@@ -503,7 +504,13 @@ describe("scanLookout: briefing rules", () => {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings.some((finding) => finding.id === "lookout.brief.force-op" || finding.id === "lookout.brief.protected-branch")).toBe(true);
     }
-    for (const brief of ["rm --help -rf /tmp/x", "rm --version -rf /tmp/x", "git clean -f -e", "nohup --help rm -rf build"]) {
+    for (const brief of [
+      "rm --help -rf /tmp/x",
+      "rm --version -rf /tmp/x",
+      "git clean -f -e",
+      "nohup --help rm -rf build",
+      "cat > README.md <<'EOF'\nrm -rf build\nEOF",
+    ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
     }
