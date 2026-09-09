@@ -40,6 +40,7 @@ import type {
 import { repoRoot, scanWorkspace } from "./workspace.js";
 import { addMatch, collectForceOps, collectProtectedPushDests } from "./command-parser.js";
 import type { CollectedMatch } from "./command-parser.js";
+import { collectRmTestArtifacts } from "./test-artifact-parser.js";
 
 export { LookoutError } from "./types.js";
 export type {
@@ -225,7 +226,7 @@ function hasSqlClientCommandContext(before: string): boolean {
       }
       continue;
     }
-    return /^(?:sqlite3|psql|mysql|mariadb|sqlcmd)$/i.test(value);
+    return /(?:^|\/)(?:sqlite3|psql|mysql|mariadb|sqlcmd)$/i.test(value);
   }
   return false;
 }
@@ -286,8 +287,9 @@ const BRIEF_RULES: BriefRule[] = [
     // Covers plural "tests", "test files/suites/cases" phrases, and direct
     // conventional test paths (src/auth.test.ts, tests/auth.spec.ts).
     pattern:
-      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:the\s+)?(?:[\w./-]+\s+){1,2}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|directory|folder|account|environment|database|server|user|record|table|branch|helper|hook)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directory|folder|tree)\b/gi,
+      /\b(?:delete|remove|drop)\s+(?:(?:all|the|existing|failing|flaky|these|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:the\s+)?(?:[\w./-]+\s+){1,2}tests\b|\b(?:delete|remove|drop)\s+(?:\w+\s+){0,2}test\s+(?:files?|suites?|cases?)\b|\b(?:skip|disable|bypass|ignore)\s+(?:(?:the|all|failing|flaky|unit|integration|e2e|regression)\s+){0,3}tests\b|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:(?:the|this|that|failing|flaky|unit|integration|e2e|regression)\s+){0,3}test\b(?!\s+(?:data|fixtures?|code|directory|folder|account|environment|database|server|user|record|table|branch|helper|hook)\b)|\b(?:delete|remove|drop|skip|disable|bypass|ignore)\s+(?:\w+\s+){0,2}[\w./@~-]*\.(?:test|spec)\.[cm]?[jt]sx?\b|\b(?:delete|remove|drop)\s+(?:the\s+)?(?:tests?|__tests?__|specs?|e2e)\s+(?:directories?|folders?|trees?)\b/gi,
     advice: GATE_ADVICE,
+    collect: collectRmTestArtifacts,
   },
   {
     id: "lookout.brief.protected-branch",

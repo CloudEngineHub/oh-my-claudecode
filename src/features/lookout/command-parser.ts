@@ -56,13 +56,7 @@ function bundledCleanHasFlag(value: string, wanted: string): boolean {
   }
   return false;
 }
-
-
-/**
- * Force/mirror classification for one flag token, including parameterized
- * long forms (--force-with-lease=<refname>:<expect>) and bundled short
- * options (-fu is -f -u).
- */
+/** Force/mirror classification, including leases and bundled short options. */
 function isPushForceFlag(flag: string): boolean {
   if (PUSH_FORCE_FLAG.test(flag)) return true;
   if (/^--force(?:-with-lease)?=/.test(flag)) return true;
@@ -115,6 +109,7 @@ function isEscapedByOddBackslashes(text: string, index: number): boolean {
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
   if (value === "!") return value;
+  if (value.startsWith("$'") && value.endsWith("'")) value = value.slice(2, -1);
   value = value.replace(/[.,!?;]+$/, "");
   while (
     value.length >= 2 &&
@@ -277,13 +272,13 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     const value = tokens[index].value;
     const ungroupedValue = value.replace(/^[({]/, "").replace(/[)};,]+$/, "");
     if (ungroupedValue === executable || ungroupedValue.endsWith(`/${executable}`)) return index;
-    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout)$/.test(wrapper ?? "")) {
+    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout|nice)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
     if (
       index > prefixIndex &&
-      /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout)$/.test(value.toLowerCase())
+      /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout|nice)$/.test(value.toLowerCase())
     ) {
       wrapper = value.toLowerCase();
       timeoutDurationConsumed = false;
@@ -345,6 +340,16 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
     }
     if (wrapper === "nohup") {
       if (value === "--" || value.startsWith("-")) {
+        index += 1;
+        continue;
+      }
+    }
+    if (wrapper === "nice") {
+      if (value === "-n" || value === "--adjustment") {
+        index += 2;
+        continue;
+      }
+      if (value.startsWith("--adjustment=") || value.startsWith("-n")) {
         index += 1;
         continue;
       }
@@ -647,6 +652,8 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
       const config = tokens[index + 1]?.value.match(/^clean\.requireforce=(.+)$/i);
       if (value === "-c" && config) {
         cleanRequireForceDisabled = isFalseGitBoolean(config[1]);
+      } else if (value === "--config-env" && config) {
+        cleanRequireForceDisabled = isFalseGitBoolean(commandEnv[config[1]] ?? process.env[config[1]]);
       }
       index += 2;
       continue;
@@ -659,7 +666,6 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
   }
   return null;
 }
-
 
 function isFalseGitBoolean(value: string | undefined): boolean {
   return /^(?:false|0|no|off)$/i.test(value ?? "");
