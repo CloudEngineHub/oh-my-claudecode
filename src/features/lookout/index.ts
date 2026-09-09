@@ -135,12 +135,7 @@ function buildNegationContext(line: string): NegationContext {
         ? [match.index]
         : [];
     }),
-    commas: [...line.matchAll(/,/g)].flatMap((match) => {
-      if (match.index === undefined) return [];
-      return /^\s*(?:then|and|but|however|except|instead)\b/i.test(line.slice(match.index + 1))
-        ? [match.index]
-        : [];
-    }),
+    commas: [...line.matchAll(/,/g)].flatMap((match) => (match.index === undefined ? [] : [match.index])),
   };
 }
 
@@ -415,7 +410,7 @@ function maskHereDocBody(brief: string): string[] {
       }
       continue;
     }
-    const match = line.match(/<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1\s*$/i);
+    const match = line.match(/<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1(?=\s|$)/i);
     if (match) delimiter = { name: match[2], quoted: match[1] !== "" };
   }
   return lines;
@@ -484,6 +479,7 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
         if (rule.collect) {
           for (const match of rule.collect(line)) {
             if (isNegated(line, match.index, negationContext)) continue;
+            if (rule.id === "lookout.brief.db-destructive" && isInertOutputText(line, match.index)) continue;
             if (!evidence.includes(match.snippet)) evidence.push(match.snippet);
             if (evidence.length >= 3) break;
           }

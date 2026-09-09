@@ -1,4 +1,7 @@
-/** Narrow parser for direct rm commands targeting conventional test artifacts. */
+/** Narrow parser for rm commands targeting conventional test artifacts. */
+
+import { findExecutableIndex, splitCommandClauses, tokenizeCommand } from "./command-parser.js";
+import { decodeAnsiCQuote } from "./substitution-parser.js";
 
 export interface TestArtifactMatch {
   snippet: string;
@@ -7,39 +10,41 @@ export interface TestArtifactMatch {
 
 const TEST_ARTIFACT = /^(?:tests?\/|__tests__\/|.+\.(?:test|spec)\.[cm]?[jt]sx?$)/i;
 
-export function collectRmTestArtifacts(line: string, depth = 0): TestArtifactMatch[] {
+function collectNestedShellBodies(line: string, depth: number): TestArtifactMatch[] {
+  if (depth >= 8) return [];
   const matches: TestArtifactMatch[] = [];
-  let clauseStart = 0;
-  for (let index = 0; index <= line.length; index += 1) {
-    const separator = index === line.length || /[;&|]/.test(line[index] ?? "");
-    if (!separator) continue;
-    const clause = line.slice(clauseStart, index);
-    const leading = clause.match(/^\s*[({]?\s*(?:(?:command|exec)\s+|env\s+(?:[A-Za-z_]\w*=\S+\s+)*|sudo\s+)*(?:[\w.-]+\/)?rm\b/i);
-    if (leading) {
-      const rest = clause.slice(leading[0].length).trim();
-      if (/(?:^|\s)(?:-h|--help|--version)(?:\s|$)/.test(rest)) {
-        clauseStart = index + 1;
-        continue;
-      }
-      for (const operand of rest.split(/\s+/)) {
-        if (operand === "--" || /^-[A-Za-z]+$/.test(operand)) continue;
-        const path = operand.replace(/^['"]|['"]$/g, "").replace(/^(?:\.\/)+/, "");
-        if (TEST_ARTIFACT.test(path)) {
-          matches.push({ snippet: `rm ${path}`, index: clauseStart + clause.indexOf(operand) });
-        }
-      }
-    }
-    clauseStart = index + 1;
-  }
-  if (depth < 8) {
-    const shell = /\b(?:bash|sh|dash|zsh|ksh)\b[^;&|\n]*\s(?:-c|--command)\s+(['"])([\s\S]*?)\1/g;
-    for (const match of line.matchAll(shell)) {
-      const body = match[2] ?? "";
-      const bodyIndex = (match.index ?? 0) + (match[0]?.indexOf(body) ?? 0);
+  const scan = (pattern: RegExp, decode = false, bodyGroup = 2): void => {
+    for (const match of line.matchAll(pattern)) {
+      const rawBody = match[bodyGroup] ?? "";
+      const body = decode ? decodeAnsiCQuote(rawBody) : rawBody;
+      const bodyIndex = (match.index ?? 0) + (match[0]?.indexOf(rawBody) ?? 0);
       for (const nested of collectRmTestArtifacts(body, depth + 1)) {
         matches.push({ snippet: nested.snippet, index: bodyIndex + nested.index });
       }
     }
-  }
+  };
+  scan(/\b(?:bash|sh|dash|zsh|ksh)\b[^;&|\n]*\s(?:-c|--command)\s+(['"])([\s\S]*?)\1/g);
+  scan(/\b(?:bash|sh|dash|zsh|ksh)\b[^;&|\n]*\s(?:-c|--command)\s+\$'((?:\\.|[^'])*)'/g, true, 1);
   return matches;
+}
+
+export function collectRmTestArtifacts(line: string, depth = 0): TestArtifactMatch[] {
+  const matches: TestArtifactMatch[] = [];
+  for (const clause of splitCommandClauses(line)) {
+    const tokens = tokenizeCommand(clause.text);
+    const rmIndex = findExecutableIndex(tokens, "rm");
+    if (rmIndex < 0) continue;
+    let operandsOnly = false;
+    for (const token of tokens.slice(rmIndex + 1)) {
+      if (token.value === "--") {
+        operandsOnly = true;
+        continue;
+      }
+      if (!operandsOnly && /^(?:-h|--help|--version)$/.test(token.value)) break;
+      if (!operandsOnly && /^-[A-Za-z]+$/.test(token.value)) continue;
+      const path = token.value.replace(/^(?:\.\/)+/, "");
+      if (TEST_ARTIFACT.test(path)) matches.push({ snippet: `rm ${path}`, index: clause.index + token.index });
+    }
+  }
+  return [...matches, ...collectNestedShellBodies(line, depth)];
 }

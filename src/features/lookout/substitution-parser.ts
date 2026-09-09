@@ -42,6 +42,17 @@ function findSubstitutionEnd(text: string, start: number): number {
       index += 1;
       continue;
     }
+    if (character === "`") {
+      const end = findBacktickEnd(text, index);
+      if (end >= 0) {
+        index = end;
+        continue;
+      }
+    }
+    if (text.startsWith("$((", index)) {
+      index += 1;
+      continue;
+    }
     if (character === "'" || character === '"') {
       quote = character;
       continue;
@@ -98,6 +109,10 @@ export function findNestedSubstitutions(clauses: readonly SubstitutionClause[]):
         index += 1;
         continue;
       }
+      if (clause.text.startsWith("$((", index)) {
+        index += 1;
+        continue;
+      }
       if (clause.text.startsWith("$(", index)) {
         const end = findSubstitutionEnd(clause.text, index);
         if (end >= 0) {
@@ -111,7 +126,7 @@ export function findNestedSubstitutions(clauses: readonly SubstitutionClause[]):
           index = end;
         }
       } else if (character === "`") {
-        const end = clause.text.indexOf("`", index + 1);
+        const end = findBacktickEnd(clause.text, index);
         if (end >= 0) {
           nested.push({ text: clause.text.slice(index + 1, end), index: clause.index + index + 1 });
           index = end;
@@ -120,4 +135,15 @@ export function findNestedSubstitutions(clauses: readonly SubstitutionClause[]):
     }
   }
   return nested;
+}
+
+function findBacktickEnd(text: string, start: number): number {
+  for (let index = start + 1; index < text.length; index += 1) {
+    if (text[index] === "\\") {
+      index += 1;
+      continue;
+    }
+    if (text[index] === "`") return index;
+  }
+  return -1;
 }

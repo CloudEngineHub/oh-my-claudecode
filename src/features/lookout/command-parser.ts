@@ -1,5 +1,3 @@
-/** Quote-aware shell/Git command parsing for lookout briefing rules. */
-
 import { decodeAnsiCQuote, findNestedSubstitutions } from "./substitution-parser.js";
 
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
@@ -87,7 +85,7 @@ export interface CollectedMatch {
   index: number;
 }
 
-interface CommandToken {
+export interface CommandToken {
   value: string;
   index: number;
   quoted: boolean;
@@ -118,7 +116,7 @@ function normalizeCommandToken(token: string): string {
   return value;
 }
 
-function tokenizeCommand(segment: string): CommandToken[] {
+export function tokenizeCommand(segment: string): CommandToken[] {
   const tokens: CommandToken[] = [];
   let index = 0;
   while (index < segment.length) {
@@ -167,7 +165,7 @@ function tokenizeCommand(segment: string): CommandToken[] {
   return tokens;
 }
 
-function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
+export function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
   const clauses: Array<{ text: string; index: number }> = [];
   let start = 0;
   let quote: "'" | '"' | null = null;
@@ -216,7 +214,7 @@ function splitCommandClauses(line: string): Array<{ text: string; index: number 
   return clauses;
 }
 
-function findExecutableIndex(tokens: CommandToken[], executable: string): number {
+export function findExecutableIndex(tokens: CommandToken[], executable: string): number {
   if (/^(?:echo|printf|print|cat)$/i.test(tokens[0]?.value ?? "")) return -1;
   const caseBodyCommand = tokens.findIndex(
     (token, index) =>
@@ -495,6 +493,7 @@ function parsePushCommand(segment: string): ParsedPush | null {
       } else if (PUSH_INLINE_REPO_OPTION.test(value)) {
         if (parsed.repo === null) parsed.repo = value.slice("--repo=".length);
       } else if (PUSH_OPTION_VALUE.test(value)) {
+        if (!tokens[i]) return null;
         i += 1; // consume the option value
       } else if (PUSH_INLINE_OPTION_VALUE.test(value)) {
         continue;
