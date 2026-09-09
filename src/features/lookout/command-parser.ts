@@ -16,36 +16,21 @@ const CLEAN_VALUE_OPTION = /^(?:-e|--exclude)$/;
 const CLEAN_INLINE_VALUE_OPTION = /^(?:-e.+|--exclude=.+)$/;
 const MAX_NESTED_SCAN_DEPTH = 64;
 function isValidPushBundle(value: string): boolean {
-  if (!BUNDLED_SHORT_FLAGS.test(value)) return true;
-  for (const character of value.slice(1)) {
-    if (character === "o") return true;
-    if (!/[46dnfquv]/.test(character)) return false;
-  }
-  return true;
+  return !BUNDLED_SHORT_FLAGS.test(value) || [...value.slice(1)].every((character) => character === "o" || /[46dnfquv]/.test(character));
 }
 function wildcardCanMatchProtectedBranch(pattern: string): boolean {
   if (!pattern.includes("*")) return false;
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
-  const matcher = new RegExp(`^${escaped}$`);
+  const matcher = new RegExp(`^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`);
   return PROTECTED_BRANCH_SAMPLES.some((branch) => matcher.test(branch));
 }
 function isValidRmBundle(value: string): boolean {
   return /^-[^-][A-Za-z]*$/.test(value) && [...value.slice(1)].every((character) => /[fFiIrRdv]/.test(character));
 }
 function isValidCleanBundle(value: string): boolean {
-  if (!CLEAN_BUNDLED_SHORT_FLAGS.test(value)) return true;
-  for (const character of value.slice(1)) {
-    if (character === "e") return true;
-    if (!/[dfinqxX]/.test(character)) return false;
-  }
-  return true;
+  return !CLEAN_BUNDLED_SHORT_FLAGS.test(value) || [...value.slice(1)].every((character) => character === "e" || /[dfinqxX]/.test(character));
 }
 function bundledCleanHasFlag(value: string, wanted: string): boolean {
-  for (const character of value.slice(1)) {
-    if (character === "e") return false;
-    if (character === wanted) return true;
-  }
-  return false;
+  return [...value.slice(1)].find((character) => character === "e" || character === wanted) === wanted;
 }
 function isPushForceFlag(flag: string): boolean {
   if (PUSH_FORCE_FLAG.test(flag)) return true;
@@ -57,11 +42,7 @@ function isPushDryRunFlag(flag: string): boolean {
   return BUNDLED_SHORT_FLAGS.test(flag) && bundledPushHasFlag(flag, "n");
 }
 function bundledPushHasFlag(flag: string, wanted: string): boolean {
-  for (const character of flag.slice(1)) {
-    if (character === "o") return false;
-    if (character === wanted) return true;
-  }
-  return false;
+  return [...flag.slice(1)].find((character) => character === "o" || character === wanted) === wanted;
 }
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
 interface ParsedPush {
@@ -174,6 +155,10 @@ export function splitCommandClauses(line: string): Array<{ text: string; index: 
       index += 1;
       continue;
     }
+    if (character === "#" && (index === start || /\s/.test(line[index - 1] ?? ""))) {
+      if (line.slice(start, index).trim()) clauses.push({ text: line.slice(start, index), index: start });
+      return clauses;
+    }
     let separatorLength = 0;
     if (character === ";") separatorLength = 1;
     else if (line.startsWith("&&", index) || line.startsWith("||", index)) separatorLength = 2;
@@ -232,7 +217,7 @@ export function findExecutableIndex(tokens: CommandToken[], executable: string):
   if (reminderCommand >= 0) return reminderCommand + 1;
 
   let index = 0;
-  while (/^(?:!|-|\*|>|\d+|[({]|do)$/.test(tokens[index]?.value ?? "")) index += 1;
+  while (/^(?:!|-|\*|>|\d+|[({]|do)$/.test(tokens[index]?.value ?? "") || /^\d*[<>]/.test(tokens[index]?.value ?? "")) index += 1;
   if (
     index > 0 &&
     tokens[index]?.value === "[" &&
@@ -443,7 +428,9 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
       }
       if (!value.startsWith("-")) break;
     }
-    const command = commandIndex >= 0 ? tokens[commandIndex + 1] : undefined;
+    let commandTokenIndex = commandIndex + 1;
+    if (commandIndex >= 0 && tokens[commandTokenIndex]?.value === "--") commandTokenIndex += 1;
+    const command = commandIndex >= 0 ? tokens[commandTokenIndex] : undefined;
     if (command && (command.quoted || command.raw !== command.value)) {
       nested.push({ text: command.value, index: clause.index + command.index });
     }
@@ -699,6 +686,10 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       const value = cleanArgs[index].value;
       if (value === "--") break;
       if (/^(?:-h|--help|--version)$/.test(value)) {
+        help = true;
+        break;
+      }
+      if (value.startsWith("--") && !/^(?:--(?:dry-run|force|interactive|quiet|exclude(?:=.+)?|no-(?:force|dry-run|interactive)))$/.test(value)) {
         help = true;
         break;
       }

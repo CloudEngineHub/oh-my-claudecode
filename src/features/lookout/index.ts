@@ -397,13 +397,17 @@ function isDocumentationSqlExample(line: string, index: number): boolean {
   return /\b(?:document|write|quote|include|show|example)\b/i.test(prefix) && /["'`]/.test(prefix);
 }
 
+const HEREDOC_INTERPRETER = /^(?:[\w./@-]+\/)?(?:bash|sh|dash|zsh|ksh|sqlite3|psql|mysql|mariadb|sqlcmd)$/i;
+
 interface HereDocMarker {
   name: string;
   quoted: boolean;
   stripTabs: boolean;
+  interpreter: boolean;
 }
 
-function findHereDocMarker(line: string): HereDocMarker | null {
+function findHereDocMarkers(line: string): HereDocMarker[] {
+  const markers: HereDocMarker[] = [];
   let quote: "'" | '"' | null = null;
   for (let index = 0; index < line.length; index += 1) {
     const character = line[index] ?? "";
@@ -431,7 +435,7 @@ function findHereDocMarker(line: string): HereDocMarker | null {
       quote = '"';
       continue;
     }
-    if (character === "#" && (index === 0 || /\s/.test(line[index - 1] ?? ""))) return null;
+    if (character === "#" && (index === 0 || /\s/.test(line[index - 1] ?? ""))) return [];
     if (!line.startsWith("<<", index)) continue;
     let cursor = index + 2;
     const stripTabs = line[cursor] === "-";
@@ -482,23 +486,28 @@ function findHereDocMarker(line: string): HereDocMarker | null {
       name += value;
       cursor += 1;
     }
-    if (name && delimiterQuote === null) return { name, quoted, stripTabs };
-    return null;
+    if (!name || delimiterQuote !== null) return [];
+    const receiver = line.slice(0, index).split(/[\s|;&()]+/).filter(Boolean);
+    markers.push({ name, quoted, stripTabs, interpreter: receiver.some((token) => HEREDOC_INTERPRETER.test(token)) });
+    index = cursor - 1;
   }
-  return null;
+  return markers;
 }
 
 function maskHereDocBody(brief: string): string[] {
   const lines = brief.split("\n");
-  let delimiter: HereDocMarker | null = null;
+  let pending: HereDocMarker[] = [];
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
-    if (delimiter !== null) {
-      const candidate = delimiter.stripTabs ? line.replace(/^\t+/, "") : line;
-      if (candidate === delimiter.name) {
-        delimiter = null;
+    if (pending.length > 0) {
+      const marker = pending[0];
+      const candidate = marker.stripTabs ? line.replace(/^\t+/, "") : line;
+      if (candidate === marker.name) {
+        pending.shift();
         lines[index] = "";
-      } else if (delimiter.quoted) {
+      } else if (marker.interpreter) {
+        // The body is executable input to a shell or SQL client; keep it for scanning.
+      } else if (marker.quoted) {
         lines[index] = "";
       } else {
         lines[index] = findNestedSubstitutions([{ text: line, index: 0 }])
@@ -507,7 +516,8 @@ function maskHereDocBody(brief: string): string[] {
       }
       continue;
     }
-    delimiter = findHereDocMarker(line);
+    const markers = findHereDocMarkers(line);
+    if (markers.length > 0) pending = markers;
   }
   return lines;
 }

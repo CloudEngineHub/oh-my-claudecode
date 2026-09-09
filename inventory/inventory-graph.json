@@ -6,14 +6,14 @@
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
     "head": "04674e35110f7050e2416be828973df8990aaa40",
-    "sourceSha256": "eb06a1520f314b10541d1d3870c646f5eae0927c728cfe19f3632e756ed22b6e",
+    "sourceSha256": "4d4f35927b1806007dbde25418b529aeda7f7d51348b5b45e766efce5ba998e7",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
   "head": "04674e35110f7050e2416be828973df8990aaa40",
-  "sourceSha256": "eb06a1520f314b10541d1d3870c646f5eae0927c728cfe19f3632e756ed22b6e",
+  "sourceSha256": "4d4f35927b1806007dbde25418b529aeda7f7d51348b5b45e766efce5ba998e7",
   "counts": {
     "public": {
       "skills": 38,
@@ -53518,6 +53518,11 @@
       },
       {
         "from": "src/features/lookout/test-artifact-parser.ts",
+        "to": "src/features/lookout/command-parser.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/features/lookout/test-artifact-parser.ts",
         "to": "src/features/lookout/substitution-parser.ts",
         "kind": "imports"
       },
@@ -78004,11 +78009,11 @@
     ],
     "stats": {
       "nodeCount": 6914,
-      "edgeCount": 7417,
+      "edgeCount": 7418,
       "importEdgeCount": 6106,
       "registerEdgeCount": 59
     }
   },
   "inventorySha256": "f86cfdc79146e041d78375e173a6dcbe03153691d908f85d49255913bf7e76f0",
-  "manifestSha256": "13e1f27afd3f312c7f1d1f2d238e709cbfe75c9bad441fe738ffa2bc674c3182"
+  "manifestSha256": "e7fbcd6541bf5420e0e6bb52620661aaf23259c64c4392731fd3df548bc58f08"
 }

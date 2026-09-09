@@ -139,6 +139,7 @@ describe("scanLookout: briefing rules", () => {
       "sqlite3 db drop\\ table\\ users",
       "DELETE\nFROM users;",
       "DROP\nTABLE users;",
+      "sqlite3 db <<'EOF'\nDROP TABLE users;\nEOF",
     ]) {
       const contextual = scanLookout({ ...base(), brief });
       expect(ids(contextual.findings)).toContain("lookout.brief.db-destructive");
@@ -461,7 +462,12 @@ describe("scanLookout: briefing rules", () => {
       "while true; do rm -rf build; done",
       "until true; do git push --force origin feature; done",
       "printf 'build\\0' | xargs -0 rm -rf",
+      "printf 'build\\0' | xargs -a list rm -rf",
       "cat >/dev/null <<EOF\n$(rm -rf build)\nEOF",
+      "bash <<'EOF'\nrm -rf build\nEOF",
+      "bash -c -- 'rm -rf build'",
+      ">out rm -rf build",
+      "2>/dev/null rm -rf build",
       "echo \"use <<EOF here\"\nrm -rf build",
       "(rm -rf build)",
       "{ rm -rf build; }",
@@ -534,6 +540,11 @@ describe("scanLookout: briefing rules", () => {
       String.raw`cat <<\EOF
 rm -rf build
 EOF`,
+      "true # rm -rf build; rm -rf dist",
+      "cat <<'A' <<'B'\nignored\nA\nrm -rf build\nB",
+      "git rm --cached tests/a.ts",
+      "git rm -n tests/a.ts",
+      "git clean -f --definitely-invalid",
       "printf 'x|rm tests/a.ts'",
       "git push --force --push-option",
       "rm -rf --definitely-invalid-option build",
@@ -560,6 +571,8 @@ EOF`,
       "command rm tests/auth.ts",
       "bash -c 'rm tests/auth.ts'",
       String.raw`bash -c $'rm tests/a.ts'`,
+      "git rm tests/a.ts",
+      "git rm -r tests/",
       "env rm tests/auth.ts",
       "sudo rm tests/auth.ts",
       "delete the auth tests",

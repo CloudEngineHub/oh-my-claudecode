@@ -1,6 +1,6 @@
 /** Narrow parser for rm commands targeting conventional test artifacts. */
 
-import { findExecutableIndex, splitCommandClauses, tokenizeCommand } from "./command-parser.js";
+import { findExecutableIndex, splitCommandClauses, tokenizeCommand, type CommandToken } from "./command-parser.js";
 import { decodeAnsiCQuote, findNestedSubstitutions } from "./substitution-parser.js";
 
 export interface TestArtifactMatch {
@@ -33,23 +33,69 @@ function collectNestedShellBodies(line: string, depth: number): TestArtifactMatc
   return matches;
 }
 
+const GIT_GLOBAL_VALUE_OPTION = /^(?:-C|-c|--git-dir|--work-tree|--namespace|--super-prefix|--exec-path|--config-env)$/;
+
+function collectGitRmTestArtifacts(clause: { text: string; index: number }, tokens: CommandToken[]): TestArtifactMatch[] {
+  const gitIndex = findExecutableIndex(tokens, "git");
+  if (gitIndex < 0) return [];
+  let index = gitIndex + 1;
+  while (index < tokens.length) {
+    const value = tokens[index].value;
+    index += 1;
+    if (value === "rm") break;
+    if (value === "--" || /^(?:-h|--help|--version)$/.test(value)) return [];
+    if (GIT_GLOBAL_VALUE_OPTION.test(value)) {
+      if (!tokens[index]) return [];
+      index += 1;
+      continue;
+    }
+    if (value.startsWith("-")) continue;
+    return [];
+  }
+  if (tokens[index - 1]?.value !== "rm") return [];
+  let dryRun = false;
+  let cached = false;
+  let operandsOnly = false;
+  const matches: TestArtifactMatch[] = [];
+  for (; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    const value = token.value;
+    if (value === "--") {
+      operandsOnly = true;
+      continue;
+    }
+    if (!operandsOnly && value.startsWith("-")) {
+      if (/^(?:-n|--dry-run)$/.test(value)) dryRun = true;
+      else if (value === "--cached") cached = true;
+      else if (/^-[fFrRnq]+$/.test(value)) continue;
+      else if (value.startsWith("--pathspec-from-file")) return [];
+      continue;
+    }
+    const path = token.value.replace(/^(?:\.\/)+/, "");
+    if (TEST_ARTIFACT.test(path)) matches.push({ snippet: `git rm ${path}`, index: clause.index + token.index });
+  }
+  return dryRun || cached ? [] : matches;
+}
+
 export function collectRmTestArtifacts(line: string, depth = 0): TestArtifactMatch[] {
   const matches: TestArtifactMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
     const tokens = tokenizeCommand(clause.text);
     const rmIndex = findExecutableIndex(tokens, "rm");
-    if (rmIndex < 0) continue;
-    let operandsOnly = false;
-    for (const token of tokens.slice(rmIndex + 1)) {
-      if (token.value === "--") {
-        operandsOnly = true;
-        continue;
+    if (rmIndex >= 0) {
+      let operandsOnly = false;
+      for (const token of tokens.slice(rmIndex + 1)) {
+        if (token.value === "--") {
+          operandsOnly = true;
+          continue;
+        }
+        if (!operandsOnly && /^(?:-h|--help|--version)$/.test(token.value)) break;
+        if (!operandsOnly && /^-[A-Za-z]+$/.test(token.value)) continue;
+        const path = token.value.replace(/^(?:\.\/)+/, "");
+        if (TEST_ARTIFACT.test(path)) matches.push({ snippet: `rm ${path}`, index: clause.index + token.index });
       }
-      if (!operandsOnly && /^(?:-h|--help|--version)$/.test(token.value)) break;
-      if (!operandsOnly && /^-[A-Za-z]+$/.test(token.value)) continue;
-      const path = token.value.replace(/^(?:\.\/)+/, "");
-      if (TEST_ARTIFACT.test(path)) matches.push({ snippet: `rm ${path}`, index: clause.index + token.index });
     }
+    matches.push(...collectGitRmTestArtifacts(clause, tokens));
   }
   return [...matches, ...collectNestedShellBodies(line, depth)];
 }
