@@ -127,6 +127,7 @@ describe("scanLookout: briefing rules", () => {
       "DROP SCHEMA production",
       "sqlite3 db.sqlite 'drop view active_users'",
       "sqlite3 db.sqlite 'drop index users_email_idx'",
+      "psql -c 'drop materialized view reports'",
       "sudo -u postgres psql -c 'drop table users'",
       "env PGDATABASE=app psql -c 'drop table users'",
       "DELETE\nFROM users;",
@@ -411,6 +412,7 @@ describe("scanLookout: briefing rules", () => {
       "echo \"<(rm -rf build)\"",
       "echo \"psql -c 'drop table users'\"",
       "rm -zrf build",
+      "rm -rf --preserve-root",
     ]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
@@ -442,6 +444,10 @@ describe("scanLookout: briefing rules", () => {
       "bash -o pipefail -c 'git push --force origin feature'",
       "bash -O extglob -c 'git push --force origin feature'",
       String.raw`bash -c rm\ -rf\ build`,
+      String.raw`bash -ce 'rm -rf build'`,
+      String.raw`env -S'rm -rf build'`,
+      "git clean -i",
+      "if ! rm -rf build; then :; fi",
       String.raw`echo "quoted\\"; rm -rf build`,
       "env -S 'git push --force origin feature'",
       "REMOTE=origin git push $REMOTE --force main",

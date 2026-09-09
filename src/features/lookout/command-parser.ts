@@ -283,6 +283,10 @@ function findExecutableIndex(tokens: CommandToken[], executable: string): number
       index += 1;
       continue;
     }
+    if (/^(?:if|while|until)$/.test(wrapper ?? "") && value === "!") {
+      index += 1;
+      continue;
+    }
     if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(value)) {
       index += 1;
       continue;
@@ -390,8 +394,17 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
       );
       if (inlineSplit) {
         nested.push({
-          text: inlineSplit.value.slice("--split-string=".length),
+          text: normalizeCommandToken(inlineSplit.value.slice("--split-string=".length)),
           index: clause.index + inlineSplit.index,
+        });
+      }
+      const attachedSplit = tokens.find(
+        (token, index) => index > envIndex && token.value.startsWith("-S") && token.value.length > 2,
+      );
+      if (attachedSplit) {
+        nested.push({
+          text: normalizeCommandToken(attachedSplit.value.slice(2)),
+          index: clause.index + attachedSplit.index + 2,
         });
       }
     }
@@ -405,7 +418,7 @@ function nestedShellCommands(line: string): Array<{ text: string; index: number 
         continue;
       }
       if (/^(?:--rcfile|--init-file|-O|-o)=/.test(value) || /^-[Oo].+/.test(value)) continue;
-      if (value === "-c" || value === "--command" || /^-[^-]*c$/.test(value)) {
+      if (value === "-c" || value === "--command" || /^-[^-]*c/.test(value)) {
         commandIndex = index;
         break;
       }
@@ -556,6 +569,8 @@ function collectRmForceOps(line: string): CollectedMatch[] {
       if (token.value === "--recursive" || token.value === "--force") {
         optionTokens.push(token);
         destructive = true;
+      } else if (/^--(?:preserve-root|no-preserve-root|one-file-system)(?:=.+)?$/.test(token.value)) {
+        continue;
       } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
         if (!isValidRmBundle(token.value)) {
           invalid = true;
@@ -657,6 +672,7 @@ function collectGitForceOps(line: string): CollectedMatch[] {
     if (!clean) continue;
     let force = false;
     let dryRun = false;
+    let interactive = false;
     let help = false;
     const cleanArgs = tokens.slice(clean.commandIndex + 1);
     for (let index = 0; index < cleanArgs.length; index += 1) {
@@ -679,8 +695,10 @@ function collectGitForceOps(line: string): CollectedMatch[] {
       else if (value === "--force" || (CLEAN_BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "f"))) force = true;
       if (value === "--no-dry-run") dryRun = false;
       else if (value === "--dry-run" || (CLEAN_BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "n"))) dryRun = true;
+      if (value === "--no-interactive") interactive = false;
+      else if (value === "--interactive" || (CLEAN_BUNDLED_SHORT_FLAGS.test(value) && bundledCleanHasFlag(value, "i"))) interactive = true;
     }
-    if (!help && !dryRun && (force || clean.cleanRequireForceDisabled)) {
+    if (!help && !dryRun && (force || interactive || clean.cleanRequireForceDisabled)) {
       addMatch(
         hits,
         clean.cleanRequireForceDisabled && !force ? "git clean (clean.requireForce=false)" : "git clean",
