@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "654c8abcc3e4d121c56e9df69d75ab9813b77136",
-    "sourceSha256": "9fae15e15f13eb38f4ae768f08239bd69fc8561f0c57552abf611808a7888c24",
+    "head": "04674e35110f7050e2416be828973df8990aaa40",
+    "sourceSha256": "4d4f35927b1806007dbde25418b529aeda7f7d51348b5b45e766efce5ba998e7",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "654c8abcc3e4d121c56e9df69d75ab9813b77136",
-  "sourceSha256": "9fae15e15f13eb38f4ae768f08239bd69fc8561f0c57552abf611808a7888c24",
+  "head": "04674e35110f7050e2416be828973df8990aaa40",
+  "sourceSha256": "4d4f35927b1806007dbde25418b529aeda7f7d51348b5b45e766efce5ba998e7",
   "counts": {
     "public": {
       "skills": 38,
@@ -24,12 +24,12 @@
     },
     "internal": {
       "hookFiles": 295,
-      "featureFiles": 71,
+      "featureFiles": 80,
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1335,
-      "total": 1356
+      "srcFiles": 1346,
+      "total": 1367
     },
     "generated": {
       "distFiles": 4986,
@@ -479,6 +479,15 @@
       "src/features/delegation-routing/resolver.ts",
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
+      "src/features/lookout/__tests__/lookout-workspace.test.ts",
+      "src/features/lookout/__tests__/lookout.test.ts",
+      "src/features/lookout/command-parser.ts",
+      "src/features/lookout/index.ts",
+      "src/features/lookout/substitution-parser.ts",
+      "src/features/lookout/test-artifact-parser.ts",
+      "src/features/lookout/types.ts",
+      "src/features/lookout/workspace.ts",
+      "src/features/lookout/wrapper-parser.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -6225,6 +6234,15 @@
       "src/features/delegation-routing/resolver.ts",
       "src/features/delegation-routing/types.ts",
       "src/features/index.ts",
+      "src/features/lookout/__tests__/lookout-workspace.test.ts",
+      "src/features/lookout/__tests__/lookout.test.ts",
+      "src/features/lookout/command-parser.ts",
+      "src/features/lookout/index.ts",
+      "src/features/lookout/substitution-parser.ts",
+      "src/features/lookout/test-artifact-parser.ts",
+      "src/features/lookout/types.ts",
+      "src/features/lookout/workspace.ts",
+      "src/features/lookout/wrapper-parser.ts",
       "src/features/magic-keywords.ts",
       "src/features/model-routing/__tests__/index.test.ts",
       "src/features/model-routing/index.ts",
@@ -35547,6 +35565,11 @@
         "path": "src/cli/__tests__/launch.test.ts"
       },
       {
+        "id": "src/cli/__tests__/lookout-cli.test.ts",
+        "kind": "src",
+        "path": "src/cli/__tests__/lookout-cli.test.ts"
+      },
+      {
         "id": "src/cli/__tests__/plugin-dir-capture.test.ts",
         "kind": "src",
         "path": "src/cli/__tests__/plugin-dir-capture.test.ts"
@@ -35765,6 +35788,11 @@
         "id": "src/cli/launch.ts",
         "kind": "src",
         "path": "src/cli/launch.ts"
+      },
+      {
+        "id": "src/cli/lookout.ts",
+        "kind": "src",
+        "path": "src/cli/lookout.ts"
       },
       {
         "id": "src/cli/team.ts",
@@ -36035,6 +36063,51 @@
         "id": "src/features/index.ts",
         "kind": "feature",
         "path": "src/features/index.ts"
+      },
+      {
+        "id": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/__tests__/lookout-workspace.test.ts"
+      },
+      {
+        "id": "src/features/lookout/__tests__/lookout.test.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/__tests__/lookout.test.ts"
+      },
+      {
+        "id": "src/features/lookout/command-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/command-parser.ts"
+      },
+      {
+        "id": "src/features/lookout/index.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/index.ts"
+      },
+      {
+        "id": "src/features/lookout/substitution-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/substitution-parser.ts"
+      },
+      {
+        "id": "src/features/lookout/test-artifact-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/test-artifact-parser.ts"
+      },
+      {
+        "id": "src/features/lookout/types.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/types.ts"
+      },
+      {
+        "id": "src/features/lookout/workspace.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/workspace.ts"
+      },
+      {
+        "id": "src/features/lookout/wrapper-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/wrapper-parser.ts"
       },
       {
         "id": "src/features/magic-keywords.ts",
@@ -50914,6 +50987,41 @@
         "kind": "imports"
       },
       {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "src/cli/index.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/lookout-cli.test.ts",
+        "to": "src/cli/lookout.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/cli/__tests__/plugin-dir-capture.test.ts",
         "to": "external:fs",
         "kind": "imports"
@@ -52170,6 +52278,11 @@
       },
       {
         "from": "src/cli/index.ts",
+        "to": "src/cli/lookout.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/index.ts",
         "to": "src/cli/win32-warning.ts",
         "kind": "imports"
       },
@@ -52312,6 +52425,26 @@
         "from": "src/cli/launch.ts",
         "to": "src/utils/config-dir.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "external:chalk",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "external:commander",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/lookout.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/cli/team.ts",
@@ -53170,6 +53303,16 @@
       },
       {
         "from": "src/features/index.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "exports"
+      },
+      {
+        "from": "src/features/index.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "type-exports"
+      },
+      {
+        "from": "src/features/index.ts",
         "to": "src/features/magic-keywords.ts",
         "kind": "exports"
       },
@@ -53242,6 +53385,171 @@
         "from": "src/features/index.ts",
         "to": "src/features/verification/index.ts",
         "kind": "type-exports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout-workspace.test.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/__tests__/lookout.test.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/command-parser.ts",
+        "to": "src/features/lookout/substitution-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/command-parser.ts",
+        "to": "src/features/lookout/wrapper-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/command-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/command-parser.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/substitution-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/test-artifact-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "exports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "type-exports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/features/lookout/index.ts",
+        "to": "src/features/lookout/workspace.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/test-artifact-parser.ts",
+        "to": "src/features/lookout/command-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/test-artifact-parser.ts",
+        "to": "src/features/lookout/command-parser.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/features/lookout/test-artifact-parser.ts",
+        "to": "src/features/lookout/substitution-parser.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/features/lookout/workspace.ts",
+        "to": "src/features/lookout/types.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/features/magic-keywords.ts",
@@ -63866,6 +64174,16 @@
       {
         "from": "src/index.ts",
         "to": "src/features/index.ts",
+        "kind": "type-exports"
+      },
+      {
+        "from": "src/index.ts",
+        "to": "src/features/lookout/index.ts",
+        "kind": "exports"
+      },
+      {
+        "from": "src/index.ts",
+        "to": "src/features/lookout/index.ts",
         "kind": "type-exports"
       },
       {
@@ -77690,12 +78008,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6903,
-      "edgeCount": 7369,
-      "importEdgeCount": 6068,
+      "nodeCount": 6914,
+      "edgeCount": 7418,
+      "importEdgeCount": 6106,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "96b61cb5df14663620165d68dbccea8b03c6757c289db671e8a2be1356240e0e",
-  "manifestSha256": "0001d6524990d7d1f13c894417fb92fb919fa52e1146562fa0b9d066f3883c2c"
+  "inventorySha256": "f86cfdc79146e041d78375e173a6dcbe03153691d908f85d49255913bf7e76f0",
+  "manifestSha256": "e7fbcd6541bf5420e0e6bb52620661aaf23259c64c4392731fd3df548bc58f08"
 }
