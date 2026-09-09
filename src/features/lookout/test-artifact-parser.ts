@@ -14,7 +14,7 @@ export function collectRmTestArtifacts(line: string): TestArtifactMatch[] {
     const separator = index === line.length || /[;&|]/.test(line[index] ?? "");
     if (!separator) continue;
     const clause = line.slice(clauseStart, index);
-    const leading = clause.match(/^\s*[({]?\s*rm\b/i);
+    const leading = clause.match(/^\s*[({]?\s*(?:(?:command|exec)\s+)?(?:[\w.-]+\/)?rm\b/i);
     if (leading) {
       const rest = clause.slice(leading[0].length).trim();
       for (const operand of rest.split(/\s+/)) {

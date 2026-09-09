@@ -170,7 +170,7 @@ function isNegated(line: string, matchIndex: number, context = buildNegationCont
  * main docs") cannot turn prose into a refspec.
  */
 const SQL_CONTEXT_PATTERN =
-  /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
+  /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX|TYPE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:(?:TABLE|ONLY)\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
 const SQL_SCHEMA_PATTERN = /\bDROP\s+SCHEMA(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/gi;
 
 function isExplicitSqlContext(line: string, end: number, start: number): boolean {
@@ -191,8 +191,31 @@ function isExplicitSqlContext(line: string, end: number, start: number): boolean
   );
 }
 
+function hasOpenShellQuote(text: string): boolean {
+  let quote: "'" | '"' | null = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index] ?? "";
+    if (quote === "'") {
+      if (character === "'") quote = null;
+      continue;
+    }
+    if (quote === '"') {
+      if (character === "\\") {
+        index += 1;
+        continue;
+      }
+      if (character === '"') quote = null;
+      continue;
+    }
+    if (character === "'" || character === '"') quote = character;
+  }
+  return quote !== null;
+}
+
 function hasSqlClientCommandContext(before: string): boolean {
-  const segment = before.split(/[;&|]/).at(-1) ?? before;
+  const lastNewline = before.lastIndexOf("\n");
+  const context = lastNewline >= 0 && !hasOpenShellQuote(before) ? before.slice(lastNewline + 1) : before;
+  const segment = context.split(/[;&|]/).at(-1) ?? context;
   const tokens = segment.trim().split(/\s+/).filter(Boolean);
   let index = 0;
   while (index < tokens.length) {
@@ -277,7 +300,7 @@ const BRIEF_RULES: BriefRule[] = [
     // (TRUNCATE TABLE Users is valid SQL).
     advice: GATE_ADVICE,
     pattern:
-      /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/g,
+      /\bDROP\s+(?:TABLE|DATABASE|MATERIALIZED\s+VIEW|VIEW|INDEX|TYPE)(?:\s+IF\s+EXISTS)?\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDROP\s+COLUMN\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bDELETE\s+FROM\s+(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])|\bTRUNCATE\s+(?:TABLE\s+|ONLY\s+)?(?:IF\s+EXISTS\s+)?(?:[A-Za-z_][\w.]*|"[^"\r\n]+"|`[^`\r\n]+`)(?=$|[\s;,.`'"])/g,
     collect: collectSqlDestructive,
   },
   {
@@ -366,6 +389,12 @@ function isInertTestDeletionText(line: string, index: number): boolean {
   );
 }
 
+function isInertOutputText(line: string, index: number): boolean {
+  const prefix = line.slice(0, index);
+  const commandPrefix = prefix.split(/[;&|]/).at(-1) ?? prefix;
+  return /^\s*(?:echo|printf|print|cat)\b/i.test(commandPrefix);
+}
+
 export interface ScanLookoutOptions {
   /** Directory to scan (defaults to process.cwd() at the CLI layer). */
   repo: string;
@@ -400,6 +429,13 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);
         for (const match of line.matchAll(re)) {
           if (match.index !== undefined && isNegated(line, match.index, negationContext)) continue;
+          if (
+            match.index !== undefined &&
+            (rule.id === "lookout.brief.db-destructive" || rule.id === "lookout.brief.protected-branch") &&
+            isInertOutputText(line, match.index)
+          ) {
+            continue;
+          }
           if (
             rule.id === "lookout.brief.test-deletion" &&
             match.index !== undefined &&

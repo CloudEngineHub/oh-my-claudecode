@@ -128,6 +128,7 @@ describe("scanLookout: briefing rules", () => {
       "sqlite3 db.sqlite 'drop view active_users'",
       "sqlite3 db.sqlite 'drop index users_email_idx'",
       "psql -c 'drop materialized view reports'",
+      "psql -c 'drop type mood'",
       "sudo -u postgres psql -c 'drop table users'",
       "env PGDATABASE=app psql -c 'drop table users'",
       "/usr/bin/psql -c 'drop table users'",
@@ -500,7 +501,7 @@ describe("scanLookout: briefing rules", () => {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings.some((finding) => finding.id === "lookout.brief.force-op" || finding.id === "lookout.brief.protected-branch")).toBe(true);
     }
-    for (const brief of ["rm --help -rf /tmp/x", "rm --version -rf /tmp/x"]) {
+    for (const brief of ["rm --help -rf /tmp/x", "rm --version -rf /tmp/x", "git clean -f -e"]) {
       const report = scanLookout({ ...base(), brief });
       expect(report.findings).toEqual([]);
     }
@@ -518,6 +519,7 @@ describe("scanLookout: briefing rules", () => {
       "skip the test suite",
       "remove the failing test",
       "rm tests/auth.test.ts",
+      "command rm tests/auth.ts",
       "delete the auth tests",
       "remove payment tests",
       "skip the auth tests",
@@ -536,6 +538,10 @@ describe("scanLookout: briefing rules", () => {
       "disable this test hook",
       "echo \"skip the auth tests\"",
       "document the phrase \"skip the auth tests\"",
+      "echo 'DROP TABLE users'",
+      "printf 'DROP TABLE users'",
+      "printf 'git push to main'",
+      "psql -c 'select 1'\ndrop table borders",
     ]) {
       const falsePositive = scanLookout({ ...base(), brief });
       expect(ids(falsePositive.findings)).not.toContain("lookout.brief.test-deletion");

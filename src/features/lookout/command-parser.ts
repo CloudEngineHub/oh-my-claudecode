@@ -65,10 +65,8 @@ function isPushForceFlag(flag: string): boolean {
 
 function isPushDryRunFlag(flag: string): boolean {
   if (PUSH_DRY_RUN_FLAG.test(flag)) return true;
-  // Bundled -n (e.g. -nu, -nf) is still a dry run.
   return BUNDLED_SHORT_FLAGS.test(flag) && bundledPushHasFlag(flag, "n");
 }
-
 function bundledPushHasFlag(flag: string, wanted: string): boolean {
   for (const character of flag.slice(1)) {
     if (character === "o") return false;
@@ -78,7 +76,6 @@ function bundledPushHasFlag(flag: string, wanted: string): boolean {
 }
 /** Words that typically begin trailing prose after a command. */
 const CLAUSE_CONNECTOR = /^(?:then|and|but|also|after|before|while|because|so|which|plus)$/i;
-
 interface ParsedPush {
   /** Genuine flags — option values never land here. */
   flags: CollectedMatch[];
@@ -707,6 +704,10 @@ function collectGitForceOps(line: string): CollectedMatch[] {
         break;
       }
       if (CLEAN_VALUE_OPTION.test(value)) {
+        if (index + 1 >= cleanArgs.length) {
+          help = true;
+          break;
+        }
         index += 1;
         continue;
       }
