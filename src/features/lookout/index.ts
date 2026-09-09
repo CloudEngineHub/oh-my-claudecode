@@ -535,13 +535,14 @@ export function scanLookout(options: ScanLookoutOptions): LookoutReport {
   if (brief !== undefined) {
     const scanBrief = brief.replace(/\\\r?\n[ \t]*/g, " ");
     const scanLines = maskHereDocBody(scanBrief);
+    const maskedBrief = scanLines.join("\n");
     // Rules evaluate line by line while command collectors split clauses so
     // a dry run or prohibition cannot hide a separate requested operation later in the
     // same line.
     for (const rule of BRIEF_RULES) {
       const evidence: string[] = [];
       const inputLines =
-        rule.id === "lookout.brief.db-destructive" ? [scanBrief] : scanLines;
+        rule.id === "lookout.brief.db-destructive" ? [maskedBrief] : scanLines;
       for (const line of inputLines) {
         const negationContext = buildNegationContext(line);
         const re = new RegExp(rule.pattern.source, rule.pattern.flags);

@@ -460,6 +460,7 @@ describe("scanLookout: briefing rules", () => {
       "for _ in 1; do rm -rf build; done",
       "while true; do rm -rf build; done",
       "until true; do git push --force origin feature; done",
+      "printf 'build\\0' | xargs -0 rm -rf",
       "cat >/dev/null <<EOF\n$(rm -rf build)\nEOF",
       "echo \"use <<EOF here\"\nrm -rf build",
       "(rm -rf build)",
@@ -527,6 +528,7 @@ describe("scanLookout: briefing rules", () => {
       "rm --version tests/auth.test.ts",
       "cat > README.md <<'EOF'\nrm -rf build\nEOF",
       "tee README.md <<'EOF'\nrm -rf build\nEOF",
+      "tee README.md <<'EOF'\nDROP TABLE users;\nEOF",
       "cat <<'EOF' >/tmp/out\nrm -rf build\nEOF",
       "cat <<'EOF'\n  EOF\nrm -rf build\nEOF",
       String.raw`cat <<\EOF
@@ -534,6 +536,7 @@ rm -rf build
 EOF`,
       "printf 'x|rm tests/a.ts'",
       "git push --force --push-option",
+      "rm -rf --definitely-invalid-option build",
       "echo $((rm -rf build))",
     ]) {
       const report = scanLookout({ ...base(), brief });

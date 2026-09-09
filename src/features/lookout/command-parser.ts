@@ -1,4 +1,5 @@
 import { decodeAnsiCQuote, findNestedSubstitutions } from "./substitution-parser.js";
+import { parseXargsOption } from "./wrapper-parser.js";
 const PROTECTED_BRANCH_NAME = /^(?:main|master|develop|release(?:\/[\w./-]+)?|production(?:\/[\w./-]+)?)$/;
 const PROTECTED_BRANCH_SAMPLES = ["main", "master", "develop", "release/example", "production/example"];
 const COMMAND_WORD = /^[A-Za-z0-9_./+:@~^=${}\-*$]+$/;
@@ -22,18 +23,15 @@ function isValidPushBundle(value: string): boolean {
   }
   return true;
 }
-
 function wildcardCanMatchProtectedBranch(pattern: string): boolean {
   if (!pattern.includes("*")) return false;
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
   const matcher = new RegExp(`^${escaped}$`);
   return PROTECTED_BRANCH_SAMPLES.some((branch) => matcher.test(branch));
 }
-
 function isValidRmBundle(value: string): boolean {
   return /^-[^-][A-Za-z]*$/.test(value) && [...value.slice(1)].every((character) => /[fFiIrRdv]/.test(character));
 }
-
 function isValidCleanBundle(value: string): boolean {
   if (!CLEAN_BUNDLED_SHORT_FLAGS.test(value)) return true;
   for (const character of value.slice(1)) {
@@ -42,7 +40,6 @@ function isValidCleanBundle(value: string): boolean {
   }
   return true;
 }
-
 function bundledCleanHasFlag(value: string, wanted: string): boolean {
   for (const character of value.slice(1)) {
     if (character === "e") return false;
@@ -72,25 +69,21 @@ interface ParsedPush {
   repo: string | null;
   refspecs: CollectedMatch[];
 }
-
 export interface CollectedMatch {
   snippet: string;
   index: number;
 }
-
 export interface CommandToken {
   value: string;
   index: number;
   quoted: boolean;
   raw: string;
 }
-
 function isEscapedByOddBackslashes(text: string, index: number): boolean {
   let count = 0;
   for (let cursor = index - 1; cursor >= 0 && text[cursor] === "\\"; cursor -= 1) count += 1;
   return count % 2 === 1;
 }
-
 function normalizeCommandToken(token: string): string {
   let value = token.replace(/\r/g, "");
   if (value === "!") return value;
@@ -108,7 +101,6 @@ function normalizeCommandToken(token: string): string {
   value = value.replace(/[.,!?;]+$/, "");
   return value;
 }
-
 export function tokenizeCommand(segment: string): CommandToken[] {
   const tokens: CommandToken[] = [];
   let index = 0;
@@ -157,7 +149,6 @@ export function tokenizeCommand(segment: string): CommandToken[] {
   }
   return tokens;
 }
-
 export function splitCommandClauses(line: string): Array<{ text: string; index: number }> {
   const clauses: Array<{ text: string; index: number }> = [];
   let start = 0;
@@ -257,13 +248,13 @@ export function findExecutableIndex(tokens: CommandToken[], executable: string):
     const value = tokens[index].value;
     const ungroupedValue = value.replace(/^[({]/, "").replace(/[)};,]+$/, "");
     if (ungroupedValue === executable || ungroupedValue.endsWith(`/${executable}`)) return index;
-    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout|nice)$/.test(wrapper ?? "")) {
+    if (index === prefixIndex && /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout|nice|xargs)$/.test(wrapper ?? "")) {
       index += 1;
       continue;
     }
     if (
       index > prefixIndex &&
-      /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout|nice)$/.test(value.toLowerCase())
+      /^(?:run|sudo|env|command|exec|if|while|until|nohup|timeout|nice|xargs)$/.test(value.toLowerCase())
     ) {
       wrapper = value.toLowerCase();
       timeoutDurationConsumed = false;
@@ -374,6 +365,16 @@ export function findExecutableIndex(tokens: CommandToken[], executable: string):
       if (!timeoutDurationConsumed) {
         timeoutDurationConsumed = true;
         index += 1;
+        continue;
+      }
+      wrapper = "";
+      continue;
+    }
+    if (wrapper === "xargs") {
+      const option = parseXargsOption(value);
+      if (option === "terminal") return -1;
+      if (option !== null) {
+        index += option;
         continue;
       }
       wrapper = "";
@@ -509,7 +510,6 @@ function parsePushCommand(segment: string): ParsedPush | null {
   }
   return parsed;
 }
-
 function isPushDryRun(parsed: ParsedPush): boolean {
   let dryRun = false;
   for (const flag of parsed.flags) {
@@ -518,11 +518,9 @@ function isPushDryRun(parsed: ParsedPush): boolean {
   }
   return dryRun;
 }
-
 export function addMatch(hits: CollectedMatch[], snippet: string, index: number): void {
   if (snippet) hits.push({ snippet, index });
 }
-
 function collectPushForceOps(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
@@ -562,7 +560,8 @@ function collectRmForceOps(line: string): CollectedMatch[] {
     const rmIndex = findExecutableIndex(tokens, "rm");
     if (rmIndex < 0) continue;
     const rm = tokens[rmIndex];
-
+    const xargsIndex = findExecutableIndex(tokens, "xargs");
+    const receivesXargsOperands = xargsIndex >= 0 && xargsIndex < rmIndex;
     let destructive = false;
     let help = false;
     let hasOperand = false;
@@ -588,6 +587,11 @@ function collectRmForceOps(line: string): CollectedMatch[] {
         destructive = true;
       } else if (/^--(?:preserve-root|no-preserve-root|one-file-system)(?:=.+)?$/.test(token.value)) {
         continue;
+      } else if (/^--(?:dir|verbose|interactive|context)(?:=.+)?$/.test(token.value)) {
+        continue;
+      } else if (token.value.startsWith("--")) {
+        invalid = true;
+        break;
       } else if (/^-[^-][A-Za-z]*$/.test(token.value)) {
         if (!isValidRmBundle(token.value)) {
           invalid = true;
@@ -602,7 +606,7 @@ function collectRmForceOps(line: string): CollectedMatch[] {
         hasOperand = true;
       }
     }
-    if (destructive && hasOperand && !help && !invalid) {
+    if (destructive && (hasOperand || receivesXargsOperands) && !help && !invalid) {
       addMatch(
         hits,
         `rm ${optionTokens.map((token) => token.value).join(" ")}`,
@@ -663,11 +667,9 @@ function findGitSubcommand(tokens: CommandToken[], command: string): GitSubcomma
   }
   return null;
 }
-
 function isFalseGitBoolean(value: string | undefined): boolean {
   return /^(?:false|0|no|off)$/i.test(value ?? "");
 }
-
 function collectGitForceOps(line: string): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
@@ -730,7 +732,6 @@ function collectGitForceOps(line: string): CollectedMatch[] {
   }
   return hits;
 }
-
 export function collectForceOps(line: string, depth = 0): CollectedMatch[] {
   const hits = [...collectGitForceOps(line), ...collectPushForceOps(line), ...collectRmForceOps(line)];
   if (depth >= MAX_NESTED_SCAN_DEPTH) return hits;
@@ -746,7 +747,6 @@ export function collectForceOps(line: string, depth = 0): CollectedMatch[] {
   }
   return hits;
 }
-
 export function collectProtectedPushDests(line: string, depth = 0): CollectedMatch[] {
   const hits: CollectedMatch[] = [];
   for (const clause of splitCommandClauses(line)) {
