@@ -6,14 +6,14 @@
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
     "head": "04674e35110f7050e2416be828973df8990aaa40",
-    "sourceSha256": "5c67e29795093d0ee5a5d3230d7e62903116f4faf856f2c59c89d14cc57e3856",
+    "sourceSha256": "7a5c1646f3c443ca2159a6059985a7e340fd0261a9c656783c16463ba97bdc48",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
   "head": "04674e35110f7050e2416be828973df8990aaa40",
-  "sourceSha256": "5c67e29795093d0ee5a5d3230d7e62903116f4faf856f2c59c89d14cc57e3856",
+  "sourceSha256": "7a5c1646f3c443ca2159a6059985a7e340fd0261a9c656783c16463ba97bdc48",
   "counts": {
     "public": {
       "skills": 38,
@@ -24,12 +24,12 @@
     },
     "internal": {
       "hookFiles": 295,
-      "featureFiles": 78,
+      "featureFiles": 79,
       "toolFiles": 61,
       "libFiles": 42,
       "templateHooks": 21,
-      "srcFiles": 1344,
-      "total": 1365
+      "srcFiles": 1345,
+      "total": 1366
     },
     "generated": {
       "distFiles": 4986,
@@ -484,6 +484,7 @@
       "src/features/lookout/command-parser.ts",
       "src/features/lookout/index.ts",
       "src/features/lookout/substitution-parser.ts",
+      "src/features/lookout/test-artifact-parser.ts",
       "src/features/lookout/types.ts",
       "src/features/lookout/workspace.ts",
       "src/features/magic-keywords.ts",
@@ -6237,6 +6238,7 @@
       "src/features/lookout/command-parser.ts",
       "src/features/lookout/index.ts",
       "src/features/lookout/substitution-parser.ts",
+      "src/features/lookout/test-artifact-parser.ts",
       "src/features/lookout/types.ts",
       "src/features/lookout/workspace.ts",
       "src/features/magic-keywords.ts",
@@ -36084,6 +36086,11 @@
         "id": "src/features/lookout/substitution-parser.ts",
         "kind": "feature",
         "path": "src/features/lookout/substitution-parser.ts"
+      },
+      {
+        "id": "src/features/lookout/test-artifact-parser.ts",
+        "kind": "feature",
+        "path": "src/features/lookout/test-artifact-parser.ts"
       },
       {
         "id": "src/features/lookout/types.ts",
@@ -77954,12 +77961,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 6912,
+      "nodeCount": 6913,
       "edgeCount": 7410,
       "importEdgeCount": 6101,
       "registerEdgeCount": 59
     }
   },
-  "inventorySha256": "c7b4e0fbcb3aba9c985dd66e976b2e474d55cd6c8b3cf8a1428e39ed2186fb2b",
-  "manifestSha256": "b15422394b059866bffde1ee2365aad0f29e2d6c8d72580f680144bc42e09f2d"
+  "inventorySha256": "773c7b771e920162f6f634b0f5b72c4967b876d64a1332a207a399e700e4bd8a",
+  "manifestSha256": "a79dfded14dbe809abbe602087cf081220fd35062375071993e5fb88a8c92515"
 }
