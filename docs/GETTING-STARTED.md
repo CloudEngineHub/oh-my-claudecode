@@ -27,7 +27,7 @@ OMC ships two surfaces and they are designed to coexist:
 
 | Surface | What you get | Recommended install |
 |---|---|---|
-| **Claude Code plugin** (`oh-my-claudecode@omc`) | In-session skills, agents, hooks, statusline, MCP servers — the `/autopilot`, `/ralph`, `/execute`, `/team` slash commands | Marketplace plugin install (Step 1–2 below) |
+| **Claude Code plugin** (`oh-my-claudecode@omc`) | In-session skills, agents, hooks, statusline, MCP servers — the `/oh-my-claudecode:autopilot`, `/oh-my-claudecode:ralph`, `/oh-my-claudecode:execute`, and `/oh-my-claudecode:team` slash commands | Marketplace plugin install (Step 1–2 below) |
 | **Terminal CLI** (`omc` binary, package `oh-my-claude-sisyphus`) | Shell commands: `omc setup`, `omc update`, `omc team`, `omc ask`, and a hard-deprecated `omc autoresearch` shim | `npm i -g oh-my-claude-sisyphus@latest` |
 
 Most users want **both**: the plugin for the in-session experience, and the npm CLI for shell-side automation and updates. Running them in parallel is fully supported — `omc update` and `omc setup` are idempotent and detect the plugin install to avoid duplicating in-session skills (#2252).
@@ -69,13 +69,9 @@ Both can be installed at the same time. The CLI auto-detects the plugin install 
 
 ### Step 3: Run initial setup
 
-After installation, enter one of the following in Claude Code:
+After installation, run this in Claude Code:
 
 ```bash
-# Option 1: natural language
-setup omc
-
-# Option 2: skill command
 /oh-my-claudecode:omc-setup
 ```
 
@@ -281,7 +277,7 @@ Defaults → User config (~/.config/claude-omc/config.jsonc)
     "astTools": true
   },
 
-  // Magic keyword customization for supported categories
+  // Magic keyword customization
   "magicKeywords": {
     "search": ["search", "find", "locate"],
     "analyze": ["analyze", "investigate", "examine"],

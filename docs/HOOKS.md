@@ -229,10 +229,10 @@ Detects magic keywords in user prompts and invokes the corresponding skill.
 - **Event**: UserPromptSubmit
 - **Behavior**: Sanitizes the prompt (removes code blocks, URLs, file paths) then matches keyword patterns
 - **Conflict resolution**: cancel has highest priority, then ralph > autopilot
+
 - **Safety**: Disabled inside team workers to prevent infinite spawning
 
 See the [Magic Keywords](#magic-keywords) section for the full keyword list.
-
 
 #### workflow-drift-guard
 
@@ -267,6 +267,7 @@ Enforces continuation when an execution mode is active. This is the hook that ke
 
 - **Event**: Stop
 - **Behavior**: Checks `.omc/state/` for active mode state files. If any current mode (ralph, ultragoal, autopilot, team) or legacy/retired state (ultrawork, pipeline) is active, injects a reinforcement message to prevent Claude from stopping.
+
 - **Reinforcement message**: "The boulder never stops" — prompts Claude to continue working
 - **Staleness check**: States older than 2 hours are treated as inactive to prevent stale state from blocking new sessions
 - **Notification**: Sends Discord/Telegram/Slack notification on first stop (if configured)
@@ -276,13 +277,13 @@ Enforces continuation when an execution mode is active. This is the hook that ke
 
 ### Mode State Management
 
-Execution mode hooks manage state files in the `.omc/state/` directory. Current records use modes such as autopilot, ralph, team, and ultragoal; legacy fields such as `linked_ultrawork` may appear only for cleanup diagnostics and are not invocable modes.
+Execution mode hooks manage state files in the `.omc/state/` directory.
 
 ```json
 {
   "active": true,
   "started_at": "2025-01-15T10:30:00Z",
-  "prompt": "team 2:executor implement auth",
+  "prompt": "ralph implement auth",
   "session_id": "abc123",
   "project_path": "/path/to/project",
   "iteration": 0,
@@ -292,8 +293,9 @@ Execution mode hooks manage state files in the `.omc/state/` directory. Current 
 }
 ```
 
-When a session ID is present, state is stored in session scope under `.omc/state/sessions/{sessionId}/`.
+The `linked_ultrawork` field is a legacy state field retained for compatibility with retired state files; it is not an invocable mode.
 
+When a session ID is present, state is stored in session scope under `.omc/state/sessions/{sessionId}/`.
 
 #### ultragoal-state.json lifecycle
 
@@ -319,6 +321,7 @@ or
 ```
 
 `cancel` removes state files for all active modes: ralph, autopilot, team, and any others; it also clears legacy/retired `ultrawork` state.
+
 
 ---
 
@@ -469,18 +472,18 @@ When multiple keywords are detected simultaneously, they resolve by the followin
 cancel  (highest priority, exclusive)
   → ralph
     → autopilot
-          → ralplan
-            → deep-interview
-              → ai-slop-cleaner
-                → tdd
-                  → code-review
-                    → security-review
-                      → ultrathink
-                        → deepsearch
-                          → analyze
+      → ralplan
+        → deep-interview
+          → ai-slop-cleaner
+            → tdd
+              → code-review
+                → security-review
+                  → ultrathink
+                    → deepsearch
+                      → analyze
 ```
 
-`cancel` is exclusive — it ignores all other matches and only runs the cancel action. All other keywords can be matched together and are processed in priority order. Team is not part of keyword priority; invoke `/oh-my-claudecode:team` explicitly for coordinated parallel work.
+`cancel` is exclusive — it ignores all other matches and only runs the cancel action. All other keywords can be matched together and are processed in priority order.
 
 ### Usage Examples
 
@@ -508,7 +511,7 @@ stopomc
 
 ### Note on the `team` Keyword
 
-`team` is not auto-detected. It must be invoked explicitly via `/oh-my-claudecode:team` to prevent infinite spawning.
+`team` is not auto-detected. It must be invoked explicitly via the `/oh-my-claudecode:team` slash command to prevent infinite spawning.
 
 ```
 /oh-my-claudecode:team 3:executor "build a fullstack todo app"

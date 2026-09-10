@@ -175,7 +175,7 @@ explore --> analyst --> planner --> critic --> executor --> verifier
 
 ### Overview
 
-Skills are **behavior injections** that modify how the orchestrator operates. Instead of swapping agents, skills add capabilities on top of existing agents. OMC provides 37 shipped skills.
+Skills are **behavior injections** that modify how the orchestrator operates. Instead of swapping agents, skills add capabilities on top of existing agents. OMC provides 39 shipped skills.
 
 ### Skill Layers
 
@@ -212,12 +212,14 @@ Active skills: team + execute + git-master
 
 **Slash commands:**
 ```bash
-/oh-my-claudecode:autopilot build me a todo app
-/oh-my-claudecode:ralph refactor the auth module
+/oh-my-claudecode:omc-plan "plan a todo app"
+/oh-my-claudecode:execute build me a todo app
+/oh-my-claudecode:omc-review [path]
+/oh-my-claudecode:verify [target]
 /oh-my-claudecode:team 3:executor "implement fullstack app"
 ```
 
-**Magic keywords** — include a keyword in natural language and the skill activates automatically; parallel team work and approved execution use explicit slash commands:
+**Magic keywords** — include a keyword in natural language and the skill activates automatically:
 ```bash
 autopilot build me a todo app      # activates autopilot
 ralph: refactor the auth module    # activates ralph
@@ -246,12 +248,20 @@ Carries an approved task through to working, verified code.
 ```bash
 /oh-my-claudecode:execute implement user authentication with OAuth
 ```
+For coordinated parallel workers, use `/oh-my-claudecode:team` instead.
 
 #### team
-Coordinates N Claude agents with a 5-stage pipeline: `plan → prd → exec → verify → fix`.
-Use the implicit Claude Code agent team with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`; each teammate is spawned through the Agent/Task tool with a distinct `name` value.
+Coordinates N Claude agents with a 5-stage pipeline: `plan → prd → exec → verify → fix`
 ```bash
 /oh-my-claudecode:team 3:executor "implement fullstack todo app"
+```
+
+#### Multi-provider advice with ask + team
+The retired `ccg` workflow is replaced by `/oh-my-claudecode:ask` plus `/oh-my-claudecode:team`: ask the selected providers for independent advice, then use a team to synthesize the results.
+```bash
+/oh-my-claudecode:ask codex "review this authentication implementation"
+/oh-my-claudecode:ask antigravity "review this authentication implementation"
+/oh-my-claudecode:team 2:executor "synthesize the advisor findings"
 ```
 
 #### ralplan
@@ -275,10 +285,27 @@ ralplan this feature
 | `release` | Automated release workflow | `/oh-my-claudecode:release` |
 | `deepinit` | Generate hierarchical AGENTS.md | `/oh-my-claudecode:deepinit` |
 | `deep-interview` | Socratic deep interview | `/deep-interview` |
-| `research` | Investigate an open question and return grounded findings | `/oh-my-claudecode:research` |
+| `research` | Parallel or focused research | `/oh-my-claudecode:research` |
 | `external-context` | Parallel document-specialist research | `/oh-my-claudecode:external-context` |
 | `ai-slop-cleaner` | Clean AI expression patterns | `/oh-my-claudecode:ai-slop-cleaner` |
 | `configure-notifications` | Configure Telegram, Discord, and Slack notification integrations | `/oh-my-claudecode:configure-notifications` |
+| `remember` | Save durable session memory | `/oh-my-claudecode:remember` |
+
+### Shipyard document discipline
+
+The opt-in Shipyard workflows compose `drydock`, `ask-navigator`, `launch`, and
+the writing-time companions `agent-doc-discipline` and
+`minimal-code-discipline`. `agent-doc-discipline` is advisory everywhere else,
+but the `drydock` seed-generation step and the `launch` C5 sediment pass must
+call the Skill tool for it before writing agent-facing prose. This keeps the
+five shared surfaces self-describing without turning a writing aid into a
+default workflow gate.
+
+At Launch closeout, the review is two independent axes: the **standards axis**
+compares the diff with the applicable `docs/standards/` guidance, while the
+**spec axis** compares it with the current ticket's acceptance criteria. The
+axes run in parallel, are reported separately, and are never merged or
+cross-ranked; the ticket fails when either axis fails.
 
 ### Magic Keyword Reference
 
@@ -353,13 +380,14 @@ Injected pattern meanings:
 | `hook success: Success` | Hook ran normally, continue as planned |
 | `hook additional context: ...` | Additional context information, take note |
 | `[MAGIC KEYWORD: ...]` | Magic keyword detected, execute indicated skill |
-| `The boulder never stops` | An active persistent execution workflow is running |
+| `The boulder never stops` | ralph/autopilot mode is active |
+
 
 ### Key Hooks
 
 **keyword-detector** — fires on `UserPromptSubmit`. Detects magic keywords in user input and activates the corresponding skill.
 
-**persistent-mode** — fires on `Stop`. When a persistent mode (ralph, team) is active, prevents Claude from stopping until work is verified complete.
+**persistent-mode** — fires on `Stop`. When a persistent mode (ralph, autopilot, team, or ultragoal) is active, prevents Claude from stopping until work is verified complete.
 
 **pre-compact** — fires on `PreCompact`. Saves critical information (active modes, TODOs, background jobs, and durable plan anchors: PRD/boulder references) to a checkpoint before the context window is compressed. The `SessionStart` hook restores the newest matching checkpoint when `source === "compact"`, so plan detail survives auto-compaction (issue #3730).
 

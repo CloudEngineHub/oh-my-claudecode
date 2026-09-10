@@ -1,6 +1,8 @@
 # Reference Documentation
 
-Complete reference for oh-my-claudecode. The 5.3.0 package ships 19 agents, 37 skills, and 21 commands, and its single configured MCP server exposes 55 tools. For quick start, see the main [README.md](../README.md).
+Complete reference for oh-my-claudecode. For quick start, see the main [README.md](../README.md).
+
+For v5.3.0, the plugin ships 19 agents, 39 skills, 21 command files, and one configured MCP server exposing exactly 55 tools.
 
 ---
 
@@ -14,7 +16,7 @@ Complete reference for oh-my-claudecode. The 5.3.0 package ships 19 agents, 37 s
 - [Legacy MCP Team Runtime Tools (Deprecated)](#legacy-mcp-team-runtime-tools-deprecated-opt-in-only)
 - [Agents (19 Total)](#agents-19-total)
 - [Goal Workflow UX: `/goal`, Ralph, Team, Ultragoal](#goal-workflow-ux-goal-ralph-team-ultragoal)
-- [Skills (37 Total)](#skills-37-total)
+- [Skills (39 Total)](#skills-39-total)
 - [Slash Commands](#slash-commands)
 - [Shipyard Methodology](./shipyard.md) — governed delivery & shared harness map
 - [Claude Code `/goal` Adapter Design](#claude-code-goal-adapter-design)
@@ -50,7 +52,7 @@ npm i -g oh-my-claude-sisyphus@latest
 omc setup
 ```
 
-The npm package exposes both `oh-my-claudecode` and `omc`; examples prefer `omc` unless troubleshooting needs the long alias. The CLI does not make in-session slash skills available by itself; install the plugin for `/autopilot`, `/ralph`, `/execute`, `/team`, and other interactive skills.
+The npm package exposes both `oh-my-claudecode` and `omc`; examples prefer `omc` unless troubleshooting needs the long alias. The CLI does not make in-session slash skills available by itself; install the plugin for `/oh-my-claudecode:autopilot`, `/oh-my-claudecode:ralph`, `/oh-my-claudecode:execute`, `/oh-my-claudecode:team`, and other interactive skills.
 
 ### Requirements
 
@@ -210,7 +212,7 @@ Resolution order inside `getOmcRoot()`:
 3. `git rev-parse --show-toplevel` (monorepo / single repo).
 4. `process.cwd()` (last resort).
 
-Once a workspace is anchored, multiple Claude Code sessions in different sub-repos can run `/ultragoal`, `/ralph`, `/execute`, `/autopilot` in parallel without bleeding state. For `/ultragoal` specifically, pass `--plan-id <id>` or `--auto-plan-id` on `create-goals` so each session writes to `.omc/ultragoal/plans/{planId}/` instead of the shared `goals.json` — see "ultragoal multi-plan" below. The PARALLEL SESSION WARNING in `session-start.mjs` performs a PID-aware liveness check and no longer suppresses restore when the owner session is dead.
+Once a workspace is anchored, multiple Claude Code sessions in different sub-repos can run `/oh-my-claudecode:ultragoal`, `/oh-my-claudecode:ralph`, `/oh-my-claudecode:execute`, and `/oh-my-claudecode:autopilot` in parallel without bleeding state. For `/oh-my-claudecode:ultragoal` specifically, pass `--plan-id <id>` or `--auto-plan-id` on `create-goals` so each session writes to `.omc/ultragoal/plans/{planId}/` instead of the shared `goals.json` — see "ultragoal multi-plan" below. The PARALLEL SESSION WARNING in `session-start.mjs` performs a PID-aware liveness check and no longer suppresses restore when the owner session is dead.
 
 #### `.omc/handoffs/` shared contract
 
@@ -625,6 +627,22 @@ omc checkpoint rollback <id> --force
 - `rollback` refuses to discard uncommitted changes unless `--force` is passed
 - Requires a git repository; no external storage is involved
 
+### `omc lookout`
+
+Pre-flight danger scan for autonomous runs. Before an unattended effort starts (graph run, autopilot, launch, a multi-agent team), lookout scans the task briefing and the workspace state and reports machine-readable findings. Advisory by design: it never blocks, never mutates, and has no skip-file backdoor.
+
+```bash
+omc lookout scan --brief "Migrate billing to v2 and update the deploy config"
+omc lookout scan --brief @task-brief.md --json
+omc lookout scan --strict   # exit 1 when review is recommended (for scripts)
+```
+
+- Briefing rules flag the dangerous operation itself — force operations, destructive SQL, test deletion/skipping, direct pushes to protected branches (high severity); secret, CI, and deployment surfaces (medium severity)
+- Workspace rules flag tracked secret-looking files and a dirty worktree; `repo` is `null` outside a git repository
+- Every finding carries `id`, `severity`, `confidence`, `actionable`, `evidence`, and `advice` — the same vocabulary drydock's `--check` audit documents, so a structured contract can be shared by both surfaces
+- `--json` emits the full report; exit codes: `0` for every successful non-strict scan and for strict scans without a review-recommended verdict, `1` for `--strict` with a review-recommended verdict, `2` for a usage/scan error
+- High-risk verdicts pair with approval gates and checkpoints: `omc graph run --approval-mode remote --checkpoint`, `omc checkpoint create`
+
 ### Graph approval gates (remote approvals)
 
 Graph runtime `human-approval` nodes support two gate styles via `omc graph run`:
@@ -648,7 +666,7 @@ Use OMC's terminal and library surfaces in non-interactive environments:
 - Run CLI commands that have deterministic exit codes, for example `omc setup`, `omc ask ...`, `omc session search ... --json`, or repo-owned verification scripts such as `npm run sync-metadata:verify`.
 - Provide authentication through runner environment variables (`ANTHROPIC_API_KEY`) or pre-authenticated provider CLIs for `codex`, `gemini`, `antigravity`, `grok`, or `cursor` when using `omc ask` / `omc team`.
 - Keep state explicit for ephemeral runners by setting `OMC_STATE_DIR` when state must survive worktree deletion or checkout replacement.
-- Avoid interactive slash skills (`/autopilot`, `/ralph`, `/execute`, `/deep-interview`, `/team`) in CI jobs; they require an active Claude Code session and user-visible conversation loop.
+- Avoid interactive slash skills (`/oh-my-claudecode:autopilot`, `/oh-my-claudecode:ralph`, `/oh-my-claudecode:execute`, `/oh-my-claudecode:deep-interview`, `/oh-my-claudecode:team`) in CI jobs; they require an active Claude Code session and user-visible conversation loop.
 - OMC does not currently provide a VS Code extension or VS Code-specific automation contract. The documented IDE path is to use Claude Code's own integrations, then install OMC through the Claude Code plugin surface.
 - Programmatic Agent SDK usage is supported through the exported TypeScript helpers and the in-process MCP server helpers in this package; it is a Node.js library surface, not an interactive plugin installer.
 
@@ -725,55 +743,69 @@ Bounded handoff policy:
 
 ## Agents (19 Total)
 
+Model-tier aliases are shown in the table below; the shipped agent catalog contains 19 base agents.
+
 Always use `oh-my-claudecode:` prefix when calling via Task tool.
 
 ### By Domain and Tier
 
-| Domain | Agent(s) | Default model |
-| ------ | --------- | ------------- |
-| **Analysis** | `architect` | opus |
-| **Pre-planning** | `analyst` | opus |
-| **Planning** | `planner` | opus |
-| **Critique** | `critic` | opus |
-| **Execution** | `executor` | sonnet |
-| **Debugging** | `debugger` | sonnet |
-| **Verification** | `verifier` | sonnet |
-| **Tracing** | `tracer` | sonnet |
-| **Search** | `explore` | haiku |
-| **Research** | `document-specialist` | sonnet |
-| **Frontend** | `designer` | sonnet |
-| **Docs** | `writer` | haiku |
-| **Interactive QA** | `qa-tester` | sonnet |
-| **Testing** | `test-engineer` | sonnet |
-| **Security** | `security-reviewer` | sonnet |
-| **Code Review** | `code-reviewer` | opus |
-| **Data Analysis** | `scientist` | sonnet |
-| **Git** | `git-master` | sonnet |
-| **Simplification** | `code-simplifier` | opus |
+| Domain             | LOW (Haiku)             | MEDIUM (Sonnet)       | HIGH (Opus)         |
+| ------------------ | ----------------------- | --------------------- | ------------------- |
+| **Analysis**       | `architect-low`         | `architect-medium`    | `architect`         |
+| **Execution**      | `executor-low`          | `executor`            | `executor-high`     |
+| **Search**         | `explore`               | -                     | `explore-high`      |
+| **Research**       | -                       | `document-specialist` | -                   |
+| **Frontend**       | `designer-low`          | `designer`            | `designer-high`     |
+| **Docs**           | `writer`                | -                     | -                   |
+| **Visual**         | -                       | `vision`              | -                   |
+| **Planning**       | -                       | -                     | `planner`           |
+| **Critique**       | -                       | -                     | `critic`            |
+| **Pre-Planning**   | -                       | -                     | `analyst`           |
+| **Testing**        | -                       | `qa-tester`           | -                   |
+| **Tracing**        | -                       | `tracer`              | -                   |
+| **Security**       | `security-reviewer-low` | -                     | `security-reviewer` |
+| **Build**          | -                       | `debugger`            | -                   |
+| **TDD**            | -                       | `test-engineer`       | -                   |
+| **Code Review**    | -                       | -                     | `code-reviewer`     |
+| **Data Analysis** | -                       | `scientist`           | `scientist-high`    |
+| **Git**            | -                       | `git-master`          | -                   |
+| **Simplification** | -                       | -                     | `code-simplifier`   |
 
 ### Agent Selection Guide
 
-| Task Type | Best Agent | Model |
-| ---------- | ---------- | ----- |
-| Codebase discovery and file mapping | `explore` | haiku |
-| Requirements analysis | `analyst` | opus |
-| System architecture and interfaces | `architect` | opus |
-| Strategic planning | `planner` | opus |
-| Plan or design critique | `critic` | opus |
-| Feature implementation | `executor` | sonnet |
-| Debugging and build errors | `debugger` | sonnet |
-| Completion verification | `verifier` | sonnet |
-| Evidence-driven tracing | `tracer` | sonnet |
-| UI component design | `designer` | sonnet |
-| Documentation | `writer` | haiku |
-| External docs/API research | `document-specialist` | sonnet |
-| Interactive CLI/service validation | `qa-tester` | sonnet |
-| Test strategy and coverage | `test-engineer` | sonnet |
-| Security review | `security-reviewer` | sonnet |
-| Code review | `code-reviewer` | opus |
-| Data analysis and statistics | `scientist` | sonnet |
-| Git operations | `git-master` | sonnet |
-| Code simplification | `code-simplifier` | opus |
+| Task Type                      | Best Agent                                                             | Model  |
+| ------------------------------ | ---------------------------------------------------------------------- | ------ |
+| Quick code lookup              | `explore`                                                              | haiku  |
+| Find files/patterns            | `explore`                                                              | haiku  |
+| Complex architectural search   | `explore-high`                                                         | opus   |
+| Simple code change             | `executor-low`                                                         | haiku  |
+| Feature implementation         | `executor`                                                             | sonnet |
+| Complex refactoring            | `executor-high`                                                        | opus   |
+| Debug simple issue             | `architect-low`                                                        | haiku  |
+| Debug complex issue            | `architect`                                                            | opus   |
+| UI component                   | `designer`                                                             | sonnet |
+| Complex UI system              | `designer-high`                                                        | opus   |
+| Write docs/comments            | `writer`                                                               | haiku  |
+| Research docs/APIs             | `document-specialist` (repo docs first; optional Context Hub / `chub`) | sonnet |
+| Analyze images/diagrams        | `vision`                                                               | sonnet |
+| Strategic planning             | `planner`                                                              | opus   |
+| Review/critique plan           | `critic`                                                               | opus   |
+| Pre-planning analysis          | `analyst`                                                              | opus   |
+| Test CLI interactively         | `qa-tester`                                                            | sonnet |
+| Evidence-driven causal tracing | `tracer`                                                               | sonnet |
+| Security review                | `security-reviewer`                                                    | sonnet |
+| Quick security scan            | `security-reviewer-low`                                                | haiku  |
+| Fix build errors               | `debugger`                                                             | sonnet |
+| Simple build fix               | `debugger` (model=haiku)                                               | haiku  |
+| TDD workflow                   | `test-engineer`                                                        | sonnet |
+| Quick test suggestions         | `test-engineer` (model=haiku)                                          | haiku  |
+| Code review                    | `code-reviewer`                                                        | opus   |
+| Quick code check               | `code-reviewer` (model=haiku)                                          | haiku  |
+| Data analysis/stats            | `scientist`                                                            | sonnet |
+| Quick data inspection          | `scientist` (model=haiku)                                              | haiku  |
+| Deep data analysis            | `scientist-high`                                                       | opus   |
+| Git operations                 | `git-master`                                                           | sonnet |
+| Code simplification            | `code-simplifier`                                                      | opus   |
 
 ---
 
@@ -833,7 +865,7 @@ Fail-closed invariants: a malformed ledger entry, an amended original that is st
 
 ## Named autopilot stage profiles (v1)
 
-A named profile is selected only by `/autopilot --workflow <name> <task>`; it is not a dynamic slash command, prompt alias, mode, plugin, filename, or independent state identity. Existing `/autopilot <task>` behavior remains the legacy no-profile path.
+A named profile is selected only by `/oh-my-claudecode:autopilot --workflow <name> <task>`; it is not a dynamic slash command, prompt alias, mode, plugin, filename, or independent state identity. Existing `/oh-my-claudecode:autopilot <task>` behavior remains the legacy no-profile path.
 
 Named profiles require Linux with the `flock` utility in v1. Their authenticated transcript boundary depends on Linux no-follow file-descriptor traversal and their recoverable mutation lock depends on kernel advisory locking; unsupported environments reject explicit `--workflow` activation before state mutation while legacy autopilot remains supported.
 
@@ -869,7 +901,7 @@ Autopilot continues to own cancel, resume, cleanup, state inspection, HUD, and S
 
 V1 deliberately defers `stageModels` and all model/provider/role routing, inline/no-spawn execution, dynamic commands/modes/state files, arbitrary stages/prompts/plugins and control-flow extensions, and the separate custom-skill inline-array frontmatter parser mismatch. See [ADR 03487](./adr/03487-named-autopilot-stage-profiles.md) for the decision record.
 
-## Skills (37 Total)
+## Skills (39 Total)
 
 Includes bundled workflow, utility, domain, and compatibility skills. Runtime truth comes from the builtin skill loader scanning `skills/*/SKILL.md` and expanding aliases declared in frontmatter.
 
@@ -880,6 +912,7 @@ Marketplace/plugin installs compact the native plugin `skills/*/SKILL.md` files 
 | Skill                     | Description                                                                    | Manual Command                              |
 | ------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------- |
 | `ai-slop-cleaner`         | Anti-slop cleanup workflow with optional reviewer-only `--review` pass        | `/oh-my-claudecode:ai-slop-cleaner`         |
+| `agent-doc-discipline`    | Writing-time discipline for agent-facing documents: checkable rules with a why, steps first, one meaning one home | `/oh-my-claudecode:agent-doc-discipline` |
 | `ask`                     | Ask Claude, Codex, Gemini, Antigravity, Grok, or Cursor via local CLI          | `/oh-my-claudecode:ask`                     |
 | `ask-navigator`           | Shipyard navigator: chart foggy efforts into decision-ticket maps, hand off to launch | `/oh-my-claudecode:ask-navigator`    |
 | `autopilot`               | Full autonomous execution from idea to working code                            | `/oh-my-claudecode:autopilot`               |
@@ -888,11 +921,12 @@ Marketplace/plugin installs compact the native plugin `skills/*/SKILL.md` files 
 | `cancel-ralph`            | Deprecated compatibility alias for `cancel`                                   | `/oh-my-claudecode:cancel-ralph`            |
 | `configure-notifications` | Configure Telegram, Discord, and Slack notification integrations               | `/oh-my-claudecode:configure-notifications` |
 | `debug`                   | Diagnose the current OMC session or repository state                           | `/oh-my-claudecode:debug`                   |
-| `deep-interview`          | Socratic deep interview with ambiguity gating                                  | `/deep-interview`                           |
+| `deep-interview`          | Socratic deep interview with ambiguity gating                                  | `/oh-my-claudecode:deep-interview`                |
 | `deepinit`                | Generate hierarchical AGENTS.md documentation                                  | `/oh-my-claudecode:deepinit`                |
 | `drydock`                 | Shipyard harness scaffold: 4-pillar shared environment, --check drift audit    | `/oh-my-claudecode:drydock`                 |
 | `execute`                 | Carry an approved task through to working, verified code                       | `/oh-my-claudecode:execute`                |
 | `external-context`        | Parallel document-specialist research                                          | `/oh-my-claudecode:external-context`       |
+| `harbor`                  | Shipyard intake gate: verify external issues and PRs, hand a signature docket  | `/oh-my-claudecode:harbor`                  |
 | `hud`                     | Configure HUD/statusline                                                        | `/oh-my-claudecode:hud`                     |
 | `launch`                  | Shipyard governed delivery pipeline: spec, tickets, frontier execution          | `/oh-my-claudecode:launch`                  |
 | `loft`                    | Shipyard shape-before-steel discipline: throwaway artifacts answer design questions | `/oh-my-claudecode:loft`              |
@@ -923,11 +957,12 @@ Marketplace/plugin installs compact the native plugin `skills/*/SKILL.md` files 
 
 ## Slash Commands
 
-The 5.3.0 package ships 21 command files. Most installed skills are exposed as `/oh-my-claudecode:<skill-name>`. Deep Interview is intentionally documented with the short `/deep-interview` path because that path receives OMC's rendered runtime threshold guidance before the interview starts. The skills table above is the full runtime-backed list, including frontmatter aliases; the commands below list shipped command files and direct skill entrypoints. Compatibility keyword modes like `deep-analyze` and `tdd` are prompt-triggered behaviors, not standalone slash commands. OMC's manual compaction helper is plugin-scoped as `/oh-my-claudecode:compact`; bare `/compact` remains Claude Code's native command and is not shadowed by OMC. The helper preserves the user's note and instructs them to run bare `/compact`; OMC does not invoke native compaction itself because Claude Code's built-in `/compact` is not a prompt skill.
+Most installed skills are exposed as `/oh-my-claudecode:<registered-name>`. The plugin ships 21 command files alongside the 39 skill entrypoints listed above; the commands below list both surfaces. Compatibility keyword modes like `deep-analyze` and `tdd` are prompt-triggered behaviors, not standalone slash commands. OMC's manual compaction helper is plugin-scoped as `/oh-my-claudecode:compact`; bare `/compact` remains Claude Code's native command and is not shadowed by OMC. The helper preserves the user's note and instructs them to run bare `/compact`; OMC does not invoke native compaction itself because Claude Code's built-in `/compact` is not a prompt skill.
 
 | Command                                                  | Description                                                                                   |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `/oh-my-claudecode:ai-slop-cleaner <target>`             | Run the anti-slop cleanup workflow (`--review` for reviewer-only pass)                        |
+| `/oh-my-claudecode:agent-doc-discipline`                 | Apply the writing-time discipline for agent-facing documents                                   |
 | `/oh-my-claudecode:ask <claude\|codex\|gemini\|antigravity\|grok\|cursor> <prompt>` | Route a prompt through the selected advisor CLI and capture an ask artifact                   |
 | `/oh-my-claudecode:ask-navigator <idea\|map>`            | Chart a foggy effort into a map of decision tickets (or work the open map), then hand off to launch |
 | `/oh-my-claudecode:autopilot <task>`                     | Full autonomous execution                                                                     |
@@ -941,6 +976,7 @@ The 5.3.0 package ships 21 command files. Most installed skills are exposed as `
 | `/oh-my-claudecode:deepinit [path]`                      | Index codebase with hierarchical AGENTS.md files                                              |
 | `/oh-my-claudecode:execute <task>`                      | Carry an approved task through to working, verified code                                      |
 | `/oh-my-claudecode:external-context <topic>`             | Run parallel document-specialist research                                                     |
+| `/oh-my-claudecode:harbor [sweep\|look at #N\|what's ready?]` | Sweep external issues and PRs, verify claims, hand a signature docket                    |
 | `/oh-my-claudecode:hud [setup\|minimal\|focused\|full\|status]` | Configure HUD/statusline                                                               |
 | `/oh-my-claudecode:drydock [--check]`                   | Lay the shipyard harness keel in a repo (5 surfaces); --check audits drift                     |
 | `/oh-my-claudecode:launch <brief\|spec-path> [--serial]` | Run the shipyard governed delivery pipeline (spec -> tickets -> frontier)                      |
@@ -980,6 +1016,8 @@ handoff: .omc/specs/deep-interview-{slug}.md
 ```
 
 When present, OMC appends a standardized **Skill Pipeline** section to the rendered skill prompt so the current stage, handoff artifact, and explicit next `Skill("oh-my-claudecode:...")` invocation are carried forward consistently.
+
+Pipeline metadata may use on-disk directory keys such as `plan`; invoke the registered workflow as `/oh-my-claudecode:omc-plan` (and use `/oh-my-claudecode:omc-review` for the review workflow).
 
 ### Skills 2.0 Compatibility (MVP)
 
@@ -1369,11 +1407,12 @@ Use Claude Code's plugin management:
 /plugin uninstall oh-my-claudecode@oh-my-claudecode
 ```
 
-Or manually remove the installed files:
+Or remove only files left by an older standalone OMC install:
 
 ```bash
-rm ~/.claude/agents/{explore,analyst,planner,architect,debugger,executor,verifier,tracer,security-reviewer,code-reviewer,test-engineer,designer,writer,qa-tester,scientist,git-master,document-specialist,code-simplifier,critic}.md
-rm ~/.claude/commands/{analyze,autopilot,deepsearch,plan,review,execute,team}.md
+# Leave Claude Code native commands untouched; OMC uses `omc-plan`/`omc-review`.
+rm ~/.claude/agents/{architect,document-specialist,explore,designer,writer,vision,critic,analyst,executor,qa-tester}.md
+rm ~/.claude/commands/{analyze,autopilot,deepsearch}.md
 ```
 
 ---
