@@ -677,8 +677,30 @@ function releaseRecoveryClaim(path, owner) {
         return;
     try {
         const current = readRecoveryClaim(path);
-        if (current && sameRecoveryClaim(current, owner))
-            unlinkSync(path);
+        if (current && sameRecoveryClaim(current, owner)) {
+            // A failed unlink here (Windows: transient EBUSY/EPERM from a
+            // lingering handle or AV scan) leaves the claim artifact on disk
+            // permanently, poisoning every future recoverEmergencyStateFile call
+            // for this path as "unattributable" (fail-closed). Retry within a
+            // short budget before giving up, matching the retry discipline used
+            // for lock/identity-probe contention elsewhere in this file.
+            for (let attempt = 0; attempt < 10; attempt += 1) {
+                try {
+                    unlinkSync(path);
+                    break;
+                }
+                catch (error) {
+                    if (error.code === 'ENOENT')
+                        break;
+                    if (attempt === 9) {
+                        if (process.env.OMC_LOCK_DEBUG)
+                            console.error(`[lock-debug] releaseRecoveryClaim unlink-failed-after-retries ${path} ${error.code}`);
+                        break;
+                    }
+                    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+                }
+            }
+        }
     }
     catch { /* best-effort exact-owner release */ }
     releaseMutationLock(lock);
@@ -904,17 +926,32 @@ function hasUnattributableRecoveryClaimArtifact(filePath, recoveryClaim) {
     const base = filePath.slice(directory.length + 1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const tempPattern = new RegExp(`^${base}\\.emergency-recovery\\.claim\\.\\d+\\.\\d+\\.[0-9a-f-]{36}\\.tmp$`, 'i');
     try {
-        if (readdirSync(directory).some((name) => tempPattern.test(name)))
+        if (readdirSync(directory).some((name) => tempPattern.test(name))) {
+            if (process.env.OMC_LOCK_DEBUG)
+                console.error(`[lock-debug] hasUnattributable temp-match ${filePath}`);
             return true;
+        }
         const claimPath = `${filePath}.emergency-recovery.claim`;
-        if (!existsSync(claimPath))
-            return recoveryClaim !== undefined;
-        if (!recoveryClaim)
+        if (!existsSync(claimPath)) {
+            const result = recoveryClaim !== undefined;
+            if (result && process.env.OMC_LOCK_DEBUG)
+                console.error(`[lock-debug] hasUnattributable no-claim-file-but-recoveryClaim-set ${filePath}`);
+            return result;
+        }
+        if (!recoveryClaim) {
+            if (process.env.OMC_LOCK_DEBUG)
+                console.error(`[lock-debug] hasUnattributable claim-file-exists-no-recoveryClaim ${filePath}`);
             return true;
+        }
         const current = readRecoveryClaim(claimPath);
-        return !current || !sameRecoveryClaim(current, recoveryClaim);
+        const result = !current || !sameRecoveryClaim(current, recoveryClaim);
+        if (result && process.env.OMC_LOCK_DEBUG)
+            console.error(`[lock-debug] hasUnattributable claim-mismatch ${filePath} current=${JSON.stringify(current)} recoveryClaim=${JSON.stringify(recoveryClaim)}`);
+        return result;
     }
-    catch {
+    catch (error) {
+        if (process.env.OMC_LOCK_DEBUG)
+            console.error(`[lock-debug] hasUnattributable caught-error ${filePath} ${error?.message}`);
         return true;
     }
 }
@@ -974,18 +1011,27 @@ export function recoverEmergencyStateFile(filePath, options) {
     // Prefilter before taking a claim so stale shared-home artifacts cannot be
     // reclaimed solely because their process owner is dead. Revalidate while
     // holding our own claim below.
-    if (!sharedRecoveryArtifactsAuthorized(filePath, authorizeState))
+    if (!sharedRecoveryArtifactsAuthorized(filePath, authorizeState)) {
+        if (process.env.OMC_LOCK_DEBUG)
+            console.error(`[lock-debug] recoverEmergency prefilter-false ${filePath}`);
         return false;
+    }
     if (!existsSync(journalPath)) {
         if (!authorizeState)
             return reconcileEmergencyPublicationTemps(filePath);
         const claimPath = `${filePath}.emergency-recovery.claim`;
         const claim = acquireRecoveryClaim(claimPath);
-        if (!claim)
+        if (!claim) {
+            if (process.env.OMC_LOCK_DEBUG)
+                console.error(`[lock-debug] recoverEmergency no-journal-claim-null ${filePath}`);
             return false;
+        }
         try {
-            if (existsSync(journalPath) || !sharedRecoveryArtifactsAuthorized(filePath, authorizeState, claim))
+            if (existsSync(journalPath) || !sharedRecoveryArtifactsAuthorized(filePath, authorizeState, claim)) {
+                if (process.env.OMC_LOCK_DEBUG)
+                    console.error(`[lock-debug] recoverEmergency no-journal-revalidate-false ${filePath}`);
                 return false;
+            }
             return reconcileEmergencyPublicationTemps(filePath, authorizeState);
         }
         finally {

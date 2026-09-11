@@ -25362,7 +25362,21 @@ function releaseRecoveryClaim(path13, owner) {
   if (!lock) return;
   try {
     const current = readRecoveryClaim(path13);
-    if (current && sameRecoveryClaim(current, owner)) (0, import_fs14.unlinkSync)(path13);
+    if (current && sameRecoveryClaim(current, owner)) {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        try {
+          (0, import_fs14.unlinkSync)(path13);
+          break;
+        } catch (error2) {
+          if (error2.code === "ENOENT") break;
+          if (attempt === 9) {
+            if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] releaseRecoveryClaim unlink-failed-after-retries ${path13} ${error2.code}`);
+            break;
+          }
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+        }
+      }
+    }
   } catch {
   }
   releaseMutationLock(lock);
@@ -25515,13 +25529,26 @@ function hasUnattributableRecoveryClaimArtifact(filePath, recoveryClaim) {
   const base = filePath.slice(directory.length + 1).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const tempPattern = new RegExp(`^${base}\\.emergency-recovery\\.claim\\.\\d+\\.\\d+\\.[0-9a-f-]{36}\\.tmp$`, "i");
   try {
-    if ((0, import_fs14.readdirSync)(directory).some((name) => tempPattern.test(name))) return true;
+    if ((0, import_fs14.readdirSync)(directory).some((name) => tempPattern.test(name))) {
+      if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] hasUnattributable temp-match ${filePath}`);
+      return true;
+    }
     const claimPath = `${filePath}.emergency-recovery.claim`;
-    if (!(0, import_fs14.existsSync)(claimPath)) return recoveryClaim !== void 0;
-    if (!recoveryClaim) return true;
+    if (!(0, import_fs14.existsSync)(claimPath)) {
+      const result2 = recoveryClaim !== void 0;
+      if (result2 && process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] hasUnattributable no-claim-file-but-recoveryClaim-set ${filePath}`);
+      return result2;
+    }
+    if (!recoveryClaim) {
+      if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] hasUnattributable claim-file-exists-no-recoveryClaim ${filePath}`);
+      return true;
+    }
     const current = readRecoveryClaim(claimPath);
-    return !current || !sameRecoveryClaim(current, recoveryClaim);
-  } catch {
+    const result = !current || !sameRecoveryClaim(current, recoveryClaim);
+    if (result && process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] hasUnattributable claim-mismatch ${filePath} current=${JSON.stringify(current)} recoveryClaim=${JSON.stringify(recoveryClaim)}`);
+    return result;
+  } catch (error2) {
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] hasUnattributable caught-error ${filePath} ${error2?.message}`);
     return true;
   }
 }
@@ -25566,14 +25593,23 @@ function recoverEmergencyStateFile(filePath, options) {
   } : void 0);
   const journalPath = emergencyJournalPath(filePath);
   if (!(0, import_fs14.existsSync)(filePath) && !(0, import_fs14.existsSync)(journalPath)) return true;
-  if (!sharedRecoveryArtifactsAuthorized(filePath, authorizeState)) return false;
+  if (!sharedRecoveryArtifactsAuthorized(filePath, authorizeState)) {
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] recoverEmergency prefilter-false ${filePath}`);
+    return false;
+  }
   if (!(0, import_fs14.existsSync)(journalPath)) {
     if (!authorizeState) return reconcileEmergencyPublicationTemps(filePath);
     const claimPath2 = `${filePath}.emergency-recovery.claim`;
     const claim2 = acquireRecoveryClaim(claimPath2);
-    if (!claim2) return false;
+    if (!claim2) {
+      if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] recoverEmergency no-journal-claim-null ${filePath}`);
+      return false;
+    }
     try {
-      if ((0, import_fs14.existsSync)(journalPath) || !sharedRecoveryArtifactsAuthorized(filePath, authorizeState, claim2)) return false;
+      if ((0, import_fs14.existsSync)(journalPath) || !sharedRecoveryArtifactsAuthorized(filePath, authorizeState, claim2)) {
+        if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] recoverEmergency no-journal-revalidate-false ${filePath}`);
+        return false;
+      }
       return reconcileEmergencyPublicationTemps(filePath, authorizeState);
     } finally {
       releaseRecoveryClaim(claimPath2, claim2);
