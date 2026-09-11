@@ -559,7 +559,8 @@ function publishEmergencyFileExclusive(path: string, content: string): boolean {
     linkSync(tempPath, path);
     unlinkSync(tempPath);
     return true;
-  } catch {
+  } catch (error) {
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] publishEmergencyFileExclusive failed path=${path} tempPath=${tempPath} pathExists=${existsSync(path)} err=${(error as NodeJS.ErrnoException)?.code} ${(error as Error)?.message}`);
     return false;
   } finally {
     if (fd !== undefined) { try { closeSync(fd); } catch { /* best-effort descriptor cleanup */ } }
@@ -576,21 +577,23 @@ function acquireRecoveryClaim(path: string, attempts = 50): MutationLockOwner | 
     // Transient: the identity probe can fail under the same load that
     // causes SQLite lock contention. Retry within budget rather than
     // failing closed on the first transient probe failure.
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim processStart-null ${path}`);
     if (attempts <= 1) return null;
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
     return acquireRecoveryClaim(path, attempts - 1);
   }
   const lock = acquireLockAt(`${path}.recovery.guard`, attempts);
-  if (!lock || 'unlocked' in lock) return null;
+  if (!lock || 'unlocked' in lock) { if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim guard-lock-null ${path}`); return null; }
   const existing = readRecoveryClaim(path);
   if (existing) {
     const live = ownerLive(existing);
-    if (live === null || live) { releaseMutationLock(lock); return null; }
-    try { unlinkSync(path); } catch { releaseMutationLock(lock); return null; }
+    if (live === null || live) { releaseMutationLock(lock); if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim existing-live=${live} ${path}`); return null; }
+    try { unlinkSync(path); } catch (error) { releaseMutationLock(lock); if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim existing-unlink-failed ${path} ${(error as NodeJS.ErrnoException).code}`); return null; }
   }
   const owner: MutationLockOwner = { version: 1, pid: process.pid, processStart, createdAt: new Date().toISOString(), nonce: randomUUID() };
   if (!publishEmergencyFileExclusive(path, JSON.stringify(owner))) {
     releaseMutationLock(lock);
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim publish-failed ${path}`);
     return null;
   }
   return owner;

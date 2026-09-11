@@ -34632,7 +34632,8 @@ function publishEmergencyFileExclusive(path27, content) {
     (0, import_fs20.linkSync)(tempPath, path27);
     (0, import_fs20.unlinkSync)(tempPath);
     return true;
-  } catch {
+  } catch (error2) {
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] publishEmergencyFileExclusive failed path=${path27} tempPath=${tempPath} pathExists=${(0, import_fs20.existsSync)(path27)} err=${error2?.code} ${error2?.message}`);
     return false;
   } finally {
     if (fd !== void 0) {
@@ -34653,29 +34654,36 @@ function publishEmergencyFileExclusive(path27, content) {
 function acquireRecoveryClaim(path27, attempts = 50) {
   const processStart = ownProcessStartIdentity();
   if (!processStart) {
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim processStart-null ${path27}`);
     if (attempts <= 1) return null;
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
     return acquireRecoveryClaim(path27, attempts - 1);
   }
   const lock = acquireLockAt(`${path27}.recovery.guard`, attempts);
-  if (!lock || "unlocked" in lock) return null;
+  if (!lock || "unlocked" in lock) {
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim guard-lock-null ${path27}`);
+    return null;
+  }
   const existing = readRecoveryClaim(path27);
   if (existing) {
     const live = ownerLive(existing);
     if (live === null || live) {
       releaseMutationLock(lock);
+      if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim existing-live=${live} ${path27}`);
       return null;
     }
     try {
       (0, import_fs20.unlinkSync)(path27);
-    } catch {
+    } catch (error2) {
       releaseMutationLock(lock);
+      if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim existing-unlink-failed ${path27} ${error2.code}`);
       return null;
     }
   }
   const owner = { version: 1, pid: process.pid, processStart, createdAt: (/* @__PURE__ */ new Date()).toISOString(), nonce: (0, import_crypto8.randomUUID)() };
   if (!publishEmergencyFileExclusive(path27, JSON.stringify(owner))) {
     releaseMutationLock(lock);
+    if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] acquireRecoveryClaim publish-failed ${path27}`);
     return null;
   }
   return owner;
