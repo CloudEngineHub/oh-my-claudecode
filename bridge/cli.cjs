@@ -34626,10 +34626,14 @@ function publishEmergencyFileExclusive(path27, content) {
     }
   }
 }
-function acquireRecoveryClaim(path27) {
+function acquireRecoveryClaim(path27, attempts = 50) {
   const processStart = ownProcessStartIdentity();
-  if (!processStart) return null;
-  const lock = acquireLockAt(`${path27}.recovery.guard`);
+  if (!processStart) {
+    if (attempts <= 1) return null;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    return acquireRecoveryClaim(path27, attempts - 1);
+  }
+  const lock = acquireLockAt(`${path27}.recovery.guard`, attempts);
   if (!lock || "unlocked" in lock) return null;
   const existing = readRecoveryClaim(path27);
   if (existing) {

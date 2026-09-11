@@ -549,10 +549,17 @@ function publishEmergencyFileExclusive(path: string, content: string): boolean {
   }
 }
 
-function acquireRecoveryClaim(path: string): MutationLockOwner | null {
+function acquireRecoveryClaim(path: string, attempts = 50): MutationLockOwner | null {
   const processStart = ownProcessStartIdentity();
-  if (!processStart) return null;
-  const lock = acquireLockAt(`${path}.recovery.guard`);
+  if (!processStart) {
+    // Transient: the identity probe can fail under the same load that
+    // causes SQLite lock contention. Retry within budget rather than
+    // failing closed on the first transient probe failure.
+    if (attempts <= 1) return null;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    return acquireRecoveryClaim(path, attempts - 1);
+  }
+  const lock = acquireLockAt(`${path}.recovery.guard`, attempts);
   if (!lock || 'unlocked' in lock) return null;
   const existing = readRecoveryClaim(path);
   if (existing) {

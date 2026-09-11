@@ -78,8 +78,8 @@ export function acquireStateFileLockSync(filePath, attempts = 50, requireExclusi
 export function releaseStateFileLockSync(lock) { if (!lock || lock.unlocked) return; if (lock.depth > 1) { lock.depth -= 1; return; } localLocks.delete(lock.key); try { lock.db.exec('BEGIN IMMEDIATE'); const row = lock.db.prepare('SELECT version, pid, process_start, created_at, nonce FROM state_mutation_locks WHERE lock_key = ?').get(lock.key); const current = readOwner(lock.lockPath); if (row && row.version === 1 && row.pid === lock.owner.pid && row.process_start === lock.owner.processStart && row.nonce === lock.owner.nonce) lock.db.prepare('DELETE FROM state_mutation_locks WHERE lock_key = ?').run(lock.key); if (sameOwner(current === 'absent' ? null : current, lock.owner)) unlinkSync(lock.lockPath); lock.db.exec('COMMIT'); } catch { try { lock.db.exec('ROLLBACK'); } catch {} } finally { try { lock.db.close(); } catch {} } }
 export function withStateFileLockSync(filePath, callback, requireExclusive = false) { const lock = acquireStateFileLockSync(filePath, 50, requireExclusive); if (!lock) return { acquired: false, value: undefined }; try { return { acquired: true, value: callback() }; } finally { releaseStateFileLockSync(lock); } }
 
-export function acquireRecoveryClaim(path) {
-  const lock = acquireStateFileLockSync(path, 50, true);
+export function acquireRecoveryClaim(path, attempts = 50) {
+  const lock = acquireStateFileLockSync(path, attempts, true);
   if (!lock) return null;
   const existing = readOwner(path);
   if (existing !== 'absent') {
@@ -87,7 +87,15 @@ export function acquireRecoveryClaim(path) {
     try { unlinkSync(path); } catch { releaseStateFileLockSync(lock); return null; }
   }
   const processStart = ownProcessStartIdentity();
-  if (!processStart || processStart === 'absent') { releaseStateFileLockSync(lock); return null; }
+  if (!processStart || processStart === 'absent') {
+    releaseStateFileLockSync(lock);
+    // Transient: the identity probe can fail under the same load that
+    // causes SQLite lock contention. Retry within budget rather than
+    // failing closed on the first transient probe failure.
+    if (attempts <= 1) return null;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    return acquireRecoveryClaim(path, attempts - 1);
+  }
   const owner = { version: 1, pid: process.pid, processStart, createdAt: new Date().toISOString(), nonce: randomUUID() };
   if (!publishOwner(path, owner)) { releaseStateFileLockSync(lock); return null; }
   return owner;
