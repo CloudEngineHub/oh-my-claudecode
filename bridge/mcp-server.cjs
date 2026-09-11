@@ -24845,6 +24845,13 @@ var import_path14 = require("path");
 var import_crypto4 = require("crypto");
 var import_better_sqlite3 = __toESM(require("better-sqlite3"), 1);
 var localLocks = /* @__PURE__ */ new Map();
+var ownProcessStartIdentityCache;
+function ownProcessStartIdentity() {
+  if (ownProcessStartIdentityCache === void 0) {
+    ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
+  }
+  return ownProcessStartIdentityCache;
+}
 function sqliteConstructor() {
   return import_better_sqlite3.default;
 }
@@ -24956,8 +24963,12 @@ function acquireLockAt(path13, attempts = 50) {
     return held;
   }
   const db = openMutationDb(path13);
-  if (!db) return null;
-  const processStart = getProcessStartIdentitySync(process.pid);
+  if (!db) {
+    if (attempts <= 1) return null;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    return acquireLockAt(path13, attempts - 1);
+  }
+  const processStart = ownProcessStartIdentity();
   if (!processStart) {
     try {
       db.close();
@@ -25020,7 +25031,7 @@ function acquireLockAt(path13, attempts = 50) {
     const lock = { db, key, path: path13, owner, depth: 1 };
     localLocks.set(key, lock);
     return lock;
-  } catch {
+  } catch (error2) {
     try {
       db.exec("ROLLBACK");
     } catch {
@@ -25028,6 +25039,11 @@ function acquireLockAt(path13, attempts = 50) {
     try {
       db.close();
     } catch {
+    }
+    const code = error2?.code;
+    if ((code === "SQLITE_BUSY" || code === "SQLITE_LOCKED") && attempts > 1) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+      return acquireLockAt(path13, attempts - 1);
     }
     return null;
   }

@@ -13,6 +13,19 @@ import { getOmcRoot, probeGitTopLevel, resolveStatePath, resolveSessionStatePath
 import { getProcessStartIdentitySync } from '../platform/process-utils.js';
 import { atomicWriteJsonSync } from './atomic-write.js';
 const localLocks = new Map();
+// The current process's own start identity is immutable for the process
+// lifetime. acquireLockAt spawns a real subprocess (ps on Darwin,
+// powershell on Windows) to compute it; without this cache every lock
+// acquisition pays that subprocess cost, which under sequential/heavy
+// Windows test runs can exceed the identity-probe timeout and make
+// acquireLockAt return null (fail-closed), silently dropping writes.
+let ownProcessStartIdentityCache;
+function ownProcessStartIdentity() {
+    if (ownProcessStartIdentityCache === undefined) {
+        ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
+    }
+    return ownProcessStartIdentityCache;
+}
 function sqliteConstructor() {
     return Database;
 }
@@ -138,9 +151,16 @@ function acquireLockAt(path, attempts = 50) {
         return held;
     }
     const db = openMutationDb(path);
-    if (!db)
-        return null;
-    const processStart = getProcessStartIdentitySync(process.pid);
+    if (!db) {
+        // Transient: sidecar validation can observe a mid-write WAL/SHM state
+        // from a concurrent owner. Retry with the same backoff as contention,
+        // rather than failing closed on a race that isn't a real integrity issue.
+        if (attempts <= 1)
+            return null;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+        return acquireLockAt(path, attempts - 1);
+    }
+    const processStart = ownProcessStartIdentity();
     if (!processStart) {
         try {
             db.close();
@@ -207,7 +227,7 @@ function acquireLockAt(path, attempts = 50) {
         localLocks.set(key, lock);
         return lock;
     }
-    catch {
+    catch (error) {
         try {
             db.exec('ROLLBACK');
         }
@@ -216,6 +236,15 @@ function acquireLockAt(path, attempts = 50) {
             db.close();
         }
         catch { /* best effort */ }
+        // SQLITE_BUSY/SQLITE_LOCKED are transient contention from a concurrent
+        // owner mid-transaction, not an integrity failure; retry within budget
+        // the same way row/artifact contention does. Any other error still
+        // fails closed immediately.
+        const code = error?.code;
+        if ((code === 'SQLITE_BUSY' || code === 'SQLITE_LOCKED') && attempts > 1) {
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+            return acquireLockAt(path, attempts - 1);
+        }
         return null;
     }
 }

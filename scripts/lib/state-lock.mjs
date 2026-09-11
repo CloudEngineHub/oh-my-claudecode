@@ -9,6 +9,16 @@ let Database = null;
 try { const loaded = require('better-sqlite3'); Database = loaded.default ?? loaded; } catch {}
 const localLocks = new Map();
 const recoveryLocks = new Map();
+// The current process's own start identity is immutable for the process
+// lifetime; without this cache every lock acquisition pays a fresh
+// subprocess spawn (ps on Darwin, powershell on Windows), which under
+// sequential/heavy test runs can exceed the identity-probe timeout and
+// silently fail-close the write.
+let ownIdentityCache;
+function ownProcessStartIdentity() {
+  if (ownIdentityCache === undefined) ownIdentityCache = processStartIdentity(process.pid);
+  return ownIdentityCache;
+}
 
 function writeAllSync(fd, content, label) {
   const bytes = Buffer.from(content, 'utf8');
@@ -50,9 +60,9 @@ export function acquireStateFileLockSync(filePath, attempts = 50, requireExclusi
   void requireExclusive;
   const lockPath = `${filePath}.mutation.lock`; mkdirSync(dirname(lockPath), { recursive: true });
   const key = canonicalKey(lockPath); const held = localLocks.get(key); if (held) { held.depth += 1; return held; }
-  const processStart = processStartIdentity(process.pid); if (!processStart || processStart === 'absent') return null;
+  const processStart = ownProcessStartIdentity(); if (!processStart || processStart === 'absent') return null;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const db = openMutationDb(lockPath); if (!db) return null;
+    const db = openMutationDb(lockPath); if (!db) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; }
     const owner = { version: 1, pid: process.pid, processStart, createdAt: new Date().toISOString(), nonce: randomUUID() };
     try {
       db.exec('BEGIN IMMEDIATE');
@@ -60,7 +70,7 @@ export function acquireStateFileLockSync(filePath, attempts = 50, requireExclusi
       if (row) { if (row.version !== 1 || !Number.isSafeInteger(row.pid) || typeof row.process_start !== 'string' || typeof row.created_at !== 'string' || typeof row.nonce !== 'string') { db.exec('ROLLBACK'); db.close(); return null; } const live = ownerLive({ pid: row.pid, processStart: row.process_start }); if (live === null || live) { db.exec('ROLLBACK'); db.close(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } db.prepare('DELETE FROM state_mutation_locks WHERE lock_key = ?').run(key); }
       const artifact = readOwner(lockPath); if (artifact !== 'absent') { if (!artifact) { db.exec('ROLLBACK'); db.close(); console.error(`[omc-lock] state_mutation_lock_unverifiable: ${lockPath}`); return null; } const live = ownerLive(artifact); if (live === null || live) { db.exec('ROLLBACK'); db.close(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } try { unlinkSync(lockPath); } catch { db.exec('ROLLBACK'); db.close(); return null; } }
       db.prepare('INSERT INTO state_mutation_locks VALUES (?,1,?,?,?,?)').run(key, owner.pid, owner.processStart, owner.createdAt, owner.nonce); if (!publishOwner(lockPath, owner)) throw new Error('owner publication failed'); db.exec('COMMIT'); const lock = { db, lockPath, owner, key, depth: 1 }; localLocks.set(key, lock); return lock;
-    } catch { try { db.exec('ROLLBACK'); } catch {} try { db.close(); } catch {} return null; }
+    } catch (error) { try { db.exec('ROLLBACK'); } catch {} try { db.close(); } catch {} if (error && (error.code === 'SQLITE_BUSY' || error.code === 'SQLITE_LOCKED')) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } return null; }
   }
   return null;
 }
@@ -75,7 +85,7 @@ export function acquireRecoveryClaim(path) {
     if (!existing || ownerLive(existing) !== false) { releaseStateFileLockSync(lock); return null; }
     try { unlinkSync(path); } catch { releaseStateFileLockSync(lock); return null; }
   }
-  const processStart = processStartIdentity(process.pid);
+  const processStart = ownProcessStartIdentity();
   if (!processStart || processStart === 'absent') { releaseStateFileLockSync(lock); return null; }
   const owner = { version: 1, pid: process.pid, processStart, createdAt: new Date().toISOString(), nonce: randomUUID() };
   if (!publishOwner(path, owner)) { releaseStateFileLockSync(lock); return null; }

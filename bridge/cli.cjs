@@ -34158,6 +34158,12 @@ var init_session_id = __esm({
 });
 
 // src/lib/mode-state-io.ts
+function ownProcessStartIdentity() {
+  if (ownProcessStartIdentityCache === void 0) {
+    ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
+  }
+  return ownProcessStartIdentityCache;
+}
 function sqliteConstructor() {
   return import_better_sqlite3.default;
 }
@@ -34269,8 +34275,12 @@ function acquireLockAt(path27, attempts = 50) {
     return held;
   }
   const db = openMutationDb(path27);
-  if (!db) return null;
-  const processStart = getProcessStartIdentitySync(process.pid);
+  if (!db) {
+    if (attempts <= 1) return null;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    return acquireLockAt(path27, attempts - 1);
+  }
+  const processStart = ownProcessStartIdentity();
   if (!processStart) {
     try {
       db.close();
@@ -34333,7 +34343,7 @@ function acquireLockAt(path27, attempts = 50) {
     const lock = { db, key, path: path27, owner, depth: 1 };
     localLocks.set(key, lock);
     return lock;
-  } catch {
+  } catch (error2) {
     try {
       db.exec("ROLLBACK");
     } catch {
@@ -34341,6 +34351,11 @@ function acquireLockAt(path27, attempts = 50) {
     try {
       db.close();
     } catch {
+    }
+    const code = error2?.code;
+    if ((code === "SQLITE_BUSY" || code === "SQLITE_LOCKED") && attempts > 1) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+      return acquireLockAt(path27, attempts - 1);
     }
     return null;
   }
@@ -35440,7 +35455,7 @@ function clearModeStateFile(mode, directory, sessionId, expectedState, cleanupSn
   }
   return success;
 }
-var import_fs20, import_path25, import_crypto8, import_better_sqlite3, localLocks;
+var import_fs20, import_path25, import_crypto8, import_better_sqlite3, localLocks, ownProcessStartIdentityCache;
 var init_mode_state_io = __esm({
   "src/lib/mode-state-io.ts"() {
     "use strict";
