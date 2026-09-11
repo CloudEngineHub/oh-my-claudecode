@@ -531,10 +531,26 @@ function writeEmergencyJournal(path: string, journal: EmergencyMutationJournal, 
   } catch { return false; }
 }
 
+// Windows processStart is formatted as `ticks:<n>` (see
+// getProcessStartIdentitySync); the literal colon is illegal in NTFS
+// filenames and made every linkSync() in publishEmergencyFileExclusive fail
+// with EINVAL. Filename-embedded process-start identities are sanitized
+// through these two functions (encode when building a temp name, decode
+// when parsing one back out of a directory listing) so the pid-reuse
+// staleness check in reconcileEmergencyPublicationTemps keeps working
+// unchanged cross-platform.
+function encodeProcessStartForFilename(processStart: string): string {
+  return processStart.replace(/:/g, '_c_');
+}
+
+function decodeProcessStartFromFilename(encoded: string): string {
+  return encoded.replace(/_c_/g, ':');
+}
+
 function emergencyPublicationTempPath(path: string): string | null {
   const processStart = ownProcessStartIdentity();
   if (!processStart) return null;
-  return `${path}.${process.pid}.${processStart}.${randomUUID()}.tmp`;
+  return `${path}.${process.pid}.${encodeProcessStartForFilename(processStart)}.${randomUUID()}.tmp`;
 }
 
 /** Publishes a complete, durable transaction file without exposing a partial final path. */
@@ -735,15 +751,16 @@ function sameFile(path: string, expected: FileIdentity): boolean {
 function reconcileEmergencyPublicationTemps(filePath: string, authorizeState?: EmergencyStateAuthorization): boolean {
   const directory = dirname(filePath);
   const base = filePath.slice(directory.length + 1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`^${base}\\.emergency-(journal\\.json|recovery\\.claim|quarantine\\.[0-9a-f-]{36}\\.payload)\\.(\\d+)\\.(\\d+)\\.([0-9a-f-]{36})\\.tmp$`, 'i');
+  const pattern = new RegExp(`^${base}\\.emergency-(journal\\.json|recovery\\.claim|quarantine\\.[0-9a-f-]{36}\\.payload)\\.(\\d+)\\.([^.]+)\\.([0-9a-f-]{36})\\.tmp$`, 'i');
   let names: string[];
   try { names = readdirSync(directory); } catch (error) { return (error as NodeJS.ErrnoException).code === 'ENOENT'; }
   for (const name of names) {
     const match = pattern.exec(name);
     if (!match) continue;
     const path = join(directory, name);
+    const matchedProcessStart = decodeProcessStartFromFilename(match[3]);
     const currentStart = processStartIdentity(Number(match[2]));
-    if (currentStart === null || currentStart === match[3]) return false;
+    if (currentStart === null || currentStart === matchedProcessStart) return false;
     const generation = fileIdentity(path);
     try {
       if (!generation) return false;
@@ -757,7 +774,7 @@ function reconcileEmergencyPublicationTemps(filePath: string, authorizeState?: E
           if (!state || typeof state !== 'object' || Array.isArray(state) || !authorizeState(state as Record<string, unknown>)) return false;
         } else {
           const claim = readRecoveryClaim(path);
-          if (!claim || claim.pid !== Number(match[2]) || claim.processStart !== match[3] || claim.nonce !== match[4]) return false;
+          if (!claim || claim.pid !== Number(match[2]) || claim.processStart !== matchedProcessStart || claim.nonce !== match[4]) return false;
         }
       }
       if (!sameFile(path, generation) || stateDigest(readFileSync(path, 'utf8')) !== stateDigest(raw)) return false;
@@ -830,7 +847,7 @@ function recoveryGenerationsAuthorized(
 function hasUnattributableRecoveryClaimArtifact(filePath: string, recoveryClaim?: MutationLockOwner): boolean {
   const directory = dirname(filePath);
   const base = filePath.slice(directory.length + 1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const tempPattern = new RegExp(`^${base}\\.emergency-recovery\\.claim\\.\\d+\\.\\d+\\.[0-9a-f-]{36}\\.tmp$`, 'i');
+  const tempPattern = new RegExp(`^${base}\\.emergency-recovery\\.claim\\.\\d+\\.[^.]+\\.[0-9a-f-]{36}\\.tmp$`, 'i');
   try {
     if (readdirSync(directory).some((name) => tempPattern.test(name))) {
       if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] hasUnattributable temp-match ${filePath}`);
