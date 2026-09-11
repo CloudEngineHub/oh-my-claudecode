@@ -28,14 +28,16 @@ type BetterSqlite3 = import('better-sqlite3').Database;
 type BetterSqlite3Constructor = new (path: string) => BetterSqlite3;
 const localLocks = new Map<string, MutationLock>();
 // The current process's own start identity is immutable for the process
-// lifetime. acquireLockAt spawns a real subprocess (ps on Darwin,
-// powershell on Windows) to compute it; without this cache every lock
-// acquisition pays that subprocess cost, which under sequential/heavy
-// Windows test runs can exceed the identity-probe timeout and make
-// acquireLockAt return null (fail-closed), silently dropping writes.
-let ownProcessStartIdentityCache: string | null | undefined;
+// lifetime once successfully captured. acquireLockAt spawns a real
+// subprocess (ps on Darwin, powershell on Windows) to compute it; caching
+// a successful result avoids paying that subprocess cost on every single
+// lock acquisition. A transient probe failure (subprocess timeout/spawn
+// hiccup under load) is deliberately NOT cached, so the next call retries
+// the real probe instead of permanently fail-closing every subsequent
+// lock acquisition for the rest of the process lifetime.
+let ownProcessStartIdentityCache: string | null = null;
 function ownProcessStartIdentity(): string | null {
-  if (ownProcessStartIdentityCache === undefined) {
+  if (ownProcessStartIdentityCache === null) {
     ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
   }
   return ownProcessStartIdentityCache;
@@ -184,7 +186,17 @@ function acquireLockAt(path: string, attempts = 50): MutationLock | null {
       try { unlinkSync(path); } catch { db.exec('ROLLBACK'); db.close(); return null; }
     }
     db.prepare('INSERT INTO state_mutation_locks (lock_key, version, pid, process_start, created_at, nonce) VALUES (?, 1, ?, ?, ?, ?)').run(key, owner.pid, owner.processStart, owner.createdAt, owner.nonce);
-    if (!publishLockOwner(path, owner)) { db.exec('ROLLBACK'); db.close(); return null; }
+    if (!publishLockOwner(path, owner)) {
+      db.exec('ROLLBACK');
+      db.close();
+      // The lock artifact may have been (re)written by a concurrent owner
+      // between our absent/dead check and this publish (e.g. linkSync sees
+      // EEXIST). This is contention, not corruption; retry within budget
+      // instead of failing closed on the first race.
+      if (attempts <= 1) return null;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+      return acquireLockAt(path, attempts - 1);
+    }
     db.exec('COMMIT');
     const lock = { db, key, path, owner, depth: 1 } as MutationLock;
     localLocks.set(key, lock);
@@ -471,8 +483,8 @@ function sessionOwnerFromStatePath(filePath: string): string | undefined {
 }
 
 function emergencyOwner(): EmergencyJournalOwner | null {
-  const processStart = processStartIdentity(process.pid);
-  return typeof processStart === 'string' ? { pid: process.pid, processStart, nonce: randomUUID() } : null;
+  const processStart = ownProcessStartIdentity();
+  return processStart !== null ? { pid: process.pid, processStart, nonce: randomUUID() } : null;
 }
 
 function sameEmergencyOwner(left: EmergencyJournalOwner, right: EmergencyJournalOwner): boolean {
@@ -499,8 +511,8 @@ function writeEmergencyJournal(path: string, journal: EmergencyMutationJournal, 
 }
 
 function emergencyPublicationTempPath(path: string): string | null {
-  const processStart = processStartIdentity(process.pid);
-  if (!processStart || processStart === 'absent') return null;
+  const processStart = ownProcessStartIdentity();
+  if (!processStart) return null;
   return `${path}.${process.pid}.${processStart}.${randomUUID()}.tmp`;
 }
 
@@ -538,8 +550,8 @@ function publishEmergencyFileExclusive(path: string, content: string): boolean {
 }
 
 function acquireRecoveryClaim(path: string): MutationLockOwner | null {
-  const processStart = processStartIdentity(process.pid);
-  if (!processStart || processStart === 'absent') return null;
+  const processStart = ownProcessStartIdentity();
+  if (!processStart) return null;
   const lock = acquireLockAt(`${path}.recovery.guard`);
   if (!lock || 'unlocked' in lock) return null;
   const existing = readRecoveryClaim(path);

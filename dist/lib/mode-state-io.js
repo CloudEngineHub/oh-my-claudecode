@@ -14,14 +14,16 @@ import { getProcessStartIdentitySync } from '../platform/process-utils.js';
 import { atomicWriteJsonSync } from './atomic-write.js';
 const localLocks = new Map();
 // The current process's own start identity is immutable for the process
-// lifetime. acquireLockAt spawns a real subprocess (ps on Darwin,
-// powershell on Windows) to compute it; without this cache every lock
-// acquisition pays that subprocess cost, which under sequential/heavy
-// Windows test runs can exceed the identity-probe timeout and make
-// acquireLockAt return null (fail-closed), silently dropping writes.
-let ownProcessStartIdentityCache;
+// lifetime once successfully captured. acquireLockAt spawns a real
+// subprocess (ps on Darwin, powershell on Windows) to compute it; caching
+// a successful result avoids paying that subprocess cost on every single
+// lock acquisition. A transient probe failure (subprocess timeout/spawn
+// hiccup under load) is deliberately NOT cached, so the next call retries
+// the real probe instead of permanently fail-closing every subsequent
+// lock acquisition for the rest of the process lifetime.
+let ownProcessStartIdentityCache = null;
 function ownProcessStartIdentity() {
-    if (ownProcessStartIdentityCache === undefined) {
+    if (ownProcessStartIdentityCache === null) {
         ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
     }
     return ownProcessStartIdentityCache;
@@ -220,7 +222,14 @@ function acquireLockAt(path, attempts = 50) {
         if (!publishLockOwner(path, owner)) {
             db.exec('ROLLBACK');
             db.close();
-            return null;
+            // The lock artifact may have been (re)written by a concurrent owner
+            // between our absent/dead check and this publish (e.g. linkSync sees
+            // EEXIST). This is contention, not corruption; retry within budget
+            // instead of failing closed on the first race.
+            if (attempts <= 1)
+                return null;
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+            return acquireLockAt(path, attempts - 1);
         }
         db.exec('COMMIT');
         const lock = { db, key, path, owner, depth: 1 };
@@ -491,8 +500,8 @@ function sessionOwnerFromStatePath(filePath) {
     return match?.[1];
 }
 function emergencyOwner() {
-    const processStart = processStartIdentity(process.pid);
-    return typeof processStart === 'string' ? { pid: process.pid, processStart, nonce: randomUUID() } : null;
+    const processStart = ownProcessStartIdentity();
+    return processStart !== null ? { pid: process.pid, processStart, nonce: randomUUID() } : null;
 }
 function sameEmergencyOwner(left, right) {
     return left.pid === right.pid && left.processStart === right.processStart && left.nonce === right.nonce;
@@ -518,8 +527,8 @@ function writeEmergencyJournal(path, journal, requireOwnership = true) {
     }
 }
 function emergencyPublicationTempPath(path) {
-    const processStart = processStartIdentity(process.pid);
-    if (!processStart || processStart === 'absent')
+    const processStart = ownProcessStartIdentity();
+    if (!processStart)
         return null;
     return `${path}.${process.pid}.${processStart}.${randomUUID()}.tmp`;
 }
@@ -570,8 +579,8 @@ function publishEmergencyFileExclusive(path, content) {
     }
 }
 function acquireRecoveryClaim(path) {
-    const processStart = processStartIdentity(process.pid);
-    if (!processStart || processStart === 'absent')
+    const processStart = ownProcessStartIdentity();
+    if (!processStart)
         return null;
     const lock = acquireLockAt(`${path}.recovery.guard`);
     if (!lock || 'unlocked' in lock)

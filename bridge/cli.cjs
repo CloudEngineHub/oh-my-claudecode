@@ -34159,7 +34159,7 @@ var init_session_id = __esm({
 
 // src/lib/mode-state-io.ts
 function ownProcessStartIdentity() {
-  if (ownProcessStartIdentityCache === void 0) {
+  if (ownProcessStartIdentityCache === null) {
     ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
   }
   return ownProcessStartIdentityCache;
@@ -34337,7 +34337,9 @@ function acquireLockAt(path27, attempts = 50) {
     if (!publishLockOwner(path27, owner)) {
       db.exec("ROLLBACK");
       db.close();
-      return null;
+      if (attempts <= 1) return null;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+      return acquireLockAt(path27, attempts - 1);
     }
     db.exec("COMMIT");
     const lock = { db, key, path: path27, owner, depth: 1 };
@@ -34557,8 +34559,8 @@ function sessionOwnerFromStatePath(filePath) {
   return match?.[1];
 }
 function emergencyOwner() {
-  const processStart = processStartIdentity2(process.pid);
-  return typeof processStart === "string" ? { pid: process.pid, processStart, nonce: (0, import_crypto8.randomUUID)() } : null;
+  const processStart = ownProcessStartIdentity();
+  return processStart !== null ? { pid: process.pid, processStart, nonce: (0, import_crypto8.randomUUID)() } : null;
 }
 function sameEmergencyOwner(left, right) {
   return left.pid === right.pid && left.processStart === right.processStart && left.nonce === right.nonce;
@@ -34581,8 +34583,8 @@ function writeEmergencyJournal(path27, journal, requireOwnership = true) {
   }
 }
 function emergencyPublicationTempPath(path27) {
-  const processStart = processStartIdentity2(process.pid);
-  if (!processStart || processStart === "absent") return null;
+  const processStart = ownProcessStartIdentity();
+  if (!processStart) return null;
   return `${path27}.${process.pid}.${processStart}.${(0, import_crypto8.randomUUID)()}.tmp`;
 }
 function publishEmergencyFileExclusive(path27, content) {
@@ -34625,8 +34627,8 @@ function publishEmergencyFileExclusive(path27, content) {
   }
 }
 function acquireRecoveryClaim(path27) {
-  const processStart = processStartIdentity2(process.pid);
-  if (!processStart || processStart === "absent") return null;
+  const processStart = ownProcessStartIdentity();
+  if (!processStart) return null;
   const lock = acquireLockAt(`${path27}.recovery.guard`);
   if (!lock || "unlocked" in lock) return null;
   const existing = readRecoveryClaim(path27);
@@ -35467,6 +35469,7 @@ var init_mode_state_io = __esm({
     init_process_utils();
     init_atomic_write();
     localLocks = /* @__PURE__ */ new Map();
+    ownProcessStartIdentityCache = null;
   }
 });
 

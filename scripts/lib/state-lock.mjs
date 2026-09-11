@@ -10,13 +10,14 @@ try { const loaded = require('better-sqlite3'); Database = loaded.default ?? loa
 const localLocks = new Map();
 const recoveryLocks = new Map();
 // The current process's own start identity is immutable for the process
-// lifetime; without this cache every lock acquisition pays a fresh
-// subprocess spawn (ps on Darwin, powershell on Windows), which under
-// sequential/heavy test runs can exceed the identity-probe timeout and
-// silently fail-close the write.
-let ownIdentityCache;
+// lifetime once successfully captured; caching it avoids a fresh
+// subprocess spawn (ps on Darwin, powershell on Windows) on every lock
+// acquisition. A transient probe failure is NOT cached, so the next call
+// retries the real probe instead of permanently fail-closing every
+// subsequent lock acquisition for the rest of the process lifetime.
+let ownIdentityCache = null;
 function ownProcessStartIdentity() {
-  if (ownIdentityCache === undefined) ownIdentityCache = processStartIdentity(process.pid);
+  if (ownIdentityCache === null) ownIdentityCache = processStartIdentity(process.pid);
   return ownIdentityCache;
 }
 
@@ -69,8 +70,8 @@ export function acquireStateFileLockSync(filePath, attempts = 50, requireExclusi
       const row = db.prepare('SELECT version, pid, process_start, created_at, nonce FROM state_mutation_locks WHERE lock_key = ?').get(key);
       if (row) { if (row.version !== 1 || !Number.isSafeInteger(row.pid) || typeof row.process_start !== 'string' || typeof row.created_at !== 'string' || typeof row.nonce !== 'string') { db.exec('ROLLBACK'); db.close(); return null; } const live = ownerLive({ pid: row.pid, processStart: row.process_start }); if (live === null || live) { db.exec('ROLLBACK'); db.close(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } db.prepare('DELETE FROM state_mutation_locks WHERE lock_key = ?').run(key); }
       const artifact = readOwner(lockPath); if (artifact !== 'absent') { if (!artifact) { db.exec('ROLLBACK'); db.close(); console.error(`[omc-lock] state_mutation_lock_unverifiable: ${lockPath}`); return null; } const live = ownerLive(artifact); if (live === null || live) { db.exec('ROLLBACK'); db.close(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } try { unlinkSync(lockPath); } catch { db.exec('ROLLBACK'); db.close(); return null; } }
-      db.prepare('INSERT INTO state_mutation_locks VALUES (?,1,?,?,?,?)').run(key, owner.pid, owner.processStart, owner.createdAt, owner.nonce); if (!publishOwner(lockPath, owner)) throw new Error('owner publication failed'); db.exec('COMMIT'); const lock = { db, lockPath, owner, key, depth: 1 }; localLocks.set(key, lock); return lock;
-    } catch (error) { try { db.exec('ROLLBACK'); } catch {} try { db.close(); } catch {} if (error && (error.code === 'SQLITE_BUSY' || error.code === 'SQLITE_LOCKED')) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } return null; }
+      db.prepare('INSERT INTO state_mutation_locks VALUES (?,1,?,?,?,?)').run(key, owner.pid, owner.processStart, owner.createdAt, owner.nonce); if (!publishOwner(lockPath, owner)) { const publishError = new Error('owner publication failed'); publishError.code = 'OMC_LOCK_PUBLISH_RACE'; throw publishError; } db.exec('COMMIT'); const lock = { db, lockPath, owner, key, depth: 1 }; localLocks.set(key, lock); return lock;
+    } catch (error) { try { db.exec('ROLLBACK'); } catch {} try { db.close(); } catch {} if (error && (error.code === 'SQLITE_BUSY' || error.code === 'SQLITE_LOCKED' || error.code === 'OMC_LOCK_PUBLISH_RACE')) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); continue; } return null; }
   }
   return null;
 }

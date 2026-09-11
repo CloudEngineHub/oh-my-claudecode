@@ -24845,9 +24845,9 @@ var import_path14 = require("path");
 var import_crypto4 = require("crypto");
 var import_better_sqlite3 = __toESM(require("better-sqlite3"), 1);
 var localLocks = /* @__PURE__ */ new Map();
-var ownProcessStartIdentityCache;
+var ownProcessStartIdentityCache = null;
 function ownProcessStartIdentity() {
-  if (ownProcessStartIdentityCache === void 0) {
+  if (ownProcessStartIdentityCache === null) {
     ownProcessStartIdentityCache = getProcessStartIdentitySync(process.pid);
   }
   return ownProcessStartIdentityCache;
@@ -25025,7 +25025,9 @@ function acquireLockAt(path13, attempts = 50) {
     if (!publishLockOwner(path13, owner)) {
       db.exec("ROLLBACK");
       db.close();
-      return null;
+      if (attempts <= 1) return null;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+      return acquireLockAt(path13, attempts - 1);
     }
     db.exec("COMMIT");
     const lock = { db, key, path: path13, owner, depth: 1 };
@@ -25215,8 +25217,8 @@ function sessionOwnerFromStatePath(filePath) {
   return match?.[1];
 }
 function emergencyOwner() {
-  const processStart = processStartIdentity(process.pid);
-  return typeof processStart === "string" ? { pid: process.pid, processStart, nonce: (0, import_crypto4.randomUUID)() } : null;
+  const processStart = ownProcessStartIdentity();
+  return processStart !== null ? { pid: process.pid, processStart, nonce: (0, import_crypto4.randomUUID)() } : null;
 }
 function sameEmergencyOwner(left, right) {
   return left.pid === right.pid && left.processStart === right.processStart && left.nonce === right.nonce;
@@ -25239,8 +25241,8 @@ function writeEmergencyJournal(path13, journal, requireOwnership = true) {
   }
 }
 function emergencyPublicationTempPath(path13) {
-  const processStart = processStartIdentity(process.pid);
-  if (!processStart || processStart === "absent") return null;
+  const processStart = ownProcessStartIdentity();
+  if (!processStart) return null;
   return `${path13}.${process.pid}.${processStart}.${(0, import_crypto4.randomUUID)()}.tmp`;
 }
 function publishEmergencyFileExclusive(path13, content) {
@@ -25283,8 +25285,8 @@ function publishEmergencyFileExclusive(path13, content) {
   }
 }
 function acquireRecoveryClaim(path13) {
-  const processStart = processStartIdentity(process.pid);
-  if (!processStart || processStart === "absent") return null;
+  const processStart = ownProcessStartIdentity();
+  if (!processStart) return null;
   const lock = acquireLockAt(`${path13}.recovery.guard`);
   if (!lock || "unlocked" in lock) return null;
   const existing = readRecoveryClaim(path13);
