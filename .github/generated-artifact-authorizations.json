@@ -21364,6 +21364,3728 @@
           "previousFilename": null
         }
       ]
+    },
+    {
+      "pullNumber": 4239,
+      "targetRef": "main",
+      "mergeBaseSha": "13543f9d6fc1a13a15b68fe5c97baeb3268569e2",
+      "headSha": "e56417db60662a39a3f641f5712596d7a090e620",
+      "owner": "Yeachan-Heo",
+      "expiresAt": "2027-01-04T04:09:32+00:00",
+      "generatedDelta": {
+        "count": 618,
+        "sha256": "07c0dfd367849b843aa2958c1f56add83a161ff5be91be7fc024a4c197e49d01"
+      },
+      "generatedFiles": [
+        {
+          "status": "modified",
+          "filename": "bridge/claude-md-coordinator.cjs",
+          "sha": "295273c81d0d259136cfb708c12a8aec439487cb",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/cli.cjs",
+          "sha": "a4744c050a8e77726c511338464a683f6f7ebdee",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/mcp-server.cjs",
+          "sha": "31b3c8a1e216755e0250614af3fef24421c4321c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/runtime-cli.cjs",
+          "sha": "5c8aa3fa5557922d52873c19a675a159b2de69f2",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/team-mcp.cjs",
+          "sha": "fbfe412a1a9aae5b69b398a6f26b0686c329b0f3",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/team.js",
+          "sha": "5c4d87e02dc0817af4c7a85f5af0c758b157e8e0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/chain-enqueuer-registration.test.d.ts",
+          "sha": "2dc35ac54ba3c8b9cfcb1026a48ac1daba92bd7c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/chain-enqueuer-registration.test.d.ts.map",
+          "sha": "4e83429756da504bb4a96061dad30ed4cf4886cd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/chain-enqueuer-registration.test.js",
+          "sha": "80095a02a3a4be4032a5a26efcdbd3840389cea8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/chain-enqueuer-registration.test.js.map",
+          "sha": "43b977dd9deb00f79a7926d797379fdf9f7ae966",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/directory-context-injector-registration.test.d.ts",
+          "sha": "3157d6ac776d272b571083189706a47aba4618d4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/directory-context-injector-registration.test.d.ts.map",
+          "sha": "58a011d206667a43a875e61e32f23ff195f700a6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/directory-context-injector-registration.test.js",
+          "sha": "951733a73511e63460bc53f6a398addfa9d72d59",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/directory-context-injector-registration.test.js.map",
+          "sha": "17a9239fc8791c57c3590e8093aa5012e8198c9a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hook-bridge-main-module.test.d.ts",
+          "sha": "5f56099637e5d915040c33e7dc063e0b40ff8f6c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hook-bridge-main-module.test.d.ts.map",
+          "sha": "62a7f5934c640702db7f6644dd1e8c6fde0366c9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hook-bridge-main-module.test.js",
+          "sha": "2d07e4a776f9bad18a7897021a9a5f719a8a3302",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hook-bridge-main-module.test.js.map",
+          "sha": "09b7d28c563d33bd57785d9a86e8bd419744b9af",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud-cache-wrapper-4237.test.d.ts",
+          "sha": "44b0141947e6b4dee9b686cb9a9b6b91cde58daa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud-cache-wrapper-4237.test.d.ts.map",
+          "sha": "4651da896c0a27758d5fe398d3bb1481125df7e5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud-cache-wrapper-4237.test.js",
+          "sha": "7e26a3cf72944765e2072f88aef312dee62b0c45",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud-cache-wrapper-4237.test.js.map",
+          "sha": "e1482c0cee978c0a93dafa53f6fe45b9895cb8d7",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/hud-cache-wrapper.test.js",
+          "sha": "ae600fd6e44ed325ccda93e85ed57a41a6ee94b1",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/hud-cache-wrapper.test.js.map",
+          "sha": "ba0a55d3dabc1e9415664588b495adef2e9e25cf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/update-hint.test.d.ts",
+          "sha": "91a583f4aa46af4b8699130d88eebbf5b85c608e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/update-hint.test.d.ts.map",
+          "sha": "d108a52d064f5a665d427f298cfe4cfe240e0c9d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/update-hint.test.js",
+          "sha": "7378f349000c57c28dcae67872d6e97b8d8eaf96",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/update-hint.test.js.map",
+          "sha": "b708998ede84685da7774651ce5cc615c80f8ec7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-header-fallback.test.d.ts",
+          "sha": "f5d5f722d4da21dccf1c5d9f7f8cf2b0c362949c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-header-fallback.test.d.ts.map",
+          "sha": "dbab3031aa90bf3b994e3478b8a213c665412721",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-header-fallback.test.js",
+          "sha": "94a86ec855ed803c8d46d60e81840c5fb569c51b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-header-fallback.test.js.map",
+          "sha": "3efa478815771dc3813f8b4bff9b62ebcbc2e559",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-user-agent.test.d.ts",
+          "sha": "8fe0ec1897a9235ad0a1ba278401135b25a503be",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-user-agent.test.d.ts.map",
+          "sha": "182aad1f3eadcece4758d5f076192f7d70b03a43",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-user-agent.test.js",
+          "sha": "aae3ee597875b7299cf35c76541959988e47e2c1",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/hud/usage-api-user-agent.test.js.map",
+          "sha": "3761f530dceafc99f18176de577fc34239158bce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/issue-3867-legacy-l-update.test.d.ts",
+          "sha": "61e1143fedeb67eb23eb8b555bdbfc589615f77a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/issue-3867-legacy-l-update.test.d.ts.map",
+          "sha": "1a49a6fcbf2ccc83fee79a97a9658539350bf431",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/issue-3867-legacy-l-update.test.js",
+          "sha": "7f8a111d5dc7a1450b96851fcdacde174f0f2445",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/issue-3867-legacy-l-update.test.js.map",
+          "sha": "77612077251efafec61a6209187143f764565b36",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts",
+          "sha": "cf284c170eae9ae8464be9a8e9b5afb5f3c2cb49",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts.map",
+          "sha": "5310c4434dc7a7f0429413c3d7af5ebf583bf659",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js",
+          "sha": "1be2fcd141bef74445c135826c66f2ddfe636755",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js.map",
+          "sha": "80e180e679a07f43cd6b9cdfa17311f1911c2fd0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/project-memory-posttool.test.d.ts",
+          "sha": "5e750f2d6e19b187fdf4e22f02aa3017c4c9ea30",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/project-memory-posttool.test.d.ts.map",
+          "sha": "8c9ff75db6c00e2293d721e067cc4a40ec90d9d6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/project-memory-posttool.test.js",
+          "sha": "01aa0d28fc62de847f31950334457f4d354c3428",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/project-memory-posttool.test.js.map",
+          "sha": "b506ff11f8e435c17e81562a22af221a2eaaddf5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts",
+          "sha": "ce7929f5bf591db4c5e41fb50618c4201b9e7be5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts.map",
+          "sha": "0852103fad326bf079c17c5526aee3d08dc69e8d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js",
+          "sha": "2e09d87cff507bc1fb7187a335209e3df7fc91e7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js.map",
+          "sha": "18051f28c233845fd6075caca1061de9bf2a5853",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/read-budget-preflight.test.d.ts",
+          "sha": "5a1463520d07382c8d37016e624bc7d1be6bca01",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/read-budget-preflight.test.d.ts.map",
+          "sha": "fb32855688e7347ba2eadc24177704680c338c4b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/read-budget-preflight.test.js",
+          "sha": "c6d849f1034d4612853a7f947550234e81dcf459",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/read-budget-preflight.test.js.map",
+          "sha": "4057b90f2497eb7da1c5e073205f313850741e6b",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/run-cjs-graceful-fallback.test.js",
+          "sha": "ace887dd5f92ab329a6202754ad537249d1bcbe4",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/run-cjs-graceful-fallback.test.js.map",
+          "sha": "1e6851248e22529a06a2e0530b19dd1f442fab73",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts",
+          "sha": "953db89bdf672fddef1a2f9ce487b4663b6afeb0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts.map",
+          "sha": "cd59d19527852e6f9aa7ceae818f5a41e311f1fa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-windows-stdio-contract.test.js",
+          "sha": "b5c1f802075a85365f953beb22c9a0018d2c2efd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-windows-stdio-contract.test.js.map",
+          "sha": "4b93605af6b5be5862a4b6d0f56752e828a8264b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts",
+          "sha": "71ab13b2055c5f3ef434171bc63e4ed4010bca7f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts.map",
+          "sha": "e8c754e7fbf04832f0c30a041e89840c644e2b55",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-worker-skip-guard.test.js",
+          "sha": "a0e96988dc4957b9022b6d6eb228196c2dae5123",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/run-cjs-worker-skip-guard.test.js.map",
+          "sha": "732de2c4d831fdf57e2db1f5d4f1be1f74163a6b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-end-forwarder-fallback.test.d.ts",
+          "sha": "626fca8da779727686a9384b0c5b9ababa7bdc84",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-end-forwarder-fallback.test.d.ts.map",
+          "sha": "2ba4ec63721e931ce8a60cad7811340582f4315b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-end-forwarder-fallback.test.js",
+          "sha": "5097b71a6a84d44651a1b3f4b7aa5c653fe3920c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-end-forwarder-fallback.test.js.map",
+          "sha": "04ffaf8fdff0b9d4d6f35bc24787565d8f7953ff",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-context-budget.test.d.ts",
+          "sha": "02c473e0d82acf6cf5e3d0face99f38832589442",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-context-budget.test.d.ts.map",
+          "sha": "f96e9616629d579b02b8cff7b9369505b895830e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-context-budget.test.js",
+          "sha": "f0e0258f218e61b3c7e24ec4a9f94c241c8b091c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-context-budget.test.js.map",
+          "sha": "5c488a660124fee98f53f93cdfdd5020407cc912",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-check.test.d.ts",
+          "sha": "2af747050ad47dd2e4cef121c137cf43864d82c4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-check.test.d.ts.map",
+          "sha": "88a639e9140f67e562e0d4fbbb92d867bf72d27c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-check.test.js",
+          "sha": "254339061ab8f65cf8102c3048b9abe197061fbb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-check.test.js.map",
+          "sha": "30339a19e8ce7e3cc7f13250b1725c4c2a288d19",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-refresh.test.d.ts",
+          "sha": "c3fa48407f4b8f7c133f8c1724efdfde02137251",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-refresh.test.d.ts.map",
+          "sha": "5e4545d78f84c9b54ef5749dd3f58921a7151cd9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-refresh.test.js",
+          "sha": "2710783449e7e4764b7d2f2d079c1869c6906d4f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/session-start-update-refresh.test.js.map",
+          "sha": "a5989e09df4f15f452b1a002989782dead63b4af",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-seed-locale.test.d.ts",
+          "sha": "fe6f8415b140316375f6a0a1a0430ea141d5b9bb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-seed-locale.test.d.ts.map",
+          "sha": "1362d1b7ea845d63ee35f66881dda7557afe6a12",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-seed-locale.test.js",
+          "sha": "dd6e25a3b3fae0e995c5ba6f29554f96c1cbfd3c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-seed-locale.test.js.map",
+          "sha": "45832ec2f785f63dd9db8731f3614f55a0eca791",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-skills.test.d.ts",
+          "sha": "7cc8c9adec42f76f938643fa294ba1dc55ba8265",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-skills.test.d.ts.map",
+          "sha": "05e2481f92a461b9e58851a6730e9bb4b5ecdaa8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-skills.test.js",
+          "sha": "88573dc2da0c81e1a605c193dc0a60753f36706f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/shipyard-skills.test.js.map",
+          "sha": "274daf80a2fc9be4173cc18f6a0060d0f29221ba",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/trusted-publishing-contract.test.d.ts",
+          "sha": "f5fd29c2f648315eedd27229eff855dae9cc3239",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/trusted-publishing-contract.test.d.ts.map",
+          "sha": "060746bf77d7705372fee4ae362660da09c54b03",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/trusted-publishing-contract.test.js",
+          "sha": "27ccd84a168bf24b6d49bd02850f988a5a8aa622",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/__tests__/trusted-publishing-contract.test.js.map",
+          "sha": "6e7772953e41bfa6f8500d49293cf866b32fd992",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/launch-secure-transport.test.d.ts",
+          "sha": "094a054b791bc43e5370ef17ae2eca3f4f4ab58a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/launch-secure-transport.test.d.ts.map",
+          "sha": "96f8736fc082ab5a3d31936afc7147d64ceef7a3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/launch-secure-transport.test.js",
+          "sha": "df2785ab29ba3bdb32b349ca5de9b706d643c69b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/launch-secure-transport.test.js.map",
+          "sha": "f72405799b8af99119a6810bdade851a734c619c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/lookout-cli.test.d.ts",
+          "sha": "da176ba931dae3db6641106a00f1e3403c5bd6cc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/lookout-cli.test.d.ts.map",
+          "sha": "c70e78719e428719f7ee7f8c9566a45e6305a831",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/lookout-cli.test.js",
+          "sha": "da6d358929c77db693a644d0b616dc406cee5f27",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/lookout-cli.test.js.map",
+          "sha": "b9d34ef54c9b52f4086c76fc009430b62f1de74c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/ralph-afk.test.d.ts",
+          "sha": "073863b086ffc609c8df8aaf35d09a4fcfe24922",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/ralph-afk.test.d.ts.map",
+          "sha": "ed5dbcb32bc9f6712d10177d9ee287f01fcf02bc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/ralph-afk.test.js",
+          "sha": "5b5282c7e00d3a4a4e367f846e582a685c3ac40f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/__tests__/ralph-afk.test.js.map",
+          "sha": "9c16920a587a2db7082fc73e08c7f328160a6826",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/__tests__/team.test.js",
+          "sha": "8b21236e5aeb247b5146e99bbb12cc3a43405552",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/__tests__/team.test.js.map",
+          "sha": "1eae1fab08b748b85778e69dcd3476a8cae36941",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/checkpoint.js.map",
+          "sha": "2cd01af2f97ffdf0ad37a6d9ac2a62fc8f859132",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/factory-init.test.d.ts",
+          "sha": "b911bfc23e0b51643c9a2458deb04cc9a72b1056",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/factory-init.test.d.ts.map",
+          "sha": "b4567b079dbfe5ebc8e3f1105b980d82899a466c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/factory-init.test.js",
+          "sha": "9b01fdd395176d2ccc626717acd5b9d7b7690831",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/factory-init.test.js.map",
+          "sha": "d6ee9e98cbb54f8bb2ff30941162c7d9be709220",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts",
+          "sha": "8fdb26e9fe93d430e8eebb3b8a0c2755508ae46f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts.map",
+          "sha": "ec33e4888d641a9ca4d6a6c03a66d276ca7d6ca3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake-headless-flag.test.js",
+          "sha": "dde4d2117134d2030ed31f5b14bbcd199d7d0c87",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake-headless-flag.test.js.map",
+          "sha": "9492a091401480769e3014196ad36458dfd983eb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake.test.d.ts",
+          "sha": "3c8e11963c4c50b998ec97977b5f76e2d737fdf1",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake.test.d.ts.map",
+          "sha": "7728e58a2a45c4ccf22d434d125f975d2100366c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake.test.js",
+          "sha": "db246d1e214d0b422e14d090a5bd46fcc9928a8c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/__tests__/intake.test.js.map",
+          "sha": "44b572b0317af2992bd1827f3f3bbee3d1846bed",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/factory.d.ts.map",
+          "sha": "f5573024f106d21ac4bce8ba2f513ed80c536c98",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/factory.js.map",
+          "sha": "95edede684ec9aa8488d7e660be549b536639050",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/intake.d.ts.map",
+          "sha": "2331681104db421408510817ce5fae7e4ce0c9cb",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/commands/intake.js",
+          "sha": "3bd0a5a9ed9b6c3e9e5fb5fd254f3421ac2b6aa6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/intake.js.map",
+          "sha": "98f8af51af55789528e6c5768ecbb40334a71413",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/ralph.d.ts.map",
+          "sha": "0480d0ab733dee30414c91f0d6360d8f4e108e9c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/commands/ralph.js",
+          "sha": "a437f320a7acf8a5d7d89e6d5f7e67012a53e7c4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/commands/ralph.js.map",
+          "sha": "e636fa58a3390428de599bb2eb66db0311a6103e",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/commands/team.d.ts.map",
+          "sha": "6d14069af97970e4bcc1f4eb0e1b3a441f759325",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/commands/team.js",
+          "sha": "65b22f6cb06f71fa74129267df4e4eee23793d50",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/commands/team.js.map",
+          "sha": "11a8921a40793fd4820341c8d371261ac4916440",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/graph.d.ts.map",
+          "sha": "15ba52546ebcdcd284630ee3a4dfae1a37a7782a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/cli/graph.js.map",
+          "sha": "89a1437eda6fa744e766fd266557d9e699737d7f",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/team.d.ts.map",
+          "sha": "b2109f675ee16eb368f4c671315e167b7b9f10f8",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/team.js",
+          "sha": "55fa2be8067a84c943825cbcf445ba9f288a11d1",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/team.js.map",
+          "sha": "11a316a6d1336ce041e158a7b8c4695a432c45a9",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/config/__tests__/loader.test.js",
+          "sha": "f5f2f13ff49981679606dcd3446c8d40bbe74d49",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/config/__tests__/loader.test.js.map",
+          "sha": "f63cd968edc417c17515b84448f924c3f3d07182",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/config/loader.d.ts.map",
+          "sha": "f7f2d29f8132ee60375e771e1e57195c87c3ee3b",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/config/loader.js",
+          "sha": "1da3f9f4fdccf3800f157f0d0df91625a886afa5",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/config/loader.js.map",
+          "sha": "0b2dfd52bcff461a37f2da075714b5a202516aa2",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/check-run.test.d.ts",
+          "sha": "e908c2d6f43317755f6ca20ecc472156fb7d48fb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/check-run.test.d.ts.map",
+          "sha": "b93b66a38573e36efe42dcd4f6476699267bfcca",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/check-run.test.js",
+          "sha": "83956ed28fa0770542a7c3c9f46862856093f621",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/check-run.test.js.map",
+          "sha": "b3e8069e05c85a4872c46d165acf3f3f55794d45",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/listener.test.d.ts",
+          "sha": "81e703a133cb70a8e5f1f4126a4ba5ae03aace29",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/listener.test.d.ts.map",
+          "sha": "9340a4aab95fee5e7ea0646026167def5c43c05e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/listener.test.js",
+          "sha": "425fe33ae261d2c48632ea5b1a4aa96f9f42e491",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/listener.test.js.map",
+          "sha": "fa5923cf02b8307e1c3ae74181d69c785d14c8a3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-frontier.test.d.ts",
+          "sha": "a7762000f44189c2deab74542a643fc5e4799e71",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-frontier.test.d.ts.map",
+          "sha": "8c7d6ead6f00c601dd1cd5ca246ce25990f99a44",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-frontier.test.js",
+          "sha": "0bd9b24ccdc2fc706ab9268b2e94bf0f92556c6d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-frontier.test.js.map",
+          "sha": "0bef2c55d4069bd853ba97ebd071e652ac2f4fb7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-ingest.test.d.ts",
+          "sha": "803f9a15b9c1f4ac3b915c175a6dc4a4f9c1944e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-ingest.test.d.ts.map",
+          "sha": "d865446819970b3432b1201d281c79ebc54f8d9a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-ingest.test.js",
+          "sha": "deb64c7921fa198f7534bade0635fbcde62d8bf0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-ingest.test.js.map",
+          "sha": "cb02d9f4022c95ae4efe4c164eaf646d5eb9e88d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-run.test.d.ts",
+          "sha": "82391c08bf419372e53a09976431559a09946d90",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-run.test.d.ts.map",
+          "sha": "228f19bb275e61abfe431f82860bf359cbb7f69c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-run.test.js",
+          "sha": "65527d2cb2e8df0df2f1fc4ed71c51d328511e6b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/map-run.test.js.map",
+          "sha": "9f51310eeecfa7525ddc99350cd8dac10e83d8e9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/status.test.d.ts",
+          "sha": "335966e909d803c4a37afaf13523e306caf271e5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/status.test.d.ts.map",
+          "sha": "bea189a0755aebd69f22e9607d1b72d35838d634",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/status.test.js",
+          "sha": "0a95f1c87f877fff42cd3a2a5ecef29c78e663cd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/__tests__/status.test.js.map",
+          "sha": "4b6863d10705ee36a2042c3cef0bdacae1ab6d5b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/listener.d.ts.map",
+          "sha": "dcd7f393e789db3b62e59d824e766d8fc5f07ec6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/listener.js.map",
+          "sha": "e94bb2f846c494ee77067250c9d0d238d854a760",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-frontier.d.ts",
+          "sha": "3e14d476e410233e1ed5965715ac39ea7b773ea9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-frontier.d.ts.map",
+          "sha": "75188ddf1def460f06d40d4c798daab6694b9c81",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-frontier.js",
+          "sha": "4de4f0ece44e6c28f60443ad26723813460677cb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-frontier.js.map",
+          "sha": "ded4f05230bb815d9b902516da758ad7a2e087c2",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-ingest.d.ts",
+          "sha": "9e25fc9f6a241ca240c50e1524d88629d2a44dcc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-ingest.d.ts.map",
+          "sha": "2bf43b1876ce9f3ce16206c11dbcff2885751984",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-ingest.js",
+          "sha": "d3e77228c2d04979cb9477b32a95fc203c2192d0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-ingest.js.map",
+          "sha": "a7f7d1998812e1d2eaa64a045b9d73ee7fb97d39",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-run.d.ts",
+          "sha": "fee54e938562cf2ea25ba2b6ca6cbc8360498e3e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-run.d.ts.map",
+          "sha": "6aa7f39605c314c9997a8ecb39bc5618ec45f665",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-run.js",
+          "sha": "2168947045c3e9c19ec408afabd2ce722b8e5050",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/map-run.js.map",
+          "sha": "9508ed57c2072d8874a3d507cab5b183a50b8e1e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/status.d.ts.map",
+          "sha": "8c661abc91337cf2cad9c0843b127c524c51ddbf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/status.js.map",
+          "sha": "2286fdb3519196f94ac0bb8afcba0e8aa8bb8935",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/watchdog.d.ts.map",
+          "sha": "2b1d51a3e54846ca59c24887c8615e7e575d543a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/watchdog.js.map",
+          "sha": "3c502298d8828f50076c577a822f9d0889cff304",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/watchdog.test.d.ts.map",
+          "sha": "5cf02ca7e845650aa8245155739208157a035ca9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/watchdog.test.js",
+          "sha": "c1d59441d5de953682790f93ea7fd6b2d167b06c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/factory/watchdog.test.js.map",
+          "sha": "4189e1d71064605b9eac6f59942ad6aaafd89563",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/checkpoint.test.d.ts",
+          "sha": "3aed30476e1823d68df6cebf615024416e591b09",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/checkpoint.test.d.ts.map",
+          "sha": "85a5c3312784365c6294db2a1131bac6082cff56",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/checkpoint.test.js",
+          "sha": "2c6b588118ef024ef2ce9074146555c20c5f82d0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/checkpoint.test.js.map",
+          "sha": "2f5502dc544df432480eeda1ea7beace949ab83d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-model-routing.test.d.ts",
+          "sha": "9a36841533ac12807d7e803d4e4d94a43637cd3a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-model-routing.test.d.ts.map",
+          "sha": "d50487c7a740156287e233ea85c85dfc700c6636",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-model-routing.test.js",
+          "sha": "1e3b72edb472c28a78188e9437a221c1197ba2f4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-model-routing.test.js.map",
+          "sha": "c24d1075f1ecf33f2ce2725308e6bd5074e1cee3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-slop-warning.test.d.ts",
+          "sha": "25b20bb767a46f60929651bc847022a19f891653",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-slop-warning.test.d.ts.map",
+          "sha": "ec01f44424f6f4d12fcb8bf87a97009b51b7ec6f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-slop-warning.test.js",
+          "sha": "5de86b92744b3110bacd4a32cbba64901e6a4054",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/__tests__/jev-slop-warning.test.js.map",
+          "sha": "97ddaf17a065954d78c4d23c39caf6c253ba12c8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/checkpoint/index.js.map",
+          "sha": "4727815cb553889b98ace74938d905bb5faeec9b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/jev-model-routing.d.ts.map",
+          "sha": "77c0c95d68794cdc3e3a5246cbaefc8dd975ca02",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/jev-model-routing.js.map",
+          "sha": "e187bccc2aef31db8ca0adaa5ce1d77e2de22ffa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/jev-slop-warning.d.ts.map",
+          "sha": "13035c5995466cf6c5803bd2014cf43e572daf0d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/jev-slop-warning.js.map",
+          "sha": "e923ab63425e6619cc914b466854a78629a6d35b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout-workspace.test.d.ts",
+          "sha": "c2e20a6575aa09715f592f332b650a08e4092527",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout-workspace.test.d.ts.map",
+          "sha": "7f1b8128b211e8bbc57a4f526d96482fd63783f6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout-workspace.test.js",
+          "sha": "c804bc8d0ec2bc42e6a20615c96d5bfcd1fc9f1e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout-workspace.test.js.map",
+          "sha": "ed4d8cc5f53830df8341c3c450bcdb47a046bf1c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout.test.d.ts",
+          "sha": "15d213f1fbed033691b9db0a13fa86d395438b10",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout.test.d.ts.map",
+          "sha": "b06b12fff820edca385eb5aad6782572a2cb36bd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout.test.js",
+          "sha": "3c93edb2b0b1371e786c93249a9087a624d7ca72",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/lookout/__tests__/lookout.test.js.map",
+          "sha": "ccb6393e5dc95d4abe353a72e96f77d0e4f89446",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts",
+          "sha": "f3c99799b9e0858520d8c073d452c67249f48ec9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts.map",
+          "sha": "2cbb293848b63e6b175a3a48e8dbb54968925581",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/notepad-wisdom/__tests__/extractor.test.js",
+          "sha": "7658695aaa21ba118bce17a1b430ee83965edec4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/features/notepad-wisdom/__tests__/extractor.test.js.map",
+          "sha": "05d6e08841c3ad3efe84fea612988bed5c1222ed",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/approval.test.d.ts",
+          "sha": "5ea2d3507f68cbbe999a23c616afd644d4b37ece",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/approval.test.d.ts.map",
+          "sha": "ddf484cbc4b2746c002aa0ea1da8e80833fbb01a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/approval.test.js",
+          "sha": "1d80ba6ae38de7cd87c70560942a70819ce4ffcf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/approval.test.js.map",
+          "sha": "d15db01f93f9c21d5aa60bdbbc8deba4513a5cfe",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/cli.test.d.ts",
+          "sha": "cb2cdc384486fa9e3c10a2750a7da6afe2216bcd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/cli.test.d.ts.map",
+          "sha": "a9e79bd6bf6b8547448fcf7e81321f04e8e26a28",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/cli.test.js",
+          "sha": "b28a6be74726d2dc99c35a5ba8d71417ef0127a4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/cli.test.js.map",
+          "sha": "05fefe03ba7838ef944d6c0d4542e19198973731",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts",
+          "sha": "5563437083ef6e88786c0e79588128d26d9bcb03",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts.map",
+          "sha": "2a285444cb5a5133b022a8638f613d7d5f7906d7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js",
+          "sha": "54b9a3fe8fcc6e70e997bb7a9bd208d63fb3d1b0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js.map",
+          "sha": "d428d85adbdaf286bc9b11523f64700bcbce9577",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/agent.test.d.ts",
+          "sha": "7a23c8b8f4d90f8f7b270de4023f8c3b49352d25",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/agent.test.d.ts.map",
+          "sha": "1f807c51ad4f1c4448d1ec5a074c45142729f2ed",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/agent.test.js",
+          "sha": "0ba79f8b10ad5920b33175a454a60987c790f33e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/agent.test.js.map",
+          "sha": "5900d6a4ec6ad9d9b75b49044a333a512dd5b838",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/command.test.d.ts",
+          "sha": "0d8be04d831fc227747f3f3db67b16fa861bfcb1",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/command.test.d.ts.map",
+          "sha": "bcf292bab1fa0e4f0588f7197adbb9c5380faa28",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/command.test.js",
+          "sha": "8006305513dd7aab5779b5d9a8684d03def11cd8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/executors/command.test.js.map",
+          "sha": "278a5e1da9387f87024a3bcf242e6aeedcc91190",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/fence.test.d.ts",
+          "sha": "2de0e0bcebea5e60a6cbb9ed931a87e846709d8c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/fence.test.d.ts.map",
+          "sha": "72926361d47c81c6fb14ba8b37ab22d6501527c9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/fence.test.js",
+          "sha": "8ab0011bc25394ee2ccb90154e19df7ffc9ffc01",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/fence.test.js.map",
+          "sha": "3a09d3f45eb698121481d37b3dd317785798cf84",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal-epoch.test.d.ts",
+          "sha": "3d07569f41edcbfa4f1a459bac444b48a41e1e64",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal-epoch.test.d.ts.map",
+          "sha": "f228846dd230b3b7186a94763cd6883b5acaea1a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal-epoch.test.js",
+          "sha": "db2db2363bda8f76e7b00a9020161b6b54bc8d10",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal-epoch.test.js.map",
+          "sha": "7224f834cbf9d81e152cd7a2d67ec6248dc01def",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal.test.d.ts",
+          "sha": "84483442ab118b29a76787cef4281c22e7438828",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal.test.d.ts.map",
+          "sha": "5a1e5e3cc7d0ab696d9eb9b0c276bfdc3a748e34",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal.test.js",
+          "sha": "7e0a741c5ea18d256950a4230cfb6517eb9de2c5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/journal.test.js.map",
+          "sha": "dd654c0bb24090675dfb4211ca15d6ad12f10326",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts",
+          "sha": "7b35a7412c13cfe67fe6d89b7a6b393a889275aa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts.map",
+          "sha": "c2cef7ac841a54aa8f474bcf5ae30198b0f628cc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/native-contained-fs.test.js",
+          "sha": "e243125abf00570d5f084796a2169661d9f6ef78",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/native-contained-fs.test.js.map",
+          "sha": "819283fb452cbd1f5cb9bd92905ba4cad5ef14df",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/progress.test.d.ts",
+          "sha": "f44433953949da339a33d09187e4c79860c04890",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/progress.test.d.ts.map",
+          "sha": "394bef35703dbfee1cb10c1718d4bb0552d8b863",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/progress.test.js",
+          "sha": "5562ac9c3f5bb3913e8c67e4e0a1db551e2dd370",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/progress.test.js.map",
+          "sha": "39dbd7455f12ad577bab3cb4f3bfea1a845cd0bf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/regression-matrix.test.d.ts",
+          "sha": "bab3ae0f3084caac29ab0222ef26bfc13fe76068",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/regression-matrix.test.d.ts.map",
+          "sha": "8686d0814e975b92a692250d92d846aed02e8c88",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/regression-matrix.test.js",
+          "sha": "2237883e3dfab492edb76fc26e9e9270a6253eac",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/regression-matrix.test.js.map",
+          "sha": "ff192ebf6bbca23bd1c2f2cd6fbf18361784dfb8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/remote-approval.test.d.ts",
+          "sha": "dc882d69d8c5c50ba418f9c199293c0c9ef8dbfb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/remote-approval.test.d.ts.map",
+          "sha": "523125a332e87880d0136d321db013d1e060f34e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/remote-approval.test.js",
+          "sha": "e2e64cf1b8fe2824786ce966606a93245ca71d12",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/remote-approval.test.js.map",
+          "sha": "26091614407704d2611c40443fb424604ceded3a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/run-dir.test.d.ts",
+          "sha": "7d6ae87760e825886390780ed021c996c4498c07",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/run-dir.test.d.ts.map",
+          "sha": "dcdd61273b141c5390cfbf1b1dc6c8d0a60eefd8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/run-dir.test.js",
+          "sha": "fa983b937dac68f2736372f1fe7d23ea11124116",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/run-dir.test.js.map",
+          "sha": "8c52c2843da685a18e53439e46ccaef2a175ad31",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/runner.test.d.ts",
+          "sha": "5ce0866adbd50e02b1f4f0a89568505001cd3a0e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/runner.test.d.ts.map",
+          "sha": "82803a0c60bb1bce1946b26b952b34385180fe7c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/runner.test.js",
+          "sha": "998d64c857fa868905b5f99c3ab03f6e73356c1c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/runner.test.js.map",
+          "sha": "f33efece98e5920722398854a9ae442649d107d7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/safe-fs.test.d.ts",
+          "sha": "fe4439c8c0e9de88b190ea891a961800030749b1",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/safe-fs.test.d.ts.map",
+          "sha": "e7c030ae1887e028e6033574a0213b914c8cbbbf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/safe-fs.test.js",
+          "sha": "d9f2e7e21a99b8e8b53ee878d081b0ba6f2b4e67",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/safe-fs.test.js.map",
+          "sha": "5b8a29a96754df2922715de8822fdf8969458eed",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/store.test.d.ts",
+          "sha": "6ffd6f9ed2070f7d6bb0f0ab808d2e753aaa5a20",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/store.test.d.ts.map",
+          "sha": "377d6a6e9fbdef75608140f89e954a415d71b698",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/store.test.js",
+          "sha": "42287b00db335e9b941676980802914f5b8d23a0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/__tests__/runtime/store.test.js.map",
+          "sha": "9dfa32bae521c3e9d6b957f3405ab3822a6b93fe",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/approval.d.ts.map",
+          "sha": "6bdb9a35f4553da4455d57e57640ecfca5cbc20e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/approval.js.map",
+          "sha": "64ac90a83969255272165d7afa7ecf5be92ea5c0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/executors/agent.d.ts.map",
+          "sha": "b34144dc2758e8f1ad002da67d13657cc487d00c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/executors/agent.js.map",
+          "sha": "0b06f6119331b039a3ada6a446dbe7589817227e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/executors/authority.d.ts.map",
+          "sha": "3ee6d910f9bf58f3f963601ec95d86ff5ebcdfb7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/executors/authority.js.map",
+          "sha": "bcf1ac478f717fee95c03956a0dd1fc4c82ebbad",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/executors/command.d.ts.map",
+          "sha": "69da847b2b818518f4ad82d6812c710f1035e4b8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/executors/command.js.map",
+          "sha": "ec1beb820e7c1ee5805df356a66ed843b464e965",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/fence.d.ts.map",
+          "sha": "db101e6e87c633a5b8c706f8331f2b3b59e791a8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/fence.js.map",
+          "sha": "e1b14712226c0208334abd8c168f08014a2e47e8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/journal.d.ts.map",
+          "sha": "f016fbf8c32f7b7f3284a0740d7c068536723f25",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/journal.js.map",
+          "sha": "3c500856666f7ec13e7cc1057bb544475390108a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/native-contained-fs.d.ts.map",
+          "sha": "736d2f2861496d747bd37505345b31828f9a1940",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/native-contained-fs.js.map",
+          "sha": "814f62d43b60954ef295a4a88612ec3998c53356",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/progress.d.ts.map",
+          "sha": "eb1fe236715483655e7741d3bd3a0e747c7b4127",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/progress.js.map",
+          "sha": "0172ef612b943a7f439be63e814ff2c69d416e07",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/remote-approval.js.map",
+          "sha": "910e5a5e4f1f637a2bdeb52510de5de709c59246",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/run-dir.d.ts.map",
+          "sha": "f70d51fbd3d687adee9fa05263b28e3a1bf7ee9c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/run-dir.js.map",
+          "sha": "87cf63bde2abf7081222abbb5336823a05d928f7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/runner.d.ts.map",
+          "sha": "7e9043c544b10c1d71637e834ee41b21efb4780b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/runner.js.map",
+          "sha": "145d62dcce42f79b2731f46a431146c5f03662ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/safe-fs.d.ts.map",
+          "sha": "5a928f25a808d6618af085efd52da20d449f20fe",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/safe-fs.js.map",
+          "sha": "092d9ca6beaf57d2ca285ce708d72689cb8f1d3e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/store.d.ts.map",
+          "sha": "b4dceb5bbd0182b8b6b2ccf7d6f61fcb6380c942",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/store.js.map",
+          "sha": "d268cde2bb634ef21a6e53e2541315299ece5345",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/types.d.ts.map",
+          "sha": "df06480e900e290de9394b2a996e0ae2009ba977",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/graph/runtime/types.js.map",
+          "sha": "a06d5b50730c1202be8ec31787b11ee338c7587c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/__tests__/compaction-concurrency.test.js",
+          "sha": "ebdda8753cb14b2eee4187be963eb41f9c19fb57",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/__tests__/compaction-concurrency.test.js.map",
+          "sha": "4642f4789ae335c8eb253433f12d15d1d14a23a3",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/bridge.d.ts.map",
+          "sha": "7f37781d23dd01a936d9f4806aa09cd7291ff0c6",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/bridge.js",
+          "sha": "fed2da179ac4e97be1e65197fc694b149016088c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/bridge.js.map",
+          "sha": "c330beab295e97db529f33e685223eb026a13cee",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts",
+          "sha": "dfde37bea320a9c48879179061dcd091cb8662e9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts.map",
+          "sha": "90552a22f0054bdfc7d313f4ae285f9020573551",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/global-config-path.test.js",
+          "sha": "e7a63df207dc9800780cbab50cedf54748ba96ff",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/global-config-path.test.js.map",
+          "sha": "5f053189b48565737489116599e534d89c70ee01",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts",
+          "sha": "1ce99461f7e17556bee27ac58ff8538ac1b8c148",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts.map",
+          "sha": "6bf1bd64d793c5521990c855ef14a3049331d6e4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js",
+          "sha": "b4d3416b1528750dc730dfd3b3273583d511f84f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js.map",
+          "sha": "8d5b536ddbe93f66d15f7202e14e044b4e89ad96",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/code-simplifier/jev-shadow.d.ts",
+          "sha": "30baafe2c1c8da570db720b4c6f3c25f989a5721",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/jev-shadow.d.ts.map",
+          "sha": "725d5eac84862db8664d54f6d43670ad5b13cb81",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/code-simplifier/jev-shadow.js",
+          "sha": "04f5ab6ed9a3bf6800ea2ebc50175707b9d84ad8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/code-simplifier/jev-shadow.js.map",
+          "sha": "893b8422e9312703075b03f09e0337452df63b4c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/active-mode.test.d.ts",
+          "sha": "5d6330c27f9c7d9874ba71e68da760e1192089af",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/active-mode.test.d.ts.map",
+          "sha": "7551752a10073e1a939f3df141388cc345ff4e38",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/active-mode.test.js",
+          "sha": "a2abbc9b0e23a7fc44a7a9fce7b6445ad4c1a44d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/active-mode.test.js.map",
+          "sha": "fe59b3a3bcd3ce146a7c12f940363ac60a52105c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/client.test.d.ts",
+          "sha": "f16d681bfc86ec3fb33883ec4bda88830958eb15",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/client.test.d.ts.map",
+          "sha": "6a4d51e694dfcc40a048ed61056f6c654ed317a8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/client.test.js",
+          "sha": "2ea5df2c614a23a2dc01400bd8213dc60fd245ca",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/client.test.js.map",
+          "sha": "8a0018c32ff8484e5d538458d63d56343d5b9fe9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts",
+          "sha": "98283101ecfdd0c6b6a70bf07ce91c5c038a3039",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts.map",
+          "sha": "96940b93d1be12b22b038398101befed54f1cf0a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/points-wire-shape.test.js",
+          "sha": "9f19d136ba3278a6dc64381b9c264c967bbbd1ee",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/points-wire-shape.test.js.map",
+          "sha": "eaa5df1fc59a4e8e5cd880a3cd20a68057ff58ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/resolver.test.d.ts",
+          "sha": "07c945aeb5de27b5738f957dc8f9cb42b5a6a35e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/resolver.test.d.ts.map",
+          "sha": "a14ea92193f78a0a68824b647fd974cb49b958a7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/resolver.test.js",
+          "sha": "49c1ee0b3e945db0a3b0a7a06d05a4880a418e6c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/__tests__/resolver.test.js.map",
+          "sha": "415ecd6de875a2b03413f7d534226d38fa7c90bf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/client.d.ts.map",
+          "sha": "f3998c62afbaa6edcad55a3c7e96016fbfc66d8c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/client.js.map",
+          "sha": "bc4bcd9c7c0a0a1dbb5c1c9fb1ed29182f12a2cf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/config.d.ts.map",
+          "sha": "ad14e3edbcd9fa5bedec86df1a6eb5f50b74e94f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/config.js.map",
+          "sha": "9ed0604dfde43af4d369bbc7002e7b73d7cf9849",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/index.d.ts.map",
+          "sha": "e260d5bdb2101c37e5e8ef2c0615449484146515",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/index.js.map",
+          "sha": "7b2ebaed8173fc41b50f5a580a559c5abcd32fea",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/jev/points.d.ts",
+          "sha": "687345d51cba24c8e8ec1238887f337c53b3db26",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/points.d.ts.map",
+          "sha": "87935743b32e56841b7d33bed52782507e49cc74",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/jev/points.js",
+          "sha": "cca0086c9aa097c0feaaf911d2c787f31f9bfc71",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/points.js.map",
+          "sha": "722f8fd434db6d99cf6e33b90a9bc328233db004",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/resolver.d.ts.map",
+          "sha": "292de9ce73ac1622850a5bfad2d47c8e6aeac334",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/jev/resolver.js",
+          "sha": "83969de6887642b544dc897de430df3dce9d5112",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/resolver.js.map",
+          "sha": "ff396580ab07c52fd8dbb88352cef8a582038b3f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/types.d.ts.map",
+          "sha": "6fb63c5428248a9611bedc132af85b70b74defcc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/jev/types.js.map",
+          "sha": "c39c85c56bf9ac2dc111c62d2fb269bb0a99cf98",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts",
+          "sha": "28b38d9d6ab6cbaa41b26d3810754fc6e3e7b803",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts.map",
+          "sha": "f05ea50f5f8b2cef274021ca62d2d91f753f55e5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js",
+          "sha": "aacc82ca14e30138f57fc1ffac3b2e2f23141f11",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js.map",
+          "sha": "4050be14f16219b3751c954b289cf4848b5c5a2d",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/keyword-detector/index.d.ts",
+          "sha": "d1bd02df089086b2efb71db675ff2e7f05f77ecf",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/keyword-detector/index.d.ts.map",
+          "sha": "7a9d05473fb0f56e7998d7b151eaa63e8552be51",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/keyword-detector/index.js",
+          "sha": "c36890b148ea3f0a3a1ad76e571fc302e89561a1",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/keyword-detector/index.js.map",
+          "sha": "c1a2693e74ccaef4a891b5208a07ebff3172210e",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/keyword-detector/jev-shadow.d.ts",
+          "sha": "0523d1a7419884e3705a79cdcd0b40e825d071ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/keyword-detector/jev-shadow.d.ts.map",
+          "sha": "10d21e6fd62eff2f59996b788fc2523b5ee4331a",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/keyword-detector/jev-shadow.js",
+          "sha": "d2a5b0e568d635e377155dd4273cdaf728d4d2ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/keyword-detector/jev-shadow.js.map",
+          "sha": "8fda3e5303defe318c2548d66403485939af3ec7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts",
+          "sha": "3fa96d70c1df1fe7937eb4359177e6aac91873f7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts.map",
+          "sha": "356abaf24a70c89c040aa1e6eac5a5199277b7cc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js",
+          "sha": "184a6a2e55192fdb11998776bb6f961cf3615634",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js.map",
+          "sha": "94a915b50c7dda8c6e56510df39cd2e2f7134c18",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/learner/jev-shadow.d.ts",
+          "sha": "18245bd141200c85f0b6d99070d3254f2011fc3e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/learner/jev-shadow.d.ts.map",
+          "sha": "a564fc4baeac96e135180e63856c141c120cf80e",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/learner/jev-shadow.js",
+          "sha": "da2636637f90c841cbf58d7a92ff64614c9d5565",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/learner/jev-shadow.js.map",
+          "sha": "375a05479cb0153b70d3034b93ae941a16266231",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts",
+          "sha": "96c160930a024505b24b87c638ba5c72decb2f06",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts.map",
+          "sha": "e49b8f5e6d680fab22af074f09fca0fdc7c0134e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js",
+          "sha": "027c4f6bbc24c1637013f9a5577b62e9e01c9394",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js.map",
+          "sha": "7da3ef25586e9d18ea5236794934ad9ac6f25f78",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/persistent-mode/index.d.ts.map",
+          "sha": "8f00bb6ee152818239bb43ff95cd0b498b2b3bba",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/persistent-mode/index.js",
+          "sha": "3a9436f473ec916c7af8714e30bed3aed700b039",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/persistent-mode/index.js.map",
+          "sha": "d8b70a4e43e6118e33c0cc79e0ea3df32cfbca48",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/persistent-mode/jev-shadow.d.ts",
+          "sha": "1a0fed9c1a0796a4d1c0e6e826061c31647e266f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/persistent-mode/jev-shadow.d.ts.map",
+          "sha": "de22d693ac432073b004ad6163f43d6b2b7b9979",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/persistent-mode/jev-shadow.js",
+          "sha": "3c5728556bf9648221b073a056865272ea1853e7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/persistent-mode/jev-shadow.js.map",
+          "sha": "37dec0eb9db2de06138d7d3a6fedabcd7d6871b7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts",
+          "sha": "28b38d9d6ab6cbaa41b26d3810754fc6e3e7b803",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts.map",
+          "sha": "86ee4fee2a2fac926b38def4da472fd507710666",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js",
+          "sha": "f90d5c5b5fdf4ef1a4dc8adfb40973d9a78e847a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js.map",
+          "sha": "88afb92c517e1741b2d3f018f1a19b27b2baaddc",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/preemptive-compaction/index.d.ts",
+          "sha": "40d27604f16b5db240cb1fdb4b58383c2f5d8908",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/preemptive-compaction/index.d.ts.map",
+          "sha": "af303f56a6d5e6e0f90ac4fab574335b845b520c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/preemptive-compaction/index.js",
+          "sha": "bc1809af4699eb72c4ebd905706fe5b687d80777",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/preemptive-compaction/index.js.map",
+          "sha": "242af525ba7b1b22cd9e856d4c03ff468597622f",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/preemptive-compaction/jev-shadow.d.ts",
+          "sha": "e5cd3788802edcc5d4f77de0d9b09908a1e4acce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/preemptive-compaction/jev-shadow.d.ts.map",
+          "sha": "74592638efcdde6e9dfc62f2d16ae5e2d9b3f3cd",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/preemptive-compaction/jev-shadow.js",
+          "sha": "247a94350d0ea3b5f39ec6f7b05620a6b105cef4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/preemptive-compaction/jev-shadow.js.map",
+          "sha": "e22266912fa2efdff48615bb9d416431ab72632f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts",
+          "sha": "a70214bbdb4cddabec6827215afb517c58184e72",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts.map",
+          "sha": "b6aaaa79d2ff7e353e72d70b645d242f94d02235",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/feedback-baseline.test.js",
+          "sha": "453fdf8f9c17a22c51e4ad721b7c4a32cb244d20",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/feedback-baseline.test.js.map",
+          "sha": "4c569c7d6cb50b86e2b2177381664688f9a337a6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts",
+          "sha": "1ca5f688a39819850e6eaa52109d832e66dc41aa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts.map",
+          "sha": "7febc465889ccccf24eb3b8e52fc3a0e183aec3d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js",
+          "sha": "474f7b00ec6f44f2cf514f991381e1d0c381569c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js.map",
+          "sha": "bccb421632c459d66e8aa6790643f98c0fd1f086",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/ralph/feedback-baseline.d.ts",
+          "sha": "ef95eb537cedd8290cea1998112435949e8d609d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/feedback-baseline.d.ts.map",
+          "sha": "59f7dbc07c3221ec69e6bdd8cc5a262bf6395cb8",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/ralph/feedback-baseline.js",
+          "sha": "0c6349695f0c05a02e5f5fc2be87c8cb6553e8b3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/feedback-baseline.js.map",
+          "sha": "e37a6ea495f00d3b281308bf73724aa55f279622",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/ralph/jev-shadow.d.ts",
+          "sha": "d8954001e8359a8d3e67166d04f74422f8086973",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/jev-shadow.d.ts.map",
+          "sha": "7685db493e290c91cfbf8d7bce5d6edef4ed650f",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/ralph/jev-shadow.js",
+          "sha": "38281df5fbbd3d52a469d32cd41865c620baa9c6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/ralph/jev-shadow.js.map",
+          "sha": "bcbc118b0a36368d47a823e5a73cd1f17b0761c8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/rules-injector/matcher.test.d.ts.map",
+          "sha": "1e5b13af1005c13d92ebaf9862bd9bef4afdbe51",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/rules-injector/matcher.test.js",
+          "sha": "91cbd17187ece7793bd1644ba28ae17d1237abc6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/rules-injector/matcher.test.js.map",
+          "sha": "1996115dae0b782a4e908bc93e34d885e8e27c0a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts",
+          "sha": "02e5bac29aa7c4478b2b8e6bb997bf2e1191fd05",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts.map",
+          "sha": "98335d5d0e16895efe1b6fbf7cddffc1a3ad5b00",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/chain-enqueuer.test.js",
+          "sha": "ae2a415d38963d390718b5027210631437909b5b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/chain-enqueuer.test.js.map",
+          "sha": "d2affa574235c65fb1ae51862b5ba001e4772c34",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/check-evidence.test.d.ts",
+          "sha": "1017e153e5e6a95099d5da8086433465560c5f43",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/check-evidence.test.d.ts.map",
+          "sha": "e9e86ae112379ccad3c7de3cf3d55b8398cd44fd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/check-evidence.test.js",
+          "sha": "ae56776b9490f6c16447c1d75792597d97de7c07",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/check-evidence.test.js.map",
+          "sha": "f8828cde29aeb25f315f56162df022dad8fe1036",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts",
+          "sha": "8bcf78fb9f80b73a6365fe1358814c9084bd9f6b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts.map",
+          "sha": "f989e2eb969025944a69fea43bf5d71d8309e1b9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js",
+          "sha": "7c00beca33a8b7cc711fb93d6dcc1f7702ad082e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js.map",
+          "sha": "11192000f930bea2b7b2a9515904693aaedb77bb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/guardrails.test.d.ts",
+          "sha": "419be04a1800499cfc843727b48b3664a4a1ad7c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/guardrails.test.d.ts.map",
+          "sha": "20c2805b0c77aae09ea0ad4b86f281b4f26b5616",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/guardrails.test.js",
+          "sha": "555b785e51099525d4cd8e2284cbe4ba6cf67742",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/guardrails.test.js.map",
+          "sha": "5d0d2c9573c1a9f77930a5d93dba1967b1aa2f50",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts",
+          "sha": "c2c36db78b7258072437955113d20edf45df35bc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts.map",
+          "sha": "c92045bf42afaf8b27df3d6c66eb153ccbf93a4f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js",
+          "sha": "65650aeff056b09ef0ebf031e0d5033ae1645331",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js.map",
+          "sha": "6ff60585ae9be6ab7fdd6f292ff06aae891894ef",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/routing.test.d.ts",
+          "sha": "8bc17dbba173a0db6f9a14a21a789d78b97c90e8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/routing.test.d.ts.map",
+          "sha": "d8a417371bae3f558b24535a610d88064fe8b533",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/routing.test.js",
+          "sha": "77a4dd5dbb331557a6f5836ad56bb5ed61270a88",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/routing.test.js.map",
+          "sha": "eca4fa071522f8478406121fd2a3b8f52912d787",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/spawn-next.test.d.ts",
+          "sha": "56c27e4f9745e6b484a5c3432df9ecb6c670226d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/spawn-next.test.d.ts.map",
+          "sha": "3b5d2c5625e76eb6d4f026b07c64aa2af24aa1cf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/spawn-next.test.js",
+          "sha": "0565e109eb9103b4bb0c31494d2a13d0d910dda9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/__tests__/spawn-next.test.js.map",
+          "sha": "b614079ff6c96cb51861252a7c0c396f7da2f1dc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/chain-enqueuer.d.ts.map",
+          "sha": "982174cec0e182b433aa138053ba58df349b00f5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/chain-enqueuer.js.map",
+          "sha": "beb04f526c234241a1418ebb52e3594d52a4cbf9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/check-evidence.d.ts.map",
+          "sha": "657d7728ddc9adbdcb0ecd737c358f91ec99421f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/check-evidence.js.map",
+          "sha": "44a64f6bd90430ca6639443209db1021be463e2b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/guardrails.d.ts.map",
+          "sha": "5361afd6847e9f88e6f9577bdcdd0908ffc32414",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/guardrails.js.map",
+          "sha": "81967d52fdb8d2847330faac618a2344c26eac61",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/routing.d.ts.map",
+          "sha": "e66fa7492c4bf6cc786688edc949ed35359c1a1e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/routing.js.map",
+          "sha": "e904a9c071828449d07082a2d8096280000370de",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/spawn-next.d.ts.map",
+          "sha": "8b34b44aba624296daf9e922ccbaa607c5cc4735",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/session-end/spawn-next.js.map",
+          "sha": "45afc4827431b39bf81b92033d12567ec4883880",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts",
+          "sha": "28b38d9d6ab6cbaa41b26d3810754fc6e3e7b803",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts.map",
+          "sha": "75fae439498a5b1535ce8f8dd3bad6d614900231",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js",
+          "sha": "47cebd955d0c95001d489cecf95df8d49afd0191",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js.map",
+          "sha": "ae24fdb9b42bcab1d0320c73492a2fac2ded0d34",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/task-size-detector/jev-shadow.d.ts",
+          "sha": "4397fe2bd265ed0089ef23fbfa939e7d0da5958f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/task-size-detector/jev-shadow.d.ts.map",
+          "sha": "0feba3c70ca11b7a58d0fa5efff87ef6a2f396eb",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hooks/task-size-detector/jev-shadow.js",
+          "sha": "4b8629512efca27b8e5e4ad622066e97f74d4241",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hooks/task-size-detector/jev-shadow.js.map",
+          "sha": "1fca06250bbaf5b522967d7369e3a4dc91d3a698",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hud/elements/update-hint.d.ts.map",
+          "sha": "286c83e5403331ffab6d1b7e6f46861c706b33a3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/hud/elements/update-hint.js.map",
+          "sha": "18325b7e3c933aa4714ac16a1e64844446869c7a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/bundled-skill-sync.test.d.ts",
+          "sha": "f880a4f37e9f09c5ffc0e08f5ebaa99de1897d52",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/bundled-skill-sync.test.d.ts.map",
+          "sha": "3605647de9980c3c8adc0f66fbe1ed22e0976223",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/bundled-skill-sync.test.js",
+          "sha": "7aaa65297b7d9d5201057e4841aa72e4ea68c3f0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/bundled-skill-sync.test.js.map",
+          "sha": "9d39d2cc7ff5369440930d3a99d81a8697e980d0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts",
+          "sha": "cd5f01cefb3ab7ae59f9c3054c7b3a6d9292b568",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts.map",
+          "sha": "c3a447a2221951f0f992c5dd87489600263bddcf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/standalone-state-lock-bridge.test.js",
+          "sha": "22b2afa6d55f6a9559bab92ee96a9de38cd065c5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/installer/__tests__/standalone-state-lock-bridge.test.js.map",
+          "sha": "8d0fb28b7a786bf47f48c8edd553f6a91cf048e7",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/__tests__/atomic-write.test.js",
+          "sha": "6a7c06987fa0187d8151b1ec8284279354df4f08",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/__tests__/atomic-write.test.js.map",
+          "sha": "864a114beee60a3d4ea5b73f4c4b4230613348ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/host-load-gate.test.d.ts",
+          "sha": "7ef9af738c80b0cac2413f9fe3bf6ceed56b8554",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/host-load-gate.test.d.ts.map",
+          "sha": "02e1a2c38fef23d781502bd7bd2334bb9ba3f5a9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/host-load-gate.test.js",
+          "sha": "6fa9fe2129912603cc3688386759f1f97afb05b5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/host-load-gate.test.js.map",
+          "sha": "6e09e002747d7df7b3d730c13a7836542c27ad67",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/mode-state-lock.test.d.ts",
+          "sha": "cc01b1942f40216148a26c8344a9b218a3f6eeb3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/mode-state-lock.test.d.ts.map",
+          "sha": "c3b878d43d1d7348a8bf7fc01993d4b9383aabdc",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/mode-state-lock.test.js",
+          "sha": "7022c00ff862b5e65571276bc01d03689e39deef",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/mode-state-lock.test.js.map",
+          "sha": "0bc31f2b5bb2893c5a900c759d02a0a7dc4db3de",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/runs-ledger.test.d.ts",
+          "sha": "355491b5b7c342dea4aa75b2dd7d0539b42e62ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/runs-ledger.test.d.ts.map",
+          "sha": "197020517acfa38a87d2e69a660a860bb8bb6215",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/runs-ledger.test.js",
+          "sha": "d43fad3823185d15854b51b426c561a3ad84eb52",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/runs-ledger.test.js.map",
+          "sha": "28112f2bc971b8ed1f0d47cfeba04af630fe345c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts",
+          "sha": "d5c89a2bb9fe858d0b859cc55680a499c7de3c0e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts.map",
+          "sha": "60c780327bdf4da9d12d3747fb23c4ded08c8008",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-bare-container.test.js",
+          "sha": "3f53f2c82a496ec57fff5a7a7b00fba8d245a924",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-bare-container.test.js.map",
+          "sha": "1012cce63407eaa3282c915d748c2d1d757c1231",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts",
+          "sha": "62a1766943e91c10d83f0dc89047c454282e12aa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts.map",
+          "sha": "c00296d4cc8feea9b6537048b4e08ad5baaf698f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-foreign-root.test.js",
+          "sha": "789848516a4dfb4416bf4e9f6fc9c3f9f8d95f4b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-foreign-root.test.js.map",
+          "sha": "6d14655c579947ddbfa9cfd5fcf337618837302a",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts",
+          "sha": "7c3bcb9d37c5a0a46978e4be500836ec63c96684",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts.map",
+          "sha": "f7cb8bf0a38b7189ef9fd4670d465645c1c12b86",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js",
+          "sha": "5894604b17d692b6fe8636fdd382d942ba670764",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js.map",
+          "sha": "4d76036f63c0338eb88f3e7965a7c05d4335cb1f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts",
+          "sha": "96960710b2c0bae6e27abac9cb70d88d03f63f56",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts.map",
+          "sha": "a7554d0515e93687a2ca16bc240c61105fe2f702",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js",
+          "sha": "4cbb638b8dbc7698d629ca734e2dfddd4af59258",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js.map",
+          "sha": "958ea4efabb6a53ab9200583566d50247cc74cb1",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts",
+          "sha": "445b30294d5180b8e21254b54d7e3357ea73c811",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts.map",
+          "sha": "3f84bf2b680a470a875a6683575a7af4407a2e06",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-timeout.test.js",
+          "sha": "d329769400151362de0ef0be7bb8eb9ecf0f54e4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-git-timeout.test.js.map",
+          "sha": "b93cbd5c8e1d565a71349c5257ed8b967e92e561",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts",
+          "sha": "6a198075c7317c349d0660ccc754d28311f1a8a5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts.map",
+          "sha": "cd76fe85e02a2c089a525cdc5686242c6c733ce5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js",
+          "sha": "7ac3a5c535e3b8d836279c3358ee422623195430",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js.map",
+          "sha": "a3456faacf37e523509663fa1c35609dda220bdb",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts",
+          "sha": "3f3351cd79cf5c12e2ba983982a58073d20d34c7",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts.map",
+          "sha": "0cab101bff10f368c5b5eceae59712bc7f7ab437",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-split-warning.test.js",
+          "sha": "9f79c27cf5c92bbf06fac8f3e6a0919cfadc6fd6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-split-warning.test.js.map",
+          "sha": "f4cc4a76d1a5901d6f417b9cc424cdd7e09a013f",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts",
+          "sha": "f47dd1b27daa39aa906dfb3dc9303f4ad56581ce",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts.map",
+          "sha": "e2ff7b413500652cd44a98a6f1bc8a9332b8f7d5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js",
+          "sha": "9c03f3156db7d75771a8c476ec1dfdc824e67a19",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js.map",
+          "sha": "2052bf9a71c5552277d8527f5ecd928aec719fa6",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/atomic-write.d.ts",
+          "sha": "bcfee87009d004431b438deddbd9c8517ea5bc2f",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/atomic-write.d.ts.map",
+          "sha": "3109688a2df905392c2e65950fb0adc00dcfa427",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/atomic-write.js",
+          "sha": "0ae98b5320589ba4c0b2441636cd514dddff2fc0",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/atomic-write.js.map",
+          "sha": "b63dc101e328f7a394561f9d3bda08454562ad1d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/host-load-gate.d.ts.map",
+          "sha": "c3afc6f04bf4094e5d91bf8207f6065115772e43",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/host-load-gate.js.map",
+          "sha": "2d80e4a7136fb5f2e499feb6cf57e92382df01b8",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/mode-state-io.d.ts",
+          "sha": "51566288b22ae8a4d781ab84b9bf599ef599b3c3",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/mode-state-io.d.ts.map",
+          "sha": "bc9a7d3c0c9e0d5ea6a5db0658fd833a54204266",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/mode-state-io.js",
+          "sha": "69b9a0aed7367378f5eaf5977ef20cb7761a11d5",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/lib/mode-state-io.js.map",
+          "sha": "d903c7d8bda6210587360f4f95e8626c92bc5897",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/runs-ledger.d.ts.map",
+          "sha": "b940f2289752f193d5f2006fe968f2d6103da129",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/lib/runs-ledger.js.map",
+          "sha": "2c7790f42fdf86b2233eecbfe6edc74300cccf12",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/notifications/__tests__/approval-reply.test.d.ts",
+          "sha": "73e8b9d00687fd9bd4a955925d5f9e24b28712d5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/notifications/__tests__/approval-reply.test.d.ts.map",
+          "sha": "b1e29b18f20195a6285c0fd525fe2b87605fb06d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/notifications/__tests__/approval-reply.test.js",
+          "sha": "2c8943faaf7633c56362950cc0f5508a6c0d8839",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/notifications/__tests__/approval-reply.test.js.map",
+          "sha": "94dfff79d86207717b878b2f2d9d1f622face518",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/shared/types.d.ts",
+          "sha": "414c6cd87f5987768f38fd29c257eb99a010f7f9",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/shared/types.d.ts.map",
+          "sha": "5c7b7c474133c280591c7073ccd854945c16b2cb",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/model-contract.test.js",
+          "sha": "b26f736b5e7bb5f6e040a65d644af07c29297f80",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/model-contract.test.js.map",
+          "sha": "b5b340c76b53818c11cf85d45f2b05fb1b439948",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-storage-boundary.test.d.ts",
+          "sha": "7317e528d0fa10dcbe28b1db68306fe991da27aa",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-storage-boundary.test.d.ts.map",
+          "sha": "db78b606334daf6ebf4d139f1486e60a12833fa0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-storage-boundary.test.js",
+          "sha": "a6607b0b02c8f9c8a3c0827dfbeaa59899b5ed35",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-storage-boundary.test.js.map",
+          "sha": "c8652aea6f9d40ca3fa635c2701fdacf9968f0af",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts",
+          "sha": "48571f9666aef7d7e6d874f6401335997c9efa48",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts.map",
+          "sha": "fa780d0b31ceb8a421b288e98aaeef7e9fb3d3ef",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js",
+          "sha": "4395383eb8019ff0aa797ad9c4132a039be46922",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js.map",
+          "sha": "a394ae87385b8878c32769e4e99853b1fb99f0a7",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/stage-router.test.js",
+          "sha": "244ecd343971d9dd6670eedb626958a60e48b13c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/stage-router.test.js.map",
+          "sha": "d0db59eb1da6a342a9f1bc9d9c76117807cba21b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/startup-claim-error.test.d.ts",
+          "sha": "56d077b366d5fed1015c6f6bcfbb182a9257e4ec",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/startup-claim-error.test.d.ts.map",
+          "sha": "b90769b967bd95a756fda4f0fd3821f852e47b04",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/startup-claim-error.test.js",
+          "sha": "3f77fcf7ebf8864570f4d6ed74b5f34f2163ae40",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/startup-claim-error.test.js.map",
+          "sha": "7867617123280e5a2e893f5569d3dd7705e0d096",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/task-storage-integrity.test.d.ts",
+          "sha": "e63d5843b4430d704a1df883746304cc28fb2498",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/task-storage-integrity.test.d.ts.map",
+          "sha": "8d891ff6a4d14d02d3d62bf0244c2e3c059b804d",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/task-storage-integrity.test.js",
+          "sha": "52b07ff2dfa970b74b1bf7c96591e045d475eb2c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/task-storage-integrity.test.js.map",
+          "sha": "80e4044413e37539f4ca2b44fed1bc4adb4b8596",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/team-instance.test.d.ts",
+          "sha": "85659c0184e6dd989a95a5f83fdcc0f88dc13c58",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/team-instance.test.d.ts.map",
+          "sha": "c7b5971920c43b196454c6179d21a7aa637c1af9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/team-instance.test.js",
+          "sha": "a95d845b63763179539759bbfff56fd0a18f03bf",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/team-instance.test.js.map",
+          "sha": "038d648c3b31ef371a76ee1758117cddfc8d00c5",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/team-owner-epoch.test.js",
+          "sha": "65d42cc01ccdc084c31903ccd2d7ec19645e5a34",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/team-owner-epoch.test.js.map",
+          "sha": "23df285746d7aa3c99ba67c0382e6c5951683020",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/tmux-session.create-team.test.js",
+          "sha": "feea5d6df29015c23b84d10bf7736ccf526ac772",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/tmux-session.create-team.test.js.map",
+          "sha": "286a88d0023a4a86eb384144ee7f7b1690839780",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/tmux-session.pane-env.test.d.ts",
+          "sha": "a930830762254111e359b7a077c63419718f8dd0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/tmux-session.pane-env.test.d.ts.map",
+          "sha": "3d6196c2a169ae2893cbc8d6e6db737948e4a6fd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/tmux-session.pane-env.test.js",
+          "sha": "56d2158a59e3aabeb0847c5b05ab9f7fab8374b5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/tmux-session.pane-env.test.js.map",
+          "sha": "22ce1bf65eb05cb3a5b5fdca81efc7c75d7d412a",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/tmux-session.test.js",
+          "sha": "ac2ab195a41807d3326e0e62cc7fe1ae4c897f26",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/__tests__/tmux-session.test.js.map",
+          "sha": "b7e56f4a879f5d741df3648203509db84d7f98b0",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts",
+          "sha": "ba0eff281edee42f76edff3c85ed17156e6ca8a9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts.map",
+          "sha": "e34b69998bb9e39c3d000928092f8d4f70697ee6",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/worker-launch-wrapper-posix.test.js",
+          "sha": "bdcddbefe5cb06414f5292a0251609ae62f7419e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/__tests__/worker-launch-wrapper-posix.test.js.map",
+          "sha": "4d85ee6c452b0c77fe69fda3ecdf6a8e633e766d",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/model-contract.d.ts",
+          "sha": "34cfb4fa4d95105c9caa4f12a889898098464f54",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/model-contract.d.ts.map",
+          "sha": "12c4c8e19ddc3bd026b4a942efe367ae81f4378d",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/model-contract.js",
+          "sha": "6d69e3c80244497389c7f41c3438c36d33c7f500",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/model-contract.js.map",
+          "sha": "9f076f0467b70c14f8e3eb41422fb7072c623753",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/runtime-v2.d.ts",
+          "sha": "e1c9224eb3a1867ce42587a58e02c2e9c645ca41",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/runtime-v2.d.ts.map",
+          "sha": "f790038a24c41865e07f6657b55b931556a8f322",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/runtime-v2.js",
+          "sha": "053e606da124ec5361996527431d3e722763d6aa",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/runtime-v2.js.map",
+          "sha": "2b7713b848df4bb9a8b63eb80612e5f58497fc66",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/scaling.d.ts.map",
+          "sha": "e295889450b92eb8cea22bac2c29e14d157be4d3",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/scaling.js",
+          "sha": "bf0920b18f86b6b9b381c17aed2700acc4222e91",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/scaling.js.map",
+          "sha": "362d30736facd6ad1e65ed4242d05723880f64e8",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/stage-router.d.ts.map",
+          "sha": "29489af27746f93d4f298bf9e75b7e05a95c96b7",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/stage-router.js",
+          "sha": "915bd730f601cb66b0151805ff40ea06c062fdc1",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/stage-router.js.map",
+          "sha": "806944ac757c97d20065bdb39fbdcd0a9245019c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/team-instance.d.ts.map",
+          "sha": "9a3b012ed8ae070be6adcb155a22a08f38956925",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/team/team-instance.js.map",
+          "sha": "9fd61173629518339076f1fc9b145bb76beca80d",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/team-owner-epoch.d.ts.map",
+          "sha": "ce98c7094bfed66d567f274a9a55723c5f4ab9cb",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/team-owner-epoch.js",
+          "sha": "86bda7cd9c3cd7c665b651b43026da25740bf9d3",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/team-owner-epoch.js.map",
+          "sha": "bd1fdf1cabfc3ccb2a0a96e943f52232283f59a6",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/tmux-session.d.ts",
+          "sha": "ab0d36cbb938627a1095aee9f9df722d90319d8d",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/tmux-session.d.ts.map",
+          "sha": "1ba0784e35041cae067d907094c5e07fe6404b15",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/tmux-session.js",
+          "sha": "79222913a9a1ed3cdee316be354023aec916a10a",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/team/tmux-session.js.map",
+          "sha": "4fc439c4a65dbe1a082bc45bc04eb679403b07c2",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts",
+          "sha": "5b7a3fc2bec7c23989a2994e5895d7d97c7f8d5c",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts.map",
+          "sha": "a90126abd3b2a9f9801da1e7853fdfa808a0f11b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/state-tools-nongit-ownership.test.js",
+          "sha": "702a8c69ec6200ba1f872509a92bd438917efdab",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/state-tools-nongit-ownership.test.js.map",
+          "sha": "b9dcece082092268c8f973335b888bf229255aa8",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts",
+          "sha": "73339ba8a08dbcc386c66ba08507c306407eb3bd",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts.map",
+          "sha": "f2fbf398d2cb52e186dabf0121bb6d2509c60579",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js",
+          "sha": "d4143f9527bd1cdfbb65c1167fc75d786b07b194",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js.map",
+          "sha": "d397b7eb9535f267bfae5f3502b9ca4b525ae36e",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts",
+          "sha": "eaa42dc383b3fa7213be84d471db701c9b9a85d4",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts.map",
+          "sha": "150e972f21ca42f7f3649dd5fc14d1d7f19aa044",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-foreign-root.test.js",
+          "sha": "419550a8b8dd605cc7aa1e3479dfb3313177fa55",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-foreign-root.test.js.map",
+          "sha": "65512e950a3729c5da016b9dc54d2b1a0fc50298",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts",
+          "sha": "b14c4c7ce4619ef0dfd0c10d8dc58c3dc076c66b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts.map",
+          "sha": "ecfa1052868c50880416cfccfe7036d1569dd5d3",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js",
+          "sha": "73c0b6c973af6d5bfd648509e583e4470ea290d5",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js.map",
+          "sha": "590115618a1e5fc95af7ab4847638c890d743964",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts",
+          "sha": "0bb2cb46e2eb2da8d4a12b99e7658b12354e6707",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts.map",
+          "sha": "05e7ceede8f99ea7438ffead269f3cba65013da9",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/lsp/__tests__/client-document-lifecycle.test.js",
+          "sha": "b86d388eb71ee7b6bff41fbacd93c3b5aba5123b",
+          "previousFilename": null
+        },
+        {
+          "status": "added",
+          "filename": "dist/tools/lsp/__tests__/client-document-lifecycle.test.js.map",
+          "sha": "fd4ae3692f12147f9aa5eb9896ebaaa4af06cb6d",
+          "previousFilename": null
+        }
+      ]
     }
   ]
 }
