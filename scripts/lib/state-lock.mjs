@@ -145,22 +145,39 @@ function sameOwner(left, right) {
   return Boolean(left && right && left.pid === right.pid && left.processStart === right.processStart && left.nonce === right.nonce);
 }
 
+// BigInt ids: NTFS file IDs exceed 2^53 once the MFT sequence number reaches
+// 32, and a Number ino rounds distinct files onto the same value.
 function ownerArtifactIdentity(path) {
   try {
-    const stats = statSync(path);
+    const stats = statSync(path, { bigint: true });
     return stats.isFile() ? { dev: stats.dev, ino: stats.ino } : null;
   } catch {
     return null;
   }
 }
 
+/** Mirrors sameFileIdentity in src/lib/atomic-write.ts: ino always, dev unless win32 reports 0 (#4156). */
+function sameArtifactIdentity(a, b) {
+  if (a.ino !== b.ino) return false;
+  if (process.platform === 'win32' && (a.dev === 0n || b.dev === 0n)) return true;
+  return a.dev === b.dev;
+}
+
 /** Remove only the exact dead publication that was inspected. */
 function reclaimDeadOwner(path, observed, identity) {
   const quarantinePath = `${path}.reclaim.${process.pid}.${randomUUID()}`;
-  // Verify the file at path still has the expected identity before renaming.
-  // If it has changed, another process has published a replacement and we must not remove it.
-  const current = ownerArtifactIdentity(path);
-  if (!current || current.dev !== identity.dev || current.ino !== identity.ino) {
+  // The liveness verdict can be seconds old (the win32 probe spawns PowerShell),
+  // and the identity alone cannot tell a replacement apart when its inode reuses
+  // the old one (or when the identity was captured after the probe). Renaming a
+  // live replacement into quarantine opens a window in which a third contender
+  // publishes, leaving two holders. Re-verify the exact artifact, owner record
+  // AND file identity, immediately before the rename. Bracketing the read with
+  // two stats binds the record that was read to the identity that was checked.
+  const before = ownerArtifactIdentity(path);
+  const current = readOwner(path);
+  const after = ownerArtifactIdentity(path);
+  if (current === 'absent' || !current || !sameOwner(current, observed) ||
+      !before || !after || !sameArtifactIdentity(before, identity) || !sameArtifactIdentity(after, identity)) {
     return 'changed';
   }
   try {
@@ -175,7 +192,7 @@ function reclaimDeadOwner(path, observed, identity) {
     moved = readOwner(quarantinePath);
     movedIdentity = ownerArtifactIdentity(quarantinePath);
     if (moved !== 'absent' && moved && movedIdentity &&
-        movedIdentity.dev === identity.dev && movedIdentity.ino === identity.ino &&
+        sameArtifactIdentity(movedIdentity, identity) &&
         sameOwner(moved, observed)) {
       try {
         unlinkSync(quarantinePath);
@@ -354,7 +371,7 @@ function acquireFileLock(lockPath, attempts) {
       }
       // Re-verify the identity hasn't changed before probing liveness.
       const recheck = ownerArtifactIdentity(lockPath);
-      if (!recheck || recheck.dev !== identity.dev || recheck.ino !== identity.ino) continue;
+      if (!recheck || !sameArtifactIdentity(recheck, identity)) continue;
       const live = ownerLive(existing);
       if (live === null) {
         recordFailure('unverifiable');

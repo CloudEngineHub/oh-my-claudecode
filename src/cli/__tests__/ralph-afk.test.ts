@@ -9,6 +9,12 @@ vi.mock('../../hooks/session-end/spawn-next.js', async (importOriginal) => {
   return { ...actual, defaultSpawnFn: spawnMock.defaultSpawnFn };
 });
 
+const ingestMock = vi.hoisted(() => ({ loadMapRecords: vi.fn(() => [] as unknown[]) }));
+vi.mock('../../factory/map-ingest.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../factory/map-ingest.js')>();
+  return { ...actual, loadMapRecords: ingestMock.loadMapRecords };
+});
+
 import { AFK_ALLOWED_TOOLS, AFK_SPAWN_FLAGS } from '../../hooks/session-end/spawn-next.js';
 import { materializeRalphSkill, ralphAfkArgv, ralphCommand, ralphVerify, resolveFeedbackCommands, RALPH_AFK_FEEDBACK_ENV, RALPH_AFK_SESSION_COMMANDS } from '../commands/ralph.js';
 import { Command } from 'commander';
@@ -211,5 +217,53 @@ process.exit(1);
   it('reports no feedback commands as a clean no-op', () => {
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'no-scripts' }), 'utf8');
     expect(ralphVerify({ session: 'sess-none' }, dir)).toBe(0);
+  });
+});
+
+describe('omc ralph from-map command', () => {
+  it('prints the frontier plan without spawning anything (dry-run surface)', async () => {
+    ingestMock.loadMapRecords.mockReturnValueOnce([
+      { number: 46, state: 'OPEN', labels: ['wayfinder:map'], assignees: 0, body: '' },
+      { number: 70, state: 'OPEN', labels: ['wayfinder:research'], assignees: 0, nativeParent: 46, body: '## Parent\n\n[o/r#46](https://github.com/o/r/issues/46)\n\n## Acceptance criteria\n\n- [ ] x' },
+      { number: 72, state: 'OPEN', labels: ['wayfinder:grilling'], assignees: 0, nativeParent: 46, body: '## Parent\n\n[o/r#46](https://github.com/o/r/issues/46)\n\nq' },
+    ] as never);
+    const logs: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => { logs.push(args.map(String).join(' ')); });
+    try {
+      const program = new Command();
+      program.exitOverride();
+      ralphCommand(program);
+      await program.parseAsync(['ralph', 'from-map', '--map', 'o/r#46'], { from: 'user' });
+    } finally {
+      spy.mockRestore();
+    }
+    const out = logs.join('\n');
+    expect(out).toContain('dry run, nothing written');
+    expect(out).toContain('#70 — ingest-with-criteria');
+    expect(out).toContain('#72 — routes to human');
+    expect(ingestMock.loadMapRecords).toHaveBeenCalledWith({ repo: 'o/r', number: 46 });
+    // Nothing was launched: the dry-run surface never spawns.
+    expect(spawnMock.defaultSpawnFn).not.toHaveBeenCalled();
+  });
+
+  it('refuses a missing or unparseable --map with a non-zero exit', async () => {
+    const errors: string[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => { errors.push(args.map(String).join(' ')); });
+    const previous = process.exitCode;
+    try {
+      const program = new Command();
+      program.exitOverride();
+      ralphCommand(program);
+      await program.parseAsync(['ralph', 'from-map'], { from: 'user' });
+      expect(process.exitCode).toBe(1);
+      process.exitCode = 0;
+      await program.parseAsync(['ralph', 'from-map', '--map', 'garbage'], { from: 'user' });
+      expect(process.exitCode).toBe(1);
+    } finally {
+      process.exitCode = previous;
+      spy.mockRestore();
+    }
+    expect(errors.join('\n')).toContain('--map <repo#number> is required');
+    expect(errors.join('\n')).toContain('could not parse map reference');
   });
 });

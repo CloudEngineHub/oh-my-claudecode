@@ -615,10 +615,10 @@ Each judgment point operates in one of three states:
 | State | Behavior | When It Occurs |
 |-------|----------|----------------|
 | **off** | Point does not run; heuristic twin is used | No `TYPESAFE_API_KEY`, `OMC_JEV=off`, or point not opted in |
-| **shadow** | Both Jev and heuristic run; Jev answer is logged but not acted on; heuristic is authoritative | Point is opted in but not activated; Jev unavailable, times out, or over budget |
-| **active** | Jev answer is used (for blocking points, this gates behavior; for advisory points, fire-and-record) | Point is opted in and activated via env `:active` or code-time `ACTIVATED_POINTS` |
+| **shadow** | Both Jev and heuristic run; Jev answer is logged but NOT acted on; heuristic is authoritative; fire-and-forget for non-blocking points | Point is opted in but not activated; Jev unavailable, times out, or over budget |
+| **active** | Jev answer IS acted on; blocking points gate behavior, non-blocking points wait (bounded by `OMC_JEV_TIMEOUT_MS`) | Point is opted in and activated via env `:active` or code-time `ACTIVATED_POINTS` |
 
-Once a point is opted in (e.g., `OMC_JEV="model-routing"`), it automatically degrades to shadow if Jev is unavailable, times out, or exceeds the request budget — no workflow blocks on Jev.
+Once a point is opted in (e.g., `OMC_JEV="model-routing"`), it automatically degrades to shadow if Jev is unavailable, times out, or exceeds the request budget — no workflow blocks on Jev. In active mode, non-blocking points wait for Jev up to `OMC_JEV_TIMEOUT_MS` (default 2000ms); if Jev fails, the heuristic twin is used and the call returns immediately.
 
 ### Shadow Log Location
 

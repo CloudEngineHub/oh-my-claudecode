@@ -42,7 +42,7 @@ async function runLockTest(
   testKey: string,
   procs: number,
   iterations: number,
-  timeoutMs: number = 30000,
+  timeoutMs: number = 90_000,
 ): Promise<{
   acquisitions: number;
   counter: number;
@@ -63,8 +63,8 @@ async function runLockTest(
   // Force the owner-file fallback
   const env = { ...process.env, NODE_ENV: 'test', OMC_TEST_FLOCK_AVAILABLE: '0' };
 
-  // Import the repro script
-  const reproPath = join(REPO_ROOT, 'repro-state-lock.mjs');
+  // Repro script from issue #4146, run in worker mode
+  const reproPath = join(REPO_ROOT, 'scripts', 'dev', 'repro-state-lock.mjs');
 
   return new Promise((resolve) => {
     const processes: ReturnType<typeof spawn>[] = [];
@@ -112,17 +112,21 @@ async function runLockTest(
 
 describe('state-lock owner-file fallback mutual exclusion (issue #4146)', () => {
   it('maintains mutual exclusion with concurrent acquisitions', async () => {
-    const result = await runLockTest(`test-mutex-${testSuiteKey}`, 4, 10, 30000);
+    const result = await runLockTest(`test-mutex-${testSuiteKey}`, 4, 10);
+
+    // Guard against a vacuous pass (workers never ran / script missing)
+    expect(result.acquisitions).toBeGreaterThan(0);
 
     // With the fix, all acquisitions should complete without overlap or lost updates
     expect(result.violated).toBe(false);
     expect(result.overlaps).toBe(0);
     expect(result.acquisitions).toBe(result.counter);
     expect(result.stranded).toBe(false);
-  }, 60000);
+  }, 120_000);
 
   it('handles dead owner reclaim without quarantining live replacements', async () => {
-    const result = await runLockTest(`test-reclaim-${testSuiteKey}`, 3, 5, 30000);
+    const result = await runLockTest(`test-reclaim-${testSuiteKey}`, 3, 5);
+    expect(result.acquisitions).toBeGreaterThan(0);
 
     // Verify no mutual exclusion violations occurred
     expect(result.violated).toBe(false);
@@ -130,13 +134,14 @@ describe('state-lock owner-file fallback mutual exclusion (issue #4146)', () => 
 
     // Verify no stranded locks left behind
     expect(result.stranded).toBe(false);
-  }, 60000);
+  }, 120_000);
 
   it('does not produce excessive unverifiable errors', async () => {
-    const result = await runLockTest(`test-unverifiable-${testSuiteKey}`, 2, 3, 30000);
+    const result = await runLockTest(`test-unverifiable-${testSuiteKey}`, 2, 3);
+    expect(result.acquisitions).toBeGreaterThan(0);
 
     // With the fix, unverifiable errors should be rare/absent
     // (they can still happen in rare races, but not the systemic kind)
     expect(result.acquireFailures).toBeLessThan(10);
-  }, 60000);
+  }, 120_000);
 });

@@ -1578,6 +1578,10 @@ async function processKeywordDetector(input: HookInput): Promise<HookOutput> {
   const taskSizeConfig = config.taskSizeDetection ?? {};
   const promptPrerequisiteConfig = getPromptPrerequisiteConfig(config);
 
+  // Record task-size judgment (Jev active/shadow/off); use Jev result if active
+  const taskSizeJudgment = await recordTaskSizeShadow(cleanedText).catch(() => undefined);
+  const jevTaskSizeResult = taskSizeJudgment?.mode === 'active' ? taskSizeJudgment.answer : undefined;
+
   // Get all keywords with optional task-size filtering (issue #790)
   const sizeCheckResult = getAllKeywordsWithSizeCheck(cleanedText, {
     enabled: taskSizeConfig.enabled !== false,
@@ -1585,6 +1589,7 @@ async function processKeywordDetector(input: HookInput): Promise<HookOutput> {
     largeWordLimit: taskSizeConfig.largeWordLimit ?? 200,
     suppressHeavyModesForSmallTasks:
       taskSizeConfig.suppressHeavyModesForSmallTasks !== false,
+    jevTaskSizeResult,
   });
 
   // Apply ralplan-first gate BEFORE task-size suppression (issue #997).
@@ -1630,12 +1635,11 @@ async function processKeywordDetector(input: HookInput): Promise<HookOutput> {
     }
   }
 
-  // Jev shadow points (issue #3669): record skill-trigger, intent, and
-  // task-size comparisons for later eval. Fire-and-forget; never changes
-  // emissions.
+  // Jev shadow points (issue #3669): record skill-trigger and intent
+  // comparisons for later eval (task-size already recorded above).
+  // Fire-and-forget for shadow/off mode; awaited for active mode.
   void recordSkillTriggerShadow(cleanedText).catch(() => {});
   void recordIntentShadow(cleanedText).catch(() => {});
-  void recordTaskSizeShadow(cleanedText).catch(() => {});
 
   const promptPrerequisiteParse = parsePromptPrerequisiteSections(promptText, promptPrerequisiteConfig);
   const executionKeywords = fullKeywords.filter((keywordType) =>

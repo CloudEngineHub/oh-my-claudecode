@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "d3ed6027e0efdc467610d9ee29e7c543ea4cedf9",
-    "sourceSha256": "0239e6dc9407acb7ee9eecab11b0a5449f4017290b41c7d5d12e7a14a3092a76",
+    "head": "cfc6b8022e65d9ea89b569ed04f9eca429137dca",
+    "sourceSha256": "4186a6b7a48fcc0bf8dc973a7a647553801060ec156089f146e59d41c3696e4f",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "d3ed6027e0efdc467610d9ee29e7c543ea4cedf9",
-  "sourceSha256": "0239e6dc9407acb7ee9eecab11b0a5449f4017290b41c7d5d12e7a14a3092a76",
+  "head": "cfc6b8022e65d9ea89b569ed04f9eca429137dca",
+  "sourceSha256": "4186a6b7a48fcc0bf8dc973a7a647553801060ec156089f146e59d41c3696e4f",
   "counts": {
     "public": {
       "skills": 47,
@@ -23,13 +23,13 @@
       "total": 96
     },
     "internal": {
-      "hookFiles": 335,
+      "hookFiles": 336,
       "featureFiles": 84,
       "toolFiles": 61,
       "libFiles": 47,
       "templateHooks": 23,
-      "srcFiles": 1428,
-      "total": 1451
+      "srcFiles": 1438,
+      "total": 1461
     },
     "generated": {
       "distFiles": 5096,
@@ -41,7 +41,7 @@
     },
     "skills": 47,
     "commands": 21,
-    "hookFiles": 335,
+    "hookFiles": 336,
     "workflows": 8,
     "agentDefinitions": 18,
     "promptLikeFiles": 61
@@ -248,6 +248,7 @@
       "src/hooks/factcheck/sentinel.ts",
       "src/hooks/factcheck/types.ts",
       "src/hooks/index.ts",
+      "src/hooks/jev/__tests__/active-mode.test.ts",
       "src/hooks/jev/__tests__/client.test.ts",
       "src/hooks/jev/__tests__/points-wire-shape.test.ts",
       "src/hooks/jev/__tests__/resolver.test.ts",
@@ -800,6 +801,7 @@
       "scripts/context-guard-stop.mjs",
       "scripts/context-safety.mjs",
       "scripts/demo-team.mjs",
+      "scripts/dev/repro-state-lock.mjs",
       "scripts/eval-autoresearch-json.mjs",
       "scripts/eval-autoresearch-timed-json.mjs",
       "scripts/find-node.sh",
@@ -853,6 +855,7 @@
       "scripts/post-tool-rules-injector.mjs",
       "scripts/post-tool-use-failure.mjs",
       "scripts/post-tool-verifier.mjs",
+      "scripts/postinstall-contained-fs.mjs",
       "scripts/pre-compact.mjs",
       "scripts/pre-tool-enforcer.mjs",
       "scripts/project-memory-posttool.mjs",
@@ -6105,6 +6108,7 @@
       "src/hooks/factcheck/sentinel.ts",
       "src/hooks/factcheck/types.ts",
       "src/hooks/index.ts",
+      "src/hooks/jev/__tests__/active-mode.test.ts",
       "src/hooks/jev/__tests__/client.test.ts",
       "src/hooks/jev/__tests__/points-wire-shape.test.ts",
       "src/hooks/jev/__tests__/resolver.test.ts",
@@ -33878,6 +33882,11 @@
         "path": "scripts/demo-team.mjs"
       },
       {
+        "id": "scripts/dev/repro-state-lock.mjs",
+        "kind": "script",
+        "path": "scripts/dev/repro-state-lock.mjs"
+      },
+      {
         "id": "scripts/eval-autoresearch-json.mjs",
         "kind": "script",
         "path": "scripts/eval-autoresearch-json.mjs"
@@ -34141,6 +34150,11 @@
         "id": "scripts/post-tool-verifier.mjs",
         "kind": "script",
         "path": "scripts/post-tool-verifier.mjs"
+      },
+      {
+        "id": "scripts/postinstall-contained-fs.mjs",
+        "kind": "script",
+        "path": "scripts/postinstall-contained-fs.mjs"
       },
       {
         "id": "scripts/pre-compact.mjs",
@@ -35201,6 +35215,11 @@
         "id": "src/__tests__/hud-build-guidance.test.ts",
         "kind": "src",
         "path": "src/__tests__/hud-build-guidance.test.ts"
+      },
+      {
+        "id": "src/__tests__/hud-cache-wrapper-4237.test.ts",
+        "kind": "src",
+        "path": "src/__tests__/hud-cache-wrapper-4237.test.ts"
       },
       {
         "id": "src/__tests__/hud-cache-wrapper.test.ts",
@@ -36753,6 +36772,11 @@
         "path": "src/cli/commands/__tests__/factory-init.test.ts"
       },
       {
+        "id": "src/cli/commands/__tests__/intake-headless-flag.test.ts",
+        "kind": "src",
+        "path": "src/cli/commands/__tests__/intake-headless-flag.test.ts"
+      },
+      {
         "id": "src/cli/commands/__tests__/intake.test.ts",
         "kind": "src",
         "path": "src/cli/commands/__tests__/intake.test.ts"
@@ -36973,6 +36997,21 @@
         "path": "src/factory/__tests__/listener.test.ts"
       },
       {
+        "id": "src/factory/__tests__/map-frontier.test.ts",
+        "kind": "src",
+        "path": "src/factory/__tests__/map-frontier.test.ts"
+      },
+      {
+        "id": "src/factory/__tests__/map-ingest.test.ts",
+        "kind": "src",
+        "path": "src/factory/__tests__/map-ingest.test.ts"
+      },
+      {
+        "id": "src/factory/__tests__/map-run.test.ts",
+        "kind": "src",
+        "path": "src/factory/__tests__/map-run.test.ts"
+      },
+      {
         "id": "src/factory/__tests__/status.test.ts",
         "kind": "src",
         "path": "src/factory/__tests__/status.test.ts"
@@ -36981,6 +37020,21 @@
         "id": "src/factory/listener.ts",
         "kind": "src",
         "path": "src/factory/listener.ts"
+      },
+      {
+        "id": "src/factory/map-frontier.ts",
+        "kind": "src",
+        "path": "src/factory/map-frontier.ts"
+      },
+      {
+        "id": "src/factory/map-ingest.ts",
+        "kind": "src",
+        "path": "src/factory/map-ingest.ts"
+      },
+      {
+        "id": "src/factory/map-run.ts",
+        "kind": "src",
+        "path": "src/factory/map-run.ts"
       },
       {
         "id": "src/factory/status.ts",
@@ -38106,6 +38160,11 @@
         "id": "src/hooks/index.ts",
         "kind": "hook",
         "path": "src/hooks/index.ts"
+      },
+      {
+        "id": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "kind": "hook",
+        "path": "src/hooks/jev/__tests__/active-mode.test.ts"
       },
       {
         "id": "src/hooks/jev/__tests__/client.test.ts",
@@ -41063,6 +41122,11 @@
         "path": "src/team/__tests__/tmux-session.kill-team-session.test.ts"
       },
       {
+        "id": "src/team/__tests__/tmux-session.pane-env.test.ts",
+        "kind": "src",
+        "path": "src/team/__tests__/tmux-session.pane-env.test.ts"
+      },
+      {
         "id": "src/team/__tests__/tmux-session.spawn.test.ts",
         "kind": "src",
         "path": "src/team/__tests__/tmux-session.spawn.test.ts"
@@ -42228,6 +42292,11 @@
         "path": "tests/integration/concurrent-ralph-sessions.test.ts"
       },
       {
+        "id": "tests/integration/contained-fs-packaging.test.ts",
+        "kind": "other",
+        "path": "tests/integration/contained-fs-packaging.test.ts"
+      },
+      {
         "id": "tests/integration/epic-3698-closure-verifier.test.ts",
         "kind": "other",
         "path": "tests/integration/epic-3698-closure-verifier.test.ts"
@@ -42236,6 +42305,11 @@
         "id": "tests/integration/git-guardrails-hook.test.ts",
         "kind": "other",
         "path": "tests/integration/git-guardrails-hook.test.ts"
+      },
+      {
+        "id": "tests/integration/jev-active-mode-repro.test.ts",
+        "kind": "other",
+        "path": "tests/integration/jev-active-mode-repro.test.ts"
       },
       {
         "id": "tests/integration/multirepo-workspace.test.ts",
@@ -42303,9 +42377,19 @@
         "path": "tests/lint/fable-routing-docs.test.ts"
       },
       {
+        "id": "tests/lint/file-identity-bigint.test.ts",
+        "kind": "other",
+        "path": "tests/lint/file-identity-bigint.test.ts"
+      },
+      {
         "id": "tests/lint/handoffs-writers.test.ts",
         "kind": "other",
         "path": "tests/lint/handoffs-writers.test.ts"
+      },
+      {
+        "id": "tests/lint/hooks-async-configuration.test.ts",
+        "kind": "other",
+        "path": "tests/lint/hooks-async-configuration.test.ts"
       },
       {
         "id": "tests/lint/inventory-graph-drift.test.ts",
@@ -43215,6 +43299,36 @@
         "kind": "imports"
       },
       {
+        "from": "scripts/dev/repro-state-lock.mjs",
+        "to": "external:node:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/dev/repro-state-lock.mjs",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/dev/repro-state-lock.mjs",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/dev/repro-state-lock.mjs",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/dev/repro-state-lock.mjs",
+        "to": "external:node:url",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/dev/repro-state-lock.mjs",
+        "to": "scripts/lib/state-lock.mjs",
+        "kind": "imports"
+      },
+      {
         "from": "scripts/eval-autoresearch-json.mjs",
         "to": "external:node:child_process",
         "kind": "imports"
@@ -43627,6 +43741,11 @@
       {
         "from": "scripts/lib/jev-shadow.mjs",
         "to": "external:node:url",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/lib/jev-shadow.mjs",
+        "to": "scripts/jev-resolve.mjs",
         "kind": "imports"
       },
       {
@@ -44152,6 +44271,26 @@
       {
         "from": "scripts/post-tool-verifier.mjs",
         "to": "scripts/lib/stdin.mjs",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/postinstall-contained-fs.mjs",
+        "to": "external:node:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/postinstall-contained-fs.mjs",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/postinstall-contained-fs.mjs",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/postinstall-contained-fs.mjs",
+        "to": "external:node:url",
         "kind": "imports"
       },
       {
@@ -46661,6 +46800,31 @@
       },
       {
         "from": "src/__tests__/hud-build-guidance.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/__tests__/hud-cache-wrapper-4237.test.ts",
+        "to": "external:node:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/__tests__/hud-cache-wrapper-4237.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/__tests__/hud-cache-wrapper-4237.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/__tests__/hud-cache-wrapper-4237.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/__tests__/hud-cache-wrapper-4237.test.ts",
         "to": "external:vitest",
         "kind": "imports"
       },
@@ -53536,6 +53700,11 @@
       },
       {
         "from": "src/cli/__tests__/team.test.ts",
+        "to": "external:fs/promises",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/team.test.ts",
         "to": "external:os",
         "kind": "imports"
       },
@@ -53552,6 +53721,26 @@
       {
         "from": "src/cli/__tests__/team.test.ts",
         "to": "src/cli/team.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/team.test.ts",
+        "to": "src/team/runtime-v2.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/team.test.ts",
+        "to": "src/team/state-paths.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/team.test.ts",
+        "to": "src/team/team-instance.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/__tests__/team.test.ts",
+        "to": "src/team/team-owner-epoch.ts",
         "kind": "imports"
       },
       {
@@ -53970,6 +54159,16 @@
         "kind": "imports"
       },
       {
+        "from": "src/cli/commands/__tests__/intake-headless-flag.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/__tests__/intake-headless-flag.test.ts",
+        "to": "src/cli/commands/intake.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/cli/commands/__tests__/intake.test.ts",
         "to": "external:vitest",
         "kind": "imports"
@@ -54307,6 +54506,16 @@
       {
         "from": "src/cli/commands/ralph.ts",
         "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/ralph.ts",
+        "to": "src/factory/map-ingest.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/ralph.ts",
+        "to": "src/factory/map-run.ts",
         "kind": "imports"
       },
       {
@@ -55360,6 +55569,91 @@
         "kind": "imports"
       },
       {
+        "from": "src/factory/__tests__/map-frontier.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-frontier.test.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-frontier.test.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-ingest.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-ingest.test.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-ingest.test.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-ingest.test.ts",
+        "to": "src/factory/map-ingest.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-ingest.test.ts",
+        "to": "src/factory/map-ingest.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "src/factory/map-ingest.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "src/factory/map-run.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/__tests__/map-run.test.ts",
+        "to": "src/hooks/ralph/prd.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/factory/__tests__/status.test.ts",
         "to": "external:child_process",
         "kind": "imports"
@@ -55451,6 +55745,71 @@
       },
       {
         "from": "src/factory/listener.ts",
+        "to": "src/lib/worktree-paths.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-ingest.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-ingest.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-ingest.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "external:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "src/factory/map-frontier.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "src/factory/map-ingest.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "src/factory/map-ingest.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "src/hooks/ralph/prd.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
+        "to": "src/hooks/ralph/prd.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/factory/map-run.ts",
         "to": "src/lib/worktree-paths.ts",
         "kind": "imports"
       },
@@ -60930,6 +61289,41 @@
         "kind": "type-exports"
       },
       {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "external:node:fs/promises",
+        "kind": "imports"
+      },
+      {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "src/hooks/jev/points.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "src/hooks/jev/resolver.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/hooks/jev/__tests__/active-mode.test.ts",
+        "to": "src/hooks/jev/types.ts",
+        "kind": "type-imports"
+      },
+      {
         "from": "src/hooks/jev/__tests__/client.test.ts",
         "to": "external:vitest",
         "kind": "imports"
@@ -62791,6 +63185,11 @@
       },
       {
         "from": "src/hooks/persistent-mode/jev-shadow.ts",
+        "to": "src/hooks/jev/index.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/hooks/persistent-mode/jev-shadow.ts",
         "to": "src/hooks/persistent-mode/index.ts",
         "kind": "type-imports"
       },
@@ -63703,6 +64102,11 @@
         "from": "src/hooks/ralph/jev-shadow.ts",
         "to": "src/hooks/jev/index.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/hooks/ralph/jev-shadow.ts",
+        "to": "src/hooks/jev/index.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/hooks/ralph/loop.ts",
@@ -69422,6 +69826,11 @@
       {
         "from": "src/lib/__tests__/mode-state-lock.test.ts",
         "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-lock.test.ts",
+        "to": "scripts/lib/state-lock.mjs",
         "kind": "imports"
       },
       {
@@ -76120,6 +76529,31 @@
         "kind": "type-imports"
       },
       {
+        "from": "src/team/__tests__/tmux-session.pane-env.test.ts",
+        "to": "external:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/tmux-session.pane-env.test.ts",
+        "to": "external:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/tmux-session.pane-env.test.ts",
+        "to": "external:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/tmux-session.pane-env.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/team/__tests__/tmux-session.pane-env.test.ts",
+        "to": "src/team/tmux-session.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/team/__tests__/tmux-session.spawn.test.ts",
         "to": "external:vitest",
         "kind": "imports"
@@ -82650,6 +83084,21 @@
         "kind": "imports"
       },
       {
+        "from": "tests/integration/contained-fs-packaging.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/contained-fs-packaging.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/contained-fs-packaging.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
         "from": "tests/integration/epic-3698-closure-verifier.test.ts",
         "to": "external:node:child_process",
         "kind": "imports"
@@ -82712,6 +83161,46 @@
       {
         "from": "tests/integration/git-guardrails-hook.test.ts",
         "to": "scripts/lib/state-root.mjs",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:http",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:http",
+        "kind": "type-imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:node:url",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/integration/jev-active-mode-repro.test.ts",
+        "to": "external:vitest",
         "kind": "imports"
       },
       {
@@ -83085,6 +83574,21 @@
         "kind": "imports"
       },
       {
+        "from": "tests/lint/file-identity-bigint.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/lint/file-identity-bigint.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/lint/file-identity-bigint.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
         "from": "tests/lint/handoffs-writers.test.ts",
         "to": "external:node:fs",
         "kind": "imports"
@@ -83096,6 +83600,21 @@
       },
       {
         "from": "tests/lint/handoffs-writers.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/lint/hooks-async-configuration.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/lint/hooks-async-configuration.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "tests/lint/hooks-async-configuration.test.ts",
         "to": "external:vitest",
         "kind": "imports"
       },
@@ -83386,12 +83905,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7166,
-      "edgeCount": 8196,
-      "importEdgeCount": 6776,
+      "nodeCount": 7182,
+      "edgeCount": 8283,
+      "importEdgeCount": 6850,
       "registerEdgeCount": 68
     }
   },
-  "inventorySha256": "22877059424c133590a79746788b8397ed7349e005a636cd24546faea841ede0",
-  "manifestSha256": "c941a5d019447f4b1fd48b86078d0cc0a6bf52b153dff4e0eeb78205f146225d"
+  "inventorySha256": "1cf0849f3e91a49ae5af7f05f40975797eaa32622a599526b48f2e615c30ac56",
+  "manifestSha256": "0bec9eff32c487e1a0134b7e541272fb9aed69ae35ee4b623dc83743709c567e"
 }

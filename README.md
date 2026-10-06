@@ -482,14 +482,20 @@ Use the HUD for live observability and the current session/replay artifacts for 
 
 ### Jev Judgment Configuration
 
-**Jev** brings calibrated decision-making to OMC's orchestration. Enable it with one environment variable:
+**Jev** brings calibrated decision-making to OMC's orchestration. Enable it with environment variables:
 
 ```bash
-export TYPESAFE_API_KEY="sk-..."
-export OMC_JEV="all:active"  # All judgment points active
+export TYPESAFE_API_KEY="sk-..."              # Jev API key (required)
+export OMC_JEV="all:active"                    # All judgment points active
+export OMC_JEV_TIMEOUT_MS="2000"               # Per-call timeout (default: 2000ms)
 ```
 
-Jev decides skill triggering, model routing, loop continuation, and more. Defaults to zero egress: without configuration, nothing is sent to the API. See **[Jev Judgment Points](docs/HOOKS.md#jev-judgment-points)** in HOOKS.md for the full configuration reference and point registry.
+**Modes:**
+- `shadow` (default): Jev is queried but heuristics decide; answers logged for analysis
+- `active`: Jev's answer overrides the heuristic; adds latency (bounded by `OMC_JEV_TIMEOUT_MS`)
+- `off`: No Jev queries sent (zero egress)
+
+Jev decides skill triggering, model routing, loop continuation, context pruning, task sizing, and completion verdicts. On timeout, HTTP error, or parse failure, active mode degrades to the heuristic without blocking. Defaults to zero egress: without configuration, nothing is sent to the API. See **[Jev Judgment Points](docs/HOOKS.md#jev-judgment-points)** in HOOKS.md for the full configuration reference and point registry.
 
 ### Notification Tags (Telegram/Discord/Slack)
 

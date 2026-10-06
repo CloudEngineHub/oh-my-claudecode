@@ -20,7 +20,7 @@ import { join, resolve } from 'path';
 import { existsSync } from 'fs';
 import { link, lstat, mkdir, open, readdir, readFile, rm, unlink, writeFile } from 'fs/promises';
 import { performance } from 'perf_hooks';
-import { TeamPaths, absPath, teamStateRoot } from './state-paths.js';
+import { TeamPaths, absPath, canonicalTeamStatePath, teamStateRoot, teamWorkspaceHash } from './state-paths.js';
 import { getOmcRoot, validateSessionId } from '../lib/worktree-paths.js';
 import { allocateTasksToWorkers } from './allocation-policy.js';
 import type { TaskAllocationInput, WorkerAllocationInput } from './allocation-policy.js';
@@ -61,7 +61,7 @@ import type {
   WorkerStatus,
   WorkerHeartbeat,
 } from './types.js';
-import { ABSOLUTE_MAX_WORKERS, isValidTeamInstanceId, isValidTmuxServerIdentity } from './types.js';
+import { ABSOLUTE_MAX_WORKERS, isValidTeamInstanceId, isValidTmuxServerIdentity, type TeamInstanceProcessIdentity } from './types.js';
 import type { TeamPhase } from './phase-controller.js';
 import { validateTeamName } from './team-name.js';
 import { TASK_ID_SAFE_PATTERN, WORKER_NAME_SAFE_PATTERN } from './contracts.js';
@@ -184,7 +184,7 @@ import { createTaskRecord, validateTaskDependencies } from './state/tasks.js';
 function workerInstructionStateRoot(cwd: string, teamName: string): string {
   return process.platform === 'win32' ? teamStateRoot(cwd, teamName) : '$OMC_TEAM_STATE_ROOT';
 }
-import { currentProcessStartIdentity, isProcessIdentityDead, publishOwnerEpoch, readLatestOwnerEpoch, requireOwnerFence, requireOwnerProcessIdentity, type OwnerFence } from './team-owner-epoch.js';
+import { currentProcessStartIdentity, isProcessIdentityDead, publishOwnerEpoch, readLatestOwnerEpoch, requireOwnerFence, requireOwnerProcessIdentity, type OwnerEpochRecord, type OwnerFence } from './team-owner-epoch.js';
 import type { RecoverDeadWorkerV2Error, RecoverDeadWorkerV2Failure, RecoverDeadWorkerV2Result, TaskRecoveryAdoptionResult } from './types.js';
 import { waitForRecoveryGateRecord, type RecoveryActivationGate } from './worker-activation-gate.js';
 import {
@@ -676,7 +676,7 @@ export function resolveTaskAssignment(
   resolvedRouting: Record<CanonicalTeamRole, { primary: RoleAssignment; fallback: RoleAssignment }>,
   roleRoutingConfig: Partial<Record<CanonicalTeamRole, TeamRoleAssignmentSpec>> | undefined,
   fallbackAgent: CliAgentType,
-): { agentType: CliAgentType; model: string; role: CanonicalTeamRole | null } {
+): { agentType: CliAgentType; model: string; reasoningEffort?: string; role: CanonicalTeamRole | null } {
   const canonicalRoles = new Set<string>(CANONICAL_TEAM_ROLES as readonly string[]);
   const hasExplicitRole = typeof task.role === 'string' && task.role.length > 0;
   const rawRole = hasExplicitRole
@@ -686,7 +686,7 @@ export function resolveTaskAssignment(
   const canonical = canonicalRoles.has(normalized) ? (normalized as CanonicalTeamRole) : null;
 
   if (!canonical) {
-    return { agentType: fallbackAgent, model: '', role: null };
+    return { agentType: fallbackAgent, model: '', reasoningEffort: undefined, role: null };
   }
 
   // Snapshot routing only overrides the caller's CLI agentType when the user
@@ -699,7 +699,7 @@ export function resolveTaskAssignment(
     canonical,
   );
   if (!hasExplicitRole && !hasConfigForRole) {
-    return { agentType: fallbackAgent, model: '', role: canonical };
+    return { agentType: fallbackAgent, model: '', reasoningEffort: undefined, role: canonical };
   }
 
   // Explicit provider + explicit role with NO per-role routing config: the user
@@ -710,12 +710,12 @@ export function resolveTaskAssignment(
   // launching Claude instead of the requested CLI provider. When `team.roleRouting`
   // *is* configured for the role, that deliberate config still wins (below).
   if (hasExplicitRole && !hasConfigForRole && fallbackAgent !== 'claude') {
-    return { agentType: fallbackAgent, model: '', role: canonical };
+    return { agentType: fallbackAgent, model: '', reasoningEffort: undefined, role: canonical };
   }
 
   const pair = resolvedRouting[canonical];
   if (!pair) {
-    return { agentType: fallbackAgent, model: '', role: canonical };
+    return { agentType: fallbackAgent, model: '', reasoningEffort: undefined, role: canonical };
   }
 
   // A routed provider is authoritative. Missing or untrusted binaries fail later
@@ -724,6 +724,7 @@ export function resolveTaskAssignment(
   return {
     agentType: chosen.provider as CliAgentType,
     model: chosen.model,
+    reasoningEffort: chosen.reasoningEffort,
     role: canonical,
   };
 }
@@ -1545,7 +1546,7 @@ async function spawnV2Worker(opts: SpawnV2WorkerOptions): Promise<SpawnV2WorkerR
   }
 
   const envVars = {
-    ...getModelWorkerEnv(opts.teamName, opts.workerName, opts.agentType),
+    ...getModelWorkerEnv(opts.teamName, opts.workerName, opts.agentType, process.env, opts.role),
     OMC_TEAM_STATE_ROOT: teamStateRoot(opts.cwd, opts.teamName),
     OMC_TEAM_LEADER_CWD: opts.cwd,
     ...(opts.worktreePath ? { OMC_TEAM_WORKTREE_PATH: opts.worktreePath } : {}),
@@ -4073,24 +4074,27 @@ export async function startTeamV2(config: StartTeamV2Config): Promise<TeamRuntim
   // providers fail before any team state or multiplexer side effect is created.
   const resolvedBinaryPaths: Partial<Record<CliAgentType, string>> = {};
   const missingBinaryReasons: Array<{ agentType: CliAgentType; reason: string }> = [];
-  const startupAssignments = new Map<string, {
+  type StartupAssignment = {
     agentType: CliAgentType;
     model?: string;
+    reasoningEffort?: string;
     role?: CanonicalTeamRole;
-  }>();
+  };
+  const startupAssignments = new Map<string, StartupAssignment>();
   const effectiveAgentTypes = new Set<CliAgentType>();
   for (let i = 0; i < workerNames.length; i++) {
     const workerName = workerNames[i]!;
     const taskIndex = startupByWorker.get(workerName);
     const fallbackAgent = (agentTypes[i % agentTypes.length] ?? agentTypes[0] ?? 'claude') as CliAgentType;
     const resolvedAssignment = taskIndex === undefined
-      ? { agentType: fallbackAgent, model: '', role: undefined }
+      ? { agentType: fallbackAgent, model: '', reasoningEffort: undefined, role: undefined }
       : resolveTaskAssignment(config.tasks[taskIndex]!, resolvedRouting,
         pluginCfg.team?.roleRouting as Partial<Record<CanonicalTeamRole, TeamRoleAssignmentSpec>> | undefined,
         fallbackAgent);
-    const assignment = {
+    const assignment: StartupAssignment = {
       agentType: resolvedAssignment.agentType,
       model: resolvedAssignment.model || resolveDefaultModel(resolvedAssignment.agentType),
+      reasoningEffort: resolvedAssignment.reasoningEffort,
       ...(resolvedAssignment.role ? { role: resolvedAssignment.role } : {}),
     };
     startupAssignments.set(workerName, assignment);
@@ -4109,7 +4113,16 @@ export async function startTeamV2(config: StartTeamV2Config): Promise<TeamRuntim
     throw new Error(`cli_binary_preflight_failed:${missing}`);
   }
 
+  // Clean up any stale reservations from dead processes BEFORE acquiring the lifecycle lock.
+  // This prevents nested lock acquisition and ensures old dead-owner reservations don't block startup.
+  try {
+    await cleanupStaleReservations(sanitized, leaderCwd);
+  } catch {
+    // Best-effort; proceed even if cleanup fails
+  }
+
   return withTeamInstanceLifecycleLock(leaderCwd, sanitized, async () => {
+    
     // Reserve the name before creating any state, worktree, pane, or provider
     // effect.  The reservation remains external and blocks same-name startup
     // until this incarnation is either fully activated or safely released.
@@ -4211,6 +4224,7 @@ export async function startTeamV2(config: StartTeamV2Config): Promise<TeamRuntim
     const descriptor = buildValidatedWorkerLaunchDescriptor(assignment.agentType, {
       teamName: sanitized, workerName, cwd: worktree?.path ?? leaderCwd, resolvedBinaryPath: binary,
       model: assignment.model,
+      reasoningEffort: assignment.reasoningEffort,
     }, promptArgs);
     preparedLaunches.set(workerName, { agentType: assignment.agentType,
       ...(assignment.role ? { role: assignment.role } : {}), descriptor,
@@ -5788,6 +5802,126 @@ export async function monitorTeamV2(
       updated_at: updatedAt,
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// cleanupStaleReservations — remove reservations owned by dead processes
+// ---------------------------------------------------------------------------
+
+/**
+ * Best-effort cleanup of stale team reservations owned by dead processes.
+ * Acquires the lifecycle lock to ensure race-safe removal.
+ * This allows new teams to be created even if a previous team's reservation
+ * file was left behind due to process death during startup.
+ */
+export async function cleanupStaleReservations(
+  teamName: string,
+  cwd: string,
+): Promise<void> {
+  const sanitized = sanitizeTeamName(teamName);
+  try {
+    await withTeamInstanceLifecycleLock(cwd, sanitized, async () => {
+      const workspaceHash = teamWorkspaceHash(cwd, sanitized);
+      const reservationPath = canonicalTeamStatePath(
+        cwd,
+        TeamPaths.teamInstanceReservation(workspaceHash, sanitized),
+      );
+
+      if (!existsSync(reservationPath)) return;
+
+      const contentStr = await readFile(reservationPath, 'utf-8');
+      const reservation = JSON.parse(contentStr) as unknown;
+
+      // Validate basic shape
+      if (
+        !(
+          reservation &&
+          typeof reservation === 'object' &&
+          !Array.isArray(reservation) &&
+          'owner' in reservation &&
+          typeof (reservation as Record<string, unknown>).owner === 'object'
+        )
+      ) {
+        return; // Malformed, leave alone
+      }
+
+      const owner = (reservation as Record<string, unknown>).owner as unknown;
+      if (!(
+        owner &&
+        typeof owner === 'object' &&
+        !Array.isArray(owner) &&
+        'pid' in owner &&
+        'process_started_at' in owner
+      )) {
+        return; // Malformed owner, leave alone
+      }
+
+      // Check if the process is dead
+      const ownerRecord = owner as Pick<OwnerEpochRecord, 'pid' | 'process_started_at'>;
+      if (isProcessIdentityDead(ownerRecord)) {
+        // Owner process is dead; clean up this reservation
+        await unlink(reservationPath);
+      }
+    }, 5_000);
+  } catch {
+    // Best-effort; silently proceed on any error
+  }
+}
+
+/**
+ * Clean up abandoned team state when config exists but has no valid instance_id.
+ * This handles partial startup failures and ensures no state is left behind.
+ */
+export async function cleanupAbandonedTeamState(
+  teamName: string,
+  cwd: string,
+): Promise<void> {
+  const sanitized = sanitizeTeamName(teamName);
+  
+  await withTeamInstanceLifecycleLock(cwd, sanitized, async () => {
+    // Clean up the reservation if it exists and owner is dead or missing
+    const workspaceHash = teamWorkspaceHash(cwd, sanitized);
+    const reservationPath = canonicalTeamStatePath(
+      cwd,
+      TeamPaths.teamInstanceReservation(workspaceHash, sanitized),
+    );
+    
+    if (existsSync(reservationPath)) {
+      try {
+        const contentStr = await readFile(reservationPath, 'utf-8');
+        const reservation = JSON.parse(contentStr) as Record<string, unknown>;
+        const owner = reservation.owner as Pick<OwnerEpochRecord, 'pid' | 'process_started_at'> | undefined;
+        
+        // Remove if owner is dead or if this process owns it
+        if (!owner || isProcessIdentityDead(owner) || ownerMatchesCurrent(owner)) {
+          await unlink(reservationPath);
+        }
+      } catch {
+        // If reservation is malformed, try to remove it anyway
+        try {
+          await unlink(reservationPath);
+        } catch {
+          // Reservation removal failed; continue with state dir cleanup
+        }
+      }
+    }
+    
+    // Clean up the team state directory
+    const teamRoot = teamStateRoot(cwd, sanitized);
+    if (existsSync(teamRoot)) {
+      try {
+        await rm(teamRoot, { recursive: true, force: true });
+      } catch (error) {
+        throw new Error(`Failed to remove team state directory at ${teamRoot}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }, 10_000);
+}
+
+// Helper to check if owner matches current process
+function ownerMatchesCurrent(owner: Pick<TeamInstanceProcessIdentity, 'pid' | 'process_started_at'>): boolean {
+  const processStartedAt = currentProcessStartIdentity();
+  return processStartedAt !== null && owner.pid === process.pid && processStartedAt === owner.process_started_at;
 }
 
 // ---------------------------------------------------------------------------

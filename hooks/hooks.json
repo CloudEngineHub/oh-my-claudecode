@@ -116,7 +116,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}\"/scripts/run.cjs \"${CLAUDE_PLUGIN_ROOT}\"/scripts/project-memory-posttool.mjs",
-            "timeout": 3
+            "timeout": 3,
+            "async": true
           },
           {
             "type": "command",

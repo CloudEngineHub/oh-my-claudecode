@@ -513,6 +513,8 @@ export interface TeamRoleAssignmentSpec {
   /** Tier name ('HIGH' | 'MEDIUM' | 'LOW') or explicit model ID. */
   model?: TeamRoleTier | string;
   agent?: KnownAgentName;
+  /** Reasoning effort level per provider. Codex: low|medium|high|xhigh|max|ultra; Claude: low|medium|high|xhigh|max; Antigravity: low|medium|high|max. Not allowed on orchestrator. */
+  reasoningEffort?: string;
 }
 
 /** Orchestrator is pinned to claude; only `model` is user-configurable. */
@@ -546,4 +548,5 @@ export interface RoleAssignment {
   /** Resolved model ID (tier names expanded to explicit model strings). */
   model: string;
   agent: KnownAgentName;
+  reasoningEffort?: string;
 }

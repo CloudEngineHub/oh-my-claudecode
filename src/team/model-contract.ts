@@ -13,7 +13,7 @@ export interface CliAgentContract {
   agentType: CliAgentType;
   binary: string;
   installInstructions: string;
-  buildLaunchArgs(model?: string, extraFlags?: string[]): string[];
+  buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags?: string[]): string[];
   parseOutput(rawOutput: string): string;
   /** Whether this agent supports a prompt/headless mode that bypasses TUI input */
   supportsPromptMode?: boolean;
@@ -25,6 +25,7 @@ export interface WorkerLaunchConfig {
   teamName: string;
   workerName: string;
   model?: string;
+  reasoningEffort?: string;
   cwd: string;
   extraFlags?: string[];
   /**
@@ -187,7 +188,7 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
     agentType: 'claude',
     binary: 'claude',
     installInstructions: 'Install Claude CLI: https://claude.ai/download',
-    buildLaunchArgs(model?: string, extraFlags: string[] = []): string[] {
+    buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags: string[] = []): string[] {
       const args = ['--dangerously-skip-permissions'];
       if (shouldUseClaudeBareMode() && !extraFlags.includes('--bare')) {
         args.push('--bare');
@@ -199,6 +200,9 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
         // these providers. (issue #1695)
         const resolved = isProviderSpecificModelId(model) ? model : normalizeToCcAlias(model);
         args.push('--model', resolved);
+      }
+      if (reasoningEffort) {
+        args.push('--effort', reasoningEffort);
       }
       return [...args, ...extraFlags];
     },
@@ -214,9 +218,12 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
     // or positional prompt mode here; runtime dispatch writes inbox.md and nudges
     // the live Codex TUI with `codex` as the worker process.
     supportsPromptMode: false,
-    buildLaunchArgs(model?: string, extraFlags: string[] = []): string[] {
+    buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags: string[] = []): string[] {
       const args = ['--dangerously-bypass-approvals-and-sandbox'];
       if (model) args.push('--model', model);
+      if (reasoningEffort) {
+        args.push('-c', `model_reasoning_effort="${reasoningEffort}"`);
+      }
       return [...args, ...extraFlags];
     },
     parseOutput(rawOutput: string): string {
@@ -244,7 +251,7 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
     installInstructions: 'Install Gemini CLI: npm install -g @google/gemini-cli',
     supportsPromptMode: true,
     promptModeFlag: '-p',
-    buildLaunchArgs(model?: string, extraFlags: string[] = []): string[] {
+    buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags: string[] = []): string[] {
       const args = ['--approval-mode', 'yolo'];
       if (model) args.push('--model', model);
       return [...args, ...extraFlags];
@@ -259,7 +266,7 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
     installInstructions: 'Install Grok Build: https://build.grok.com',
     supportsPromptMode: true,
     promptModeFlag: '-p',
-    buildLaunchArgs(model?: string, extraFlags: string[] = []): string[] {
+    buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags: string[] = []): string[] {
       const args = ['--always-approve'];
       if (model) args.push('--model', model);
       return [...args, ...extraFlags];
@@ -274,7 +281,7 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
     installInstructions: 'Install the Antigravity CLI (agy) per the official instructions at https://antigravity.google, then verify with `agy --version`.',
     supportsPromptMode: true,
     promptModeFlag: '-p',
-    buildLaunchArgs(model?: string, extraFlags: string[] = []): string[] {
+    buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags: string[] = []): string[] {
       // agy's `-p`/`--print` is appended by getPromptModeArgs as `-p <instruction>`,
       // where the prompt is the VALUE of `-p` (not a boolean). All other flags
       // MUST precede that `-p`, so buildLaunchArgs returns only the leading flags
@@ -282,6 +289,9 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
       // so no trust-confirm send-keys is needed (unlike gemini). Verified agy 1.0.10.
       const args = ['--dangerously-skip-permissions'];
       if (model) args.push('--model', model);
+      if (reasoningEffort) {
+        args.push('--effort', reasoningEffort);
+      }
       return [...args, ...extraFlags];
     },
     parseOutput(rawOutput: string): string {
@@ -295,7 +305,7 @@ const CONTRACTS: Record<CliAgentType, CliAgentContract> = {
     // Team workers must be persistent interactive panes, so the one-shot
     // `-p/--print` path is deliberately unused here (same stance as codex).
     supportsPromptMode: false,
-    buildLaunchArgs(model?: string, extraFlags: string[] = []): string[] {
+    buildLaunchArgs(model?: string, reasoningEffort?: string, extraFlags: string[] = []): string[] {
       // `--force` suppresses per-command approval prompts and `--trust` accepts
       // the workspace, which together are cursor-agent's equivalent of the
       // approval bypass every other provider already passes. Without them a
@@ -397,7 +407,7 @@ export function resolveValidatedBinaryPath(agentType: CliAgentType): string {
 }
 
 export function buildLaunchArgs(agentType: CliAgentType, config: WorkerLaunchConfig): string[] {
-  return getContract(agentType).buildLaunchArgs(config.model, config.extraFlags);
+  return getContract(agentType).buildLaunchArgs(config.model, config.reasoningEffort, config.extraFlags);
 }
 
 export function buildWorkerArgv(agentType: CliAgentType, config: WorkerLaunchConfig): string[] {
@@ -497,6 +507,7 @@ export function getWorkerEnv(
   workerName: string,
   agentType: CliAgentType,
   env: NodeJS.ProcessEnv = process.env,
+  role?: string,
 ): Record<string, string> {
   validateTeamName(teamName);
   const workerEnv: Record<string, string> = {
@@ -504,6 +515,9 @@ export function getWorkerEnv(
     OMC_TEAM_NAME: teamName,
     OMC_WORKER_AGENT_TYPE: agentType,
   };
+  if (role) {
+    workerEnv.OMC_TEAM_ROLE = role;
+  }
 
   for (const key of WORKER_MODEL_ENV_ALLOWLIST) {
     const value = env[key];
