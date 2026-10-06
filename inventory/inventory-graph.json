@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "cfc6b8022e65d9ea89b569ed04f9eca429137dca",
-    "sourceSha256": "4186a6b7a48fcc0bf8dc973a7a647553801060ec156089f146e59d41c3696e4f",
+    "head": "7a614e5890a2f8f8665411f9825175e0b9dade3c",
+    "sourceSha256": "ad0a57d0c822ff93296408f13ac4385a370516af87dea5bd3fbfd8e7e4ee8d07",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "cfc6b8022e65d9ea89b569ed04f9eca429137dca",
-  "sourceSha256": "4186a6b7a48fcc0bf8dc973a7a647553801060ec156089f146e59d41c3696e4f",
+  "head": "7a614e5890a2f8f8665411f9825175e0b9dade3c",
+  "sourceSha256": "ad0a57d0c822ff93296408f13ac4385a370516af87dea5bd3fbfd8e7e4ee8d07",
   "counts": {
     "public": {
       "skills": 47,
@@ -32,9 +32,9 @@
       "total": 1461
     },
     "generated": {
-      "distFiles": 5096,
+      "distFiles": 5611,
       "bridgeFiles": 9,
-      "total": 5105
+      "total": 5620
     },
     "prompt": {
       "promptLikeFiles": 61
@@ -971,6 +971,10 @@
       "dist/__tests__/bridge-help-question-regex.test.d.ts.map",
       "dist/__tests__/bridge-help-question-regex.test.js",
       "dist/__tests__/bridge-help-question-regex.test.js.map",
+      "dist/__tests__/chain-enqueuer-registration.test.d.ts",
+      "dist/__tests__/chain-enqueuer-registration.test.d.ts.map",
+      "dist/__tests__/chain-enqueuer-registration.test.js",
+      "dist/__tests__/chain-enqueuer-registration.test.js.map",
       "dist/__tests__/claude-goal-adapter-doc.test.d.ts",
       "dist/__tests__/claude-goal-adapter-doc.test.d.ts.map",
       "dist/__tests__/claude-goal-adapter-doc.test.js",
@@ -1055,6 +1059,10 @@
       "dist/__tests__/delegation-enforcer.test.d.ts.map",
       "dist/__tests__/delegation-enforcer.test.js",
       "dist/__tests__/delegation-enforcer.test.js.map",
+      "dist/__tests__/directory-context-injector-registration.test.d.ts",
+      "dist/__tests__/directory-context-injector-registration.test.d.ts.map",
+      "dist/__tests__/directory-context-injector-registration.test.js",
+      "dist/__tests__/directory-context-injector-registration.test.js.map",
       "dist/__tests__/directory-context-injector.test.d.ts",
       "dist/__tests__/directory-context-injector.test.d.ts.map",
       "dist/__tests__/directory-context-injector.test.js",
@@ -1091,6 +1099,10 @@
       "dist/__tests__/helpers/prompt-test-helpers.d.ts.map",
       "dist/__tests__/helpers/prompt-test-helpers.js",
       "dist/__tests__/helpers/prompt-test-helpers.js.map",
+      "dist/__tests__/hook-bridge-main-module.test.d.ts",
+      "dist/__tests__/hook-bridge-main-module.test.d.ts.map",
+      "dist/__tests__/hook-bridge-main-module.test.js",
+      "dist/__tests__/hook-bridge-main-module.test.js.map",
       "dist/__tests__/hooks-command-escaping.test.d.ts",
       "dist/__tests__/hooks-command-escaping.test.d.ts.map",
       "dist/__tests__/hooks-command-escaping.test.js",
@@ -1131,6 +1143,10 @@
       "dist/__tests__/hud-build-guidance.test.d.ts.map",
       "dist/__tests__/hud-build-guidance.test.js",
       "dist/__tests__/hud-build-guidance.test.js.map",
+      "dist/__tests__/hud-cache-wrapper-4237.test.d.ts",
+      "dist/__tests__/hud-cache-wrapper-4237.test.d.ts.map",
+      "dist/__tests__/hud-cache-wrapper-4237.test.js",
+      "dist/__tests__/hud-cache-wrapper-4237.test.js.map",
       "dist/__tests__/hud-cache-wrapper.test.d.ts",
       "dist/__tests__/hud-cache-wrapper.test.d.ts.map",
       "dist/__tests__/hud-cache-wrapper.test.js",
@@ -1295,6 +1311,14 @@
       "dist/__tests__/hud/transcript-agent-lifecycle.test.d.ts.map",
       "dist/__tests__/hud/transcript-agent-lifecycle.test.js",
       "dist/__tests__/hud/transcript-agent-lifecycle.test.js.map",
+      "dist/__tests__/hud/update-hint.test.d.ts",
+      "dist/__tests__/hud/update-hint.test.d.ts.map",
+      "dist/__tests__/hud/update-hint.test.js",
+      "dist/__tests__/hud/update-hint.test.js.map",
+      "dist/__tests__/hud/usage-api-header-fallback.test.d.ts",
+      "dist/__tests__/hud/usage-api-header-fallback.test.d.ts.map",
+      "dist/__tests__/hud/usage-api-header-fallback.test.js",
+      "dist/__tests__/hud/usage-api-header-fallback.test.js.map",
       "dist/__tests__/hud/usage-api-lock.test.d.ts",
       "dist/__tests__/hud/usage-api-lock.test.d.ts.map",
       "dist/__tests__/hud/usage-api-lock.test.js",
@@ -1303,6 +1327,10 @@
       "dist/__tests__/hud/usage-api-stale.test.d.ts.map",
       "dist/__tests__/hud/usage-api-stale.test.js",
       "dist/__tests__/hud/usage-api-stale.test.js.map",
+      "dist/__tests__/hud/usage-api-user-agent.test.d.ts",
+      "dist/__tests__/hud/usage-api-user-agent.test.d.ts.map",
+      "dist/__tests__/hud/usage-api-user-agent.test.js",
+      "dist/__tests__/hud/usage-api-user-agent.test.js.map",
       "dist/__tests__/hud/usage-api.test.d.ts",
       "dist/__tests__/hud/usage-api.test.d.ts.map",
       "dist/__tests__/hud/usage-api.test.js",
@@ -1351,6 +1379,10 @@
       "dist/__tests__/issue-2652-runtime-wiring-and-output-contract.test.d.ts.map",
       "dist/__tests__/issue-2652-runtime-wiring-and-output-contract.test.js",
       "dist/__tests__/issue-2652-runtime-wiring-and-output-contract.test.js.map",
+      "dist/__tests__/issue-3867-legacy-l-update.test.d.ts",
+      "dist/__tests__/issue-3867-legacy-l-update.test.d.ts.map",
+      "dist/__tests__/issue-3867-legacy-l-update.test.js",
+      "dist/__tests__/issue-3867-legacy-l-update.test.js.map",
       "dist/__tests__/job-management-sqlite.test.d.ts",
       "dist/__tests__/job-management-sqlite.test.d.ts.map",
       "dist/__tests__/job-management-sqlite.test.js",
@@ -1555,6 +1587,10 @@
       "dist/__tests__/pre-compact-cwd.test.d.ts.map",
       "dist/__tests__/pre-compact-cwd.test.js",
       "dist/__tests__/pre-compact-cwd.test.js.map",
+      "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts",
+      "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts.map",
+      "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js",
+      "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js.map",
       "dist/__tests__/pre-tool-enforcer.test.d.ts",
       "dist/__tests__/pre-tool-enforcer.test.d.ts.map",
       "dist/__tests__/pre-tool-enforcer.test.js",
@@ -1567,6 +1603,10 @@
       "dist/__tests__/project-memory-merge.test.d.ts.map",
       "dist/__tests__/project-memory-merge.test.js",
       "dist/__tests__/project-memory-merge.test.js.map",
+      "dist/__tests__/project-memory-posttool.test.d.ts",
+      "dist/__tests__/project-memory-posttool.test.d.ts.map",
+      "dist/__tests__/project-memory-posttool.test.js",
+      "dist/__tests__/project-memory-posttool.test.js.map",
       "dist/__tests__/project-session-manager-review-worktree.test.d.ts",
       "dist/__tests__/project-session-manager-review-worktree.test.d.ts.map",
       "dist/__tests__/project-session-manager-review-worktree.test.js",
@@ -1651,6 +1691,10 @@
       "dist/__tests__/rate-limit-wait/daemon-bootstrap.test.d.ts.map",
       "dist/__tests__/rate-limit-wait/daemon-bootstrap.test.js",
       "dist/__tests__/rate-limit-wait/daemon-bootstrap.test.js.map",
+      "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts",
+      "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts.map",
+      "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js",
+      "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js.map",
       "dist/__tests__/rate-limit-wait/daemon.test.d.ts",
       "dist/__tests__/rate-limit-wait/daemon.test.d.ts.map",
       "dist/__tests__/rate-limit-wait/daemon.test.js",
@@ -1671,6 +1715,10 @@
       "dist/__tests__/rate-limit-wait/tmux-detector.test.d.ts.map",
       "dist/__tests__/rate-limit-wait/tmux-detector.test.js",
       "dist/__tests__/rate-limit-wait/tmux-detector.test.js.map",
+      "dist/__tests__/read-budget-preflight.test.d.ts",
+      "dist/__tests__/read-budget-preflight.test.d.ts.map",
+      "dist/__tests__/read-budget-preflight.test.js",
+      "dist/__tests__/read-budget-preflight.test.js.map",
       "dist/__tests__/release-boundary.test.d.ts",
       "dist/__tests__/release-boundary.test.d.ts.map",
       "dist/__tests__/release-boundary.test.js",
@@ -1711,6 +1759,14 @@
       "dist/__tests__/run-cjs-graceful-fallback.test.d.ts.map",
       "dist/__tests__/run-cjs-graceful-fallback.test.js",
       "dist/__tests__/run-cjs-graceful-fallback.test.js.map",
+      "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts",
+      "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts.map",
+      "dist/__tests__/run-cjs-windows-stdio-contract.test.js",
+      "dist/__tests__/run-cjs-windows-stdio-contract.test.js.map",
+      "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts",
+      "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts.map",
+      "dist/__tests__/run-cjs-worker-skip-guard.test.js",
+      "dist/__tests__/run-cjs-worker-skip-guard.test.js.map",
       "dist/__tests__/runtime-guidance-plan-ralph.test.d.ts",
       "dist/__tests__/runtime-guidance-plan-ralph.test.d.ts.map",
       "dist/__tests__/runtime-guidance-plan-ralph.test.js",
@@ -1727,6 +1783,10 @@
       "dist/__tests__/session-end-empty-stdin.test.d.ts.map",
       "dist/__tests__/session-end-empty-stdin.test.js",
       "dist/__tests__/session-end-empty-stdin.test.js.map",
+      "dist/__tests__/session-end-forwarder-fallback.test.d.ts",
+      "dist/__tests__/session-end-forwarder-fallback.test.d.ts.map",
+      "dist/__tests__/session-end-forwarder-fallback.test.js",
+      "dist/__tests__/session-end-forwarder-fallback.test.js.map",
       "dist/__tests__/session-end-process-exit.test.d.ts",
       "dist/__tests__/session-end-process-exit.test.d.ts.map",
       "dist/__tests__/session-end-process-exit.test.js",
@@ -1747,6 +1807,10 @@
       "dist/__tests__/session-start-cache-cleanup.test.d.ts.map",
       "dist/__tests__/session-start-cache-cleanup.test.js",
       "dist/__tests__/session-start-cache-cleanup.test.js.map",
+      "dist/__tests__/session-start-context-budget.test.d.ts",
+      "dist/__tests__/session-start-context-budget.test.d.ts.map",
+      "dist/__tests__/session-start-context-budget.test.js",
+      "dist/__tests__/session-start-context-budget.test.js.map",
       "dist/__tests__/session-start-precompact-restore.test.d.ts",
       "dist/__tests__/session-start-precompact-restore.test.d.ts.map",
       "dist/__tests__/session-start-precompact-restore.test.js",
@@ -1759,6 +1823,14 @@
       "dist/__tests__/session-start-timeout-cleanup.test.d.ts.map",
       "dist/__tests__/session-start-timeout-cleanup.test.js",
       "dist/__tests__/session-start-timeout-cleanup.test.js.map",
+      "dist/__tests__/session-start-update-check.test.d.ts",
+      "dist/__tests__/session-start-update-check.test.d.ts.map",
+      "dist/__tests__/session-start-update-check.test.js",
+      "dist/__tests__/session-start-update-check.test.js.map",
+      "dist/__tests__/session-start-update-refresh.test.d.ts",
+      "dist/__tests__/session-start-update-refresh.test.d.ts.map",
+      "dist/__tests__/session-start-update-refresh.test.js",
+      "dist/__tests__/session-start-update-refresh.test.js.map",
       "dist/__tests__/session-summary-pid-tracking.test.d.ts",
       "dist/__tests__/session-summary-pid-tracking.test.d.ts.map",
       "dist/__tests__/session-summary-pid-tracking.test.js",
@@ -1795,6 +1867,14 @@
       "dist/__tests__/shared-state-locking.test.d.ts.map",
       "dist/__tests__/shared-state-locking.test.js",
       "dist/__tests__/shared-state-locking.test.js.map",
+      "dist/__tests__/shipyard-seed-locale.test.d.ts",
+      "dist/__tests__/shipyard-seed-locale.test.d.ts.map",
+      "dist/__tests__/shipyard-seed-locale.test.js",
+      "dist/__tests__/shipyard-seed-locale.test.js.map",
+      "dist/__tests__/shipyard-skills.test.d.ts",
+      "dist/__tests__/shipyard-skills.test.d.ts.map",
+      "dist/__tests__/shipyard-skills.test.js",
+      "dist/__tests__/shipyard-skills.test.js.map",
       "dist/__tests__/skill-entitlements-cross-surface.test.d.ts",
       "dist/__tests__/skill-entitlements-cross-surface.test.d.ts.map",
       "dist/__tests__/skill-entitlements-cross-surface.test.js",
@@ -1903,6 +1983,10 @@
       "dist/__tests__/tools/trace-tools.test.d.ts.map",
       "dist/__tests__/tools/trace-tools.test.js",
       "dist/__tests__/tools/trace-tools.test.js.map",
+      "dist/__tests__/trusted-publishing-contract.test.d.ts",
+      "dist/__tests__/trusted-publishing-contract.test.d.ts.map",
+      "dist/__tests__/trusted-publishing-contract.test.js",
+      "dist/__tests__/trusted-publishing-contract.test.js.map",
       "dist/__tests__/types.test.d.ts",
       "dist/__tests__/types.test.d.ts.map",
       "dist/__tests__/types.test.js",
@@ -2155,14 +2239,26 @@
       "dist/cli/__tests__/hud-watch.test.d.ts.map",
       "dist/cli/__tests__/hud-watch.test.js",
       "dist/cli/__tests__/hud-watch.test.js.map",
+      "dist/cli/__tests__/launch-secure-transport.test.d.ts",
+      "dist/cli/__tests__/launch-secure-transport.test.d.ts.map",
+      "dist/cli/__tests__/launch-secure-transport.test.js",
+      "dist/cli/__tests__/launch-secure-transport.test.js.map",
       "dist/cli/__tests__/launch.test.d.ts",
       "dist/cli/__tests__/launch.test.d.ts.map",
       "dist/cli/__tests__/launch.test.js",
       "dist/cli/__tests__/launch.test.js.map",
+      "dist/cli/__tests__/lookout-cli.test.d.ts",
+      "dist/cli/__tests__/lookout-cli.test.d.ts.map",
+      "dist/cli/__tests__/lookout-cli.test.js",
+      "dist/cli/__tests__/lookout-cli.test.js.map",
       "dist/cli/__tests__/plugin-dir-capture.test.d.ts",
       "dist/cli/__tests__/plugin-dir-capture.test.d.ts.map",
       "dist/cli/__tests__/plugin-dir-capture.test.js",
       "dist/cli/__tests__/plugin-dir-capture.test.js.map",
+      "dist/cli/__tests__/ralph-afk.test.d.ts",
+      "dist/cli/__tests__/ralph-afk.test.d.ts.map",
+      "dist/cli/__tests__/ralph-afk.test.js",
+      "dist/cli/__tests__/ralph-afk.test.js.map",
       "dist/cli/__tests__/self-improve-paths.test.d.ts",
       "dist/cli/__tests__/self-improve-paths.test.d.ts.map",
       "dist/cli/__tests__/self-improve-paths.test.js",
@@ -2242,6 +2338,7 @@
       "dist/cli/checkpoint.d.ts",
       "dist/cli/checkpoint.d.ts.map",
       "dist/cli/checkpoint.js",
+      "dist/cli/checkpoint.js.map",
       "dist/cli/claude-md-coordinator.d.ts",
       "dist/cli/claude-md-coordinator.d.ts.map",
       "dist/cli/claude-md-coordinator.js",
@@ -2254,6 +2351,18 @@
       "dist/cli/commands/__tests__/doctor-team-routing.test.d.ts.map",
       "dist/cli/commands/__tests__/doctor-team-routing.test.js",
       "dist/cli/commands/__tests__/doctor-team-routing.test.js.map",
+      "dist/cli/commands/__tests__/factory-init.test.d.ts",
+      "dist/cli/commands/__tests__/factory-init.test.d.ts.map",
+      "dist/cli/commands/__tests__/factory-init.test.js",
+      "dist/cli/commands/__tests__/factory-init.test.js.map",
+      "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts",
+      "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts.map",
+      "dist/cli/commands/__tests__/intake-headless-flag.test.js",
+      "dist/cli/commands/__tests__/intake-headless-flag.test.js.map",
+      "dist/cli/commands/__tests__/intake.test.d.ts",
+      "dist/cli/commands/__tests__/intake.test.d.ts.map",
+      "dist/cli/commands/__tests__/intake.test.js",
+      "dist/cli/commands/__tests__/intake.test.js.map",
       "dist/cli/commands/__tests__/team-role-shorthand.test.d.ts",
       "dist/cli/commands/__tests__/team-role-shorthand.test.d.ts.map",
       "dist/cli/commands/__tests__/team-role-shorthand.test.js",
@@ -2287,11 +2396,17 @@
       "dist/cli/commands/doctor-team-routing.js",
       "dist/cli/commands/doctor-team-routing.js.map",
       "dist/cli/commands/factory.d.ts",
+      "dist/cli/commands/factory.d.ts.map",
       "dist/cli/commands/factory.js",
+      "dist/cli/commands/factory.js.map",
       "dist/cli/commands/intake.d.ts",
+      "dist/cli/commands/intake.d.ts.map",
       "dist/cli/commands/intake.js",
+      "dist/cli/commands/intake.js.map",
       "dist/cli/commands/ralph.d.ts",
+      "dist/cli/commands/ralph.d.ts.map",
       "dist/cli/commands/ralph.js",
+      "dist/cli/commands/ralph.js.map",
       "dist/cli/commands/ralphthon.d.ts",
       "dist/cli/commands/ralphthon.d.ts.map",
       "dist/cli/commands/ralphthon.js",
@@ -2321,7 +2436,9 @@
       "dist/cli/commands/wait.js",
       "dist/cli/commands/wait.js.map",
       "dist/cli/graph.d.ts",
+      "dist/cli/graph.d.ts.map",
       "dist/cli/graph.js",
+      "dist/cli/graph.js.map",
       "dist/cli/hud-watch.d.ts",
       "dist/cli/hud-watch.d.ts.map",
       "dist/cli/hud-watch.js",
@@ -2407,13 +2524,70 @@
       "dist/constants/names.d.ts.map",
       "dist/constants/names.js",
       "dist/constants/names.js.map",
+      "dist/factory/__tests__/check-run.test.d.ts",
+      "dist/factory/__tests__/check-run.test.d.ts.map",
+      "dist/factory/__tests__/check-run.test.js",
+      "dist/factory/__tests__/check-run.test.js.map",
+      "dist/factory/__tests__/listener.test.d.ts",
+      "dist/factory/__tests__/listener.test.d.ts.map",
+      "dist/factory/__tests__/listener.test.js",
+      "dist/factory/__tests__/listener.test.js.map",
+      "dist/factory/__tests__/map-frontier.test.d.ts",
+      "dist/factory/__tests__/map-frontier.test.d.ts.map",
+      "dist/factory/__tests__/map-frontier.test.js",
+      "dist/factory/__tests__/map-frontier.test.js.map",
+      "dist/factory/__tests__/map-ingest.test.d.ts",
+      "dist/factory/__tests__/map-ingest.test.d.ts.map",
+      "dist/factory/__tests__/map-ingest.test.js",
+      "dist/factory/__tests__/map-ingest.test.js.map",
+      "dist/factory/__tests__/map-run.test.d.ts",
+      "dist/factory/__tests__/map-run.test.d.ts.map",
+      "dist/factory/__tests__/map-run.test.js",
+      "dist/factory/__tests__/map-run.test.js.map",
+      "dist/factory/__tests__/status.test.d.ts",
+      "dist/factory/__tests__/status.test.d.ts.map",
+      "dist/factory/__tests__/status.test.js",
+      "dist/factory/__tests__/status.test.js.map",
       "dist/factory/listener.d.ts",
+      "dist/factory/listener.d.ts.map",
       "dist/factory/listener.js",
+      "dist/factory/listener.js.map",
+      "dist/factory/map-frontier.d.ts",
+      "dist/factory/map-frontier.d.ts.map",
+      "dist/factory/map-frontier.js",
+      "dist/factory/map-frontier.js.map",
+      "dist/factory/map-ingest.d.ts",
+      "dist/factory/map-ingest.d.ts.map",
+      "dist/factory/map-ingest.js",
+      "dist/factory/map-ingest.js.map",
+      "dist/factory/map-run.d.ts",
+      "dist/factory/map-run.d.ts.map",
+      "dist/factory/map-run.js",
+      "dist/factory/map-run.js.map",
       "dist/factory/status.d.ts",
+      "dist/factory/status.d.ts.map",
       "dist/factory/status.js",
+      "dist/factory/status.js.map",
       "dist/factory/watchdog.d.ts",
+      "dist/factory/watchdog.d.ts.map",
       "dist/factory/watchdog.js",
+      "dist/factory/watchdog.js.map",
       "dist/factory/watchdog.test.d.ts",
+      "dist/factory/watchdog.test.d.ts.map",
+      "dist/factory/watchdog.test.js",
+      "dist/factory/watchdog.test.js.map",
+      "dist/features/__tests__/checkpoint.test.d.ts",
+      "dist/features/__tests__/checkpoint.test.d.ts.map",
+      "dist/features/__tests__/checkpoint.test.js",
+      "dist/features/__tests__/checkpoint.test.js.map",
+      "dist/features/__tests__/jev-model-routing.test.d.ts",
+      "dist/features/__tests__/jev-model-routing.test.d.ts.map",
+      "dist/features/__tests__/jev-model-routing.test.js",
+      "dist/features/__tests__/jev-model-routing.test.js.map",
+      "dist/features/__tests__/jev-slop-warning.test.d.ts",
+      "dist/features/__tests__/jev-slop-warning.test.d.ts.map",
+      "dist/features/__tests__/jev-slop-warning.test.js",
+      "dist/features/__tests__/jev-slop-warning.test.js.map",
       "dist/features/__tests__/magic-keywords.test.d.ts",
       "dist/features/__tests__/magic-keywords.test.d.ts.map",
       "dist/features/__tests__/magic-keywords.test.js",
@@ -2485,6 +2659,7 @@
       "dist/features/checkpoint/index.d.ts",
       "dist/features/checkpoint/index.d.ts.map",
       "dist/features/checkpoint/index.js",
+      "dist/features/checkpoint/index.js.map",
       "dist/features/context-injector/collector.d.ts",
       "dist/features/context-injector/collector.d.ts.map",
       "dist/features/context-injector/collector.js",
@@ -2546,9 +2721,21 @@
       "dist/features/index.js",
       "dist/features/index.js.map",
       "dist/features/jev-model-routing.d.ts",
+      "dist/features/jev-model-routing.d.ts.map",
       "dist/features/jev-model-routing.js",
+      "dist/features/jev-model-routing.js.map",
       "dist/features/jev-slop-warning.d.ts",
+      "dist/features/jev-slop-warning.d.ts.map",
       "dist/features/jev-slop-warning.js",
+      "dist/features/jev-slop-warning.js.map",
+      "dist/features/lookout/__tests__/lookout-workspace.test.d.ts",
+      "dist/features/lookout/__tests__/lookout-workspace.test.d.ts.map",
+      "dist/features/lookout/__tests__/lookout-workspace.test.js",
+      "dist/features/lookout/__tests__/lookout-workspace.test.js.map",
+      "dist/features/lookout/__tests__/lookout.test.d.ts",
+      "dist/features/lookout/__tests__/lookout.test.d.ts.map",
+      "dist/features/lookout/__tests__/lookout.test.js",
+      "dist/features/lookout/__tests__/lookout.test.js.map",
       "dist/features/lookout/command-parser.d.ts",
       "dist/features/lookout/command-parser.d.ts.map",
       "dist/features/lookout/command-parser.js",
@@ -2625,6 +2812,10 @@
       "dist/features/model-routing/types.d.ts.map",
       "dist/features/model-routing/types.js",
       "dist/features/model-routing/types.js.map",
+      "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts",
+      "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts.map",
+      "dist/features/notepad-wisdom/__tests__/extractor.test.js",
+      "dist/features/notepad-wisdom/__tests__/extractor.test.js.map",
       "dist/features/notepad-wisdom/extractor.d.ts",
       "dist/features/notepad-wisdom/extractor.d.ts.map",
       "dist/features/notepad-wisdom/extractor.js",
@@ -2721,6 +2912,70 @@
       "dist/graph/__tests__/fixtures.d.ts.map",
       "dist/graph/__tests__/fixtures.js",
       "dist/graph/__tests__/fixtures.js.map",
+      "dist/graph/__tests__/runtime/approval.test.d.ts",
+      "dist/graph/__tests__/runtime/approval.test.d.ts.map",
+      "dist/graph/__tests__/runtime/approval.test.js",
+      "dist/graph/__tests__/runtime/approval.test.js.map",
+      "dist/graph/__tests__/runtime/cli.test.d.ts",
+      "dist/graph/__tests__/runtime/cli.test.d.ts.map",
+      "dist/graph/__tests__/runtime/cli.test.js",
+      "dist/graph/__tests__/runtime/cli.test.js.map",
+      "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts",
+      "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts.map",
+      "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js",
+      "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js.map",
+      "dist/graph/__tests__/runtime/executors/agent.test.d.ts",
+      "dist/graph/__tests__/runtime/executors/agent.test.d.ts.map",
+      "dist/graph/__tests__/runtime/executors/agent.test.js",
+      "dist/graph/__tests__/runtime/executors/agent.test.js.map",
+      "dist/graph/__tests__/runtime/executors/command.test.d.ts",
+      "dist/graph/__tests__/runtime/executors/command.test.d.ts.map",
+      "dist/graph/__tests__/runtime/executors/command.test.js",
+      "dist/graph/__tests__/runtime/executors/command.test.js.map",
+      "dist/graph/__tests__/runtime/fence.test.d.ts",
+      "dist/graph/__tests__/runtime/fence.test.d.ts.map",
+      "dist/graph/__tests__/runtime/fence.test.js",
+      "dist/graph/__tests__/runtime/fence.test.js.map",
+      "dist/graph/__tests__/runtime/journal-epoch.test.d.ts",
+      "dist/graph/__tests__/runtime/journal-epoch.test.d.ts.map",
+      "dist/graph/__tests__/runtime/journal-epoch.test.js",
+      "dist/graph/__tests__/runtime/journal-epoch.test.js.map",
+      "dist/graph/__tests__/runtime/journal.test.d.ts",
+      "dist/graph/__tests__/runtime/journal.test.d.ts.map",
+      "dist/graph/__tests__/runtime/journal.test.js",
+      "dist/graph/__tests__/runtime/journal.test.js.map",
+      "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts",
+      "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts.map",
+      "dist/graph/__tests__/runtime/native-contained-fs.test.js",
+      "dist/graph/__tests__/runtime/native-contained-fs.test.js.map",
+      "dist/graph/__tests__/runtime/progress.test.d.ts",
+      "dist/graph/__tests__/runtime/progress.test.d.ts.map",
+      "dist/graph/__tests__/runtime/progress.test.js",
+      "dist/graph/__tests__/runtime/progress.test.js.map",
+      "dist/graph/__tests__/runtime/regression-matrix.test.d.ts",
+      "dist/graph/__tests__/runtime/regression-matrix.test.d.ts.map",
+      "dist/graph/__tests__/runtime/regression-matrix.test.js",
+      "dist/graph/__tests__/runtime/regression-matrix.test.js.map",
+      "dist/graph/__tests__/runtime/remote-approval.test.d.ts",
+      "dist/graph/__tests__/runtime/remote-approval.test.d.ts.map",
+      "dist/graph/__tests__/runtime/remote-approval.test.js",
+      "dist/graph/__tests__/runtime/remote-approval.test.js.map",
+      "dist/graph/__tests__/runtime/run-dir.test.d.ts",
+      "dist/graph/__tests__/runtime/run-dir.test.d.ts.map",
+      "dist/graph/__tests__/runtime/run-dir.test.js",
+      "dist/graph/__tests__/runtime/run-dir.test.js.map",
+      "dist/graph/__tests__/runtime/runner.test.d.ts",
+      "dist/graph/__tests__/runtime/runner.test.d.ts.map",
+      "dist/graph/__tests__/runtime/runner.test.js",
+      "dist/graph/__tests__/runtime/runner.test.js.map",
+      "dist/graph/__tests__/runtime/safe-fs.test.d.ts",
+      "dist/graph/__tests__/runtime/safe-fs.test.d.ts.map",
+      "dist/graph/__tests__/runtime/safe-fs.test.js",
+      "dist/graph/__tests__/runtime/safe-fs.test.js.map",
+      "dist/graph/__tests__/runtime/store.test.d.ts",
+      "dist/graph/__tests__/runtime/store.test.d.ts.map",
+      "dist/graph/__tests__/runtime/store.test.js",
+      "dist/graph/__tests__/runtime/store.test.js.map",
       "dist/graph/__tests__/scheduler.test.d.ts",
       "dist/graph/__tests__/scheduler.test.d.ts.map",
       "dist/graph/__tests__/scheduler.test.js",
@@ -2734,38 +2989,65 @@
       "dist/graph/index.js",
       "dist/graph/index.js.map",
       "dist/graph/runtime/approval.d.ts",
+      "dist/graph/runtime/approval.d.ts.map",
       "dist/graph/runtime/approval.js",
+      "dist/graph/runtime/approval.js.map",
       "dist/graph/runtime/contained-fd.d.ts",
       "dist/graph/runtime/contained-fd.d.ts.map",
       "dist/graph/runtime/contained-fd.js",
       "dist/graph/runtime/contained-fd.js.map",
       "dist/graph/runtime/executors/agent.d.ts",
+      "dist/graph/runtime/executors/agent.d.ts.map",
       "dist/graph/runtime/executors/agent.js",
+      "dist/graph/runtime/executors/agent.js.map",
       "dist/graph/runtime/executors/authority.d.ts",
+      "dist/graph/runtime/executors/authority.d.ts.map",
       "dist/graph/runtime/executors/authority.js",
+      "dist/graph/runtime/executors/authority.js.map",
       "dist/graph/runtime/executors/command.d.ts",
+      "dist/graph/runtime/executors/command.d.ts.map",
       "dist/graph/runtime/executors/command.js",
+      "dist/graph/runtime/executors/command.js.map",
       "dist/graph/runtime/fence.d.ts",
+      "dist/graph/runtime/fence.d.ts.map",
       "dist/graph/runtime/fence.js",
+      "dist/graph/runtime/fence.js.map",
       "dist/graph/runtime/journal.d.ts",
+      "dist/graph/runtime/journal.d.ts.map",
       "dist/graph/runtime/journal.js",
+      "dist/graph/runtime/journal.js.map",
       "dist/graph/runtime/native-contained-fs.d.ts",
+      "dist/graph/runtime/native-contained-fs.d.ts.map",
       "dist/graph/runtime/native-contained-fs.js",
+      "dist/graph/runtime/native-contained-fs.js.map",
       "dist/graph/runtime/progress.d.ts",
+      "dist/graph/runtime/progress.d.ts.map",
       "dist/graph/runtime/progress.js",
+      "dist/graph/runtime/progress.js.map",
       "dist/graph/runtime/remote-approval.d.ts",
       "dist/graph/runtime/remote-approval.d.ts.map",
       "dist/graph/runtime/remote-approval.js",
+      "dist/graph/runtime/remote-approval.js.map",
       "dist/graph/runtime/run-dir.d.ts",
+      "dist/graph/runtime/run-dir.d.ts.map",
       "dist/graph/runtime/run-dir.js",
+      "dist/graph/runtime/run-dir.js.map",
       "dist/graph/runtime/runner.d.ts",
+      "dist/graph/runtime/runner.d.ts.map",
       "dist/graph/runtime/runner.js",
+      "dist/graph/runtime/runner.js.map",
       "dist/graph/runtime/safe-fs.d.ts",
+      "dist/graph/runtime/safe-fs.d.ts.map",
       "dist/graph/runtime/safe-fs.js",
+      "dist/graph/runtime/safe-fs.js.map",
       "dist/graph/runtime/store.d.ts",
+      "dist/graph/runtime/store.d.ts.map",
       "dist/graph/runtime/store.js",
+      "dist/graph/runtime/store.js.map",
       "dist/graph/runtime/types.d.ts",
+      "dist/graph/runtime/types.d.ts.map",
       "dist/graph/runtime/types.js",
+      "dist/graph/runtime/types.js.map",
       "dist/graph/scheduler.d.ts",
       "dist/graph/scheduler.d.ts.map",
       "dist/graph/scheduler.js",
@@ -3046,12 +3328,22 @@
       "dist/hooks/bridge.d.ts.map",
       "dist/hooks/bridge.js",
       "dist/hooks/bridge.js.map",
+      "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts",
+      "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts.map",
+      "dist/hooks/code-simplifier/__tests__/global-config-path.test.js",
+      "dist/hooks/code-simplifier/__tests__/global-config-path.test.js.map",
+      "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts",
+      "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts.map",
+      "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js",
+      "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js.map",
       "dist/hooks/code-simplifier/index.d.ts",
       "dist/hooks/code-simplifier/index.d.ts.map",
       "dist/hooks/code-simplifier/index.js",
       "dist/hooks/code-simplifier/index.js.map",
       "dist/hooks/code-simplifier/jev-shadow.d.ts",
+      "dist/hooks/code-simplifier/jev-shadow.d.ts.map",
       "dist/hooks/code-simplifier/jev-shadow.js",
+      "dist/hooks/code-simplifier/jev-shadow.js.map",
       "dist/hooks/codebase-map.d.ts",
       "dist/hooks/codebase-map.d.ts.map",
       "dist/hooks/codebase-map.js",
@@ -3140,28 +3432,66 @@
       "dist/hooks/index.d.ts.map",
       "dist/hooks/index.js",
       "dist/hooks/index.js.map",
+      "dist/hooks/jev/__tests__/active-mode.test.d.ts",
+      "dist/hooks/jev/__tests__/active-mode.test.d.ts.map",
+      "dist/hooks/jev/__tests__/active-mode.test.js",
+      "dist/hooks/jev/__tests__/active-mode.test.js.map",
+      "dist/hooks/jev/__tests__/client.test.d.ts",
+      "dist/hooks/jev/__tests__/client.test.d.ts.map",
+      "dist/hooks/jev/__tests__/client.test.js",
+      "dist/hooks/jev/__tests__/client.test.js.map",
+      "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts",
+      "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts.map",
+      "dist/hooks/jev/__tests__/points-wire-shape.test.js",
+      "dist/hooks/jev/__tests__/points-wire-shape.test.js.map",
+      "dist/hooks/jev/__tests__/resolver.test.d.ts",
+      "dist/hooks/jev/__tests__/resolver.test.d.ts.map",
+      "dist/hooks/jev/__tests__/resolver.test.js",
+      "dist/hooks/jev/__tests__/resolver.test.js.map",
       "dist/hooks/jev/client.d.ts",
+      "dist/hooks/jev/client.d.ts.map",
       "dist/hooks/jev/client.js",
+      "dist/hooks/jev/client.js.map",
       "dist/hooks/jev/config.d.ts",
+      "dist/hooks/jev/config.d.ts.map",
       "dist/hooks/jev/config.js",
+      "dist/hooks/jev/config.js.map",
       "dist/hooks/jev/index.d.ts",
+      "dist/hooks/jev/index.d.ts.map",
       "dist/hooks/jev/index.js",
+      "dist/hooks/jev/index.js.map",
       "dist/hooks/jev/points.d.ts",
+      "dist/hooks/jev/points.d.ts.map",
       "dist/hooks/jev/points.js",
+      "dist/hooks/jev/points.js.map",
       "dist/hooks/jev/resolver.d.ts",
+      "dist/hooks/jev/resolver.d.ts.map",
       "dist/hooks/jev/resolver.js",
+      "dist/hooks/jev/resolver.js.map",
       "dist/hooks/jev/types.d.ts",
+      "dist/hooks/jev/types.d.ts.map",
       "dist/hooks/jev/types.js",
+      "dist/hooks/jev/types.js.map",
       "dist/hooks/keyword-detector/__tests__/index.test.d.ts",
       "dist/hooks/keyword-detector/__tests__/index.test.d.ts.map",
       "dist/hooks/keyword-detector/__tests__/index.test.js",
       "dist/hooks/keyword-detector/__tests__/index.test.js.map",
+      "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts",
+      "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts.map",
+      "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js",
+      "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js.map",
       "dist/hooks/keyword-detector/index.d.ts",
       "dist/hooks/keyword-detector/index.d.ts.map",
       "dist/hooks/keyword-detector/index.js",
       "dist/hooks/keyword-detector/index.js.map",
       "dist/hooks/keyword-detector/jev-shadow.d.ts",
+      "dist/hooks/keyword-detector/jev-shadow.d.ts.map",
       "dist/hooks/keyword-detector/jev-shadow.js",
+      "dist/hooks/keyword-detector/jev-shadow.js.map",
+      "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts",
+      "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts.map",
+      "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js",
+      "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js.map",
       "dist/hooks/learner/auto-invoke.d.ts",
       "dist/hooks/learner/auto-invoke.d.ts.map",
       "dist/hooks/learner/auto-invoke.js",
@@ -3199,7 +3529,9 @@
       "dist/hooks/learner/index.js",
       "dist/hooks/learner/index.js.map",
       "dist/hooks/learner/jev-shadow.d.ts",
+      "dist/hooks/learner/jev-shadow.d.ts.map",
       "dist/hooks/learner/jev-shadow.js",
+      "dist/hooks/learner/jev-shadow.js.map",
       "dist/hooks/learner/loader.d.ts",
       "dist/hooks/learner/loader.d.ts.map",
       "dist/hooks/learner/loader.js",
@@ -3340,6 +3672,10 @@
       "dist/hooks/persistent-mode/__tests__/idle-repo-state.test.d.ts.map",
       "dist/hooks/persistent-mode/__tests__/idle-repo-state.test.js",
       "dist/hooks/persistent-mode/__tests__/idle-repo-state.test.js.map",
+      "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts",
+      "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts.map",
+      "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js",
+      "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js.map",
       "dist/hooks/persistent-mode/__tests__/oversize-tool-result-redirect.test.d.ts",
       "dist/hooks/persistent-mode/__tests__/oversize-tool-result-redirect.test.d.ts.map",
       "dist/hooks/persistent-mode/__tests__/oversize-tool-result-redirect.test.js",
@@ -3405,7 +3741,9 @@
       "dist/hooks/persistent-mode/index.js",
       "dist/hooks/persistent-mode/index.js.map",
       "dist/hooks/persistent-mode/jev-shadow.d.ts",
+      "dist/hooks/persistent-mode/jev-shadow.d.ts.map",
       "dist/hooks/persistent-mode/jev-shadow.js",
+      "dist/hooks/persistent-mode/jev-shadow.js.map",
       "dist/hooks/persistent-mode/session-isolation.test.d.ts",
       "dist/hooks/persistent-mode/session-isolation.test.d.ts.map",
       "dist/hooks/persistent-mode/session-isolation.test.js",
@@ -3430,6 +3768,10 @@
       "dist/hooks/pre-compact/restore.d.ts.map",
       "dist/hooks/pre-compact/restore.js",
       "dist/hooks/pre-compact/restore.js.map",
+      "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts",
+      "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts.map",
+      "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js",
+      "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js.map",
       "dist/hooks/preemptive-compaction/constants.d.ts",
       "dist/hooks/preemptive-compaction/constants.d.ts.map",
       "dist/hooks/preemptive-compaction/constants.js",
@@ -3439,7 +3781,9 @@
       "dist/hooks/preemptive-compaction/index.js",
       "dist/hooks/preemptive-compaction/index.js.map",
       "dist/hooks/preemptive-compaction/jev-shadow.d.ts",
+      "dist/hooks/preemptive-compaction/jev-shadow.d.ts.map",
       "dist/hooks/preemptive-compaction/jev-shadow.js",
+      "dist/hooks/preemptive-compaction/jev-shadow.js.map",
       "dist/hooks/preemptive-compaction/types.d.ts",
       "dist/hooks/preemptive-compaction/types.d.ts.map",
       "dist/hooks/preemptive-compaction/types.js",
@@ -3524,14 +3868,26 @@
       "dist/hooks/prompt-prerequisites/index.d.ts.map",
       "dist/hooks/prompt-prerequisites/index.js",
       "dist/hooks/prompt-prerequisites/index.js.map",
+      "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts",
+      "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts.map",
+      "dist/hooks/ralph/__tests__/feedback-baseline.test.js",
+      "dist/hooks/ralph/__tests__/feedback-baseline.test.js.map",
+      "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts",
+      "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts.map",
+      "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js",
+      "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js.map",
       "dist/hooks/ralph/feedback-baseline.d.ts",
+      "dist/hooks/ralph/feedback-baseline.d.ts.map",
       "dist/hooks/ralph/feedback-baseline.js",
+      "dist/hooks/ralph/feedback-baseline.js.map",
       "dist/hooks/ralph/index.d.ts",
       "dist/hooks/ralph/index.d.ts.map",
       "dist/hooks/ralph/index.js",
       "dist/hooks/ralph/index.js.map",
       "dist/hooks/ralph/jev-shadow.d.ts",
+      "dist/hooks/ralph/jev-shadow.d.ts.map",
       "dist/hooks/ralph/jev-shadow.js",
+      "dist/hooks/ralph/jev-shadow.js.map",
       "dist/hooks/ralph/loop.d.ts",
       "dist/hooks/ralph/loop.d.ts.map",
       "dist/hooks/ralph/loop.js",
@@ -3645,6 +4001,9 @@
       "dist/hooks/rules-injector/matcher.js",
       "dist/hooks/rules-injector/matcher.js.map",
       "dist/hooks/rules-injector/matcher.test.d.ts",
+      "dist/hooks/rules-injector/matcher.test.d.ts.map",
+      "dist/hooks/rules-injector/matcher.test.js",
+      "dist/hooks/rules-injector/matcher.test.js.map",
       "dist/hooks/rules-injector/parser.d.ts",
       "dist/hooks/rules-injector/parser.d.ts.map",
       "dist/hooks/rules-injector/parser.js",
@@ -3673,6 +4032,14 @@
       "dist/hooks/session-end/__tests__/callbacks.test.d.ts.map",
       "dist/hooks/session-end/__tests__/callbacks.test.js",
       "dist/hooks/session-end/__tests__/callbacks.test.js.map",
+      "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts",
+      "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/chain-enqueuer.test.js",
+      "dist/hooks/session-end/__tests__/chain-enqueuer.test.js.map",
+      "dist/hooks/session-end/__tests__/check-evidence.test.d.ts",
+      "dist/hooks/session-end/__tests__/check-evidence.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/check-evidence.test.js",
+      "dist/hooks/session-end/__tests__/check-evidence.test.js.map",
       "dist/hooks/session-end/__tests__/cleanup-manifest.test.d.ts",
       "dist/hooks/session-end/__tests__/cleanup-manifest.test.d.ts.map",
       "dist/hooks/session-end/__tests__/cleanup-manifest.test.js",
@@ -3681,6 +4048,14 @@
       "dist/hooks/session-end/__tests__/duplicate-notifications.test.d.ts.map",
       "dist/hooks/session-end/__tests__/duplicate-notifications.test.js",
       "dist/hooks/session-end/__tests__/duplicate-notifications.test.js.map",
+      "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts",
+      "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js",
+      "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js.map",
+      "dist/hooks/session-end/__tests__/guardrails.test.d.ts",
+      "dist/hooks/session-end/__tests__/guardrails.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/guardrails.test.js",
+      "dist/hooks/session-end/__tests__/guardrails.test.js.map",
       "dist/hooks/session-end/__tests__/mode-state-cleanup.test.d.ts",
       "dist/hooks/session-end/__tests__/mode-state-cleanup.test.d.ts.map",
       "dist/hooks/session-end/__tests__/mode-state-cleanup.test.js",
@@ -3689,10 +4064,18 @@
       "dist/hooks/session-end/__tests__/openclaw-session-end.test.d.ts.map",
       "dist/hooks/session-end/__tests__/openclaw-session-end.test.js",
       "dist/hooks/session-end/__tests__/openclaw-session-end.test.js.map",
+      "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts",
+      "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js",
+      "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js.map",
       "dist/hooks/session-end/__tests__/python-repl-cleanup.test.d.ts",
       "dist/hooks/session-end/__tests__/python-repl-cleanup.test.d.ts.map",
       "dist/hooks/session-end/__tests__/python-repl-cleanup.test.js",
       "dist/hooks/session-end/__tests__/python-repl-cleanup.test.js.map",
+      "dist/hooks/session-end/__tests__/routing.test.d.ts",
+      "dist/hooks/session-end/__tests__/routing.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/routing.test.js",
+      "dist/hooks/session-end/__tests__/routing.test.js.map",
       "dist/hooks/session-end/__tests__/session-duration.test.d.ts",
       "dist/hooks/session-end/__tests__/session-duration.test.d.ts.map",
       "dist/hooks/session-end/__tests__/session-duration.test.js",
@@ -3705,6 +4088,10 @@
       "dist/hooks/session-end/__tests__/session-end-timeout.test.d.ts.map",
       "dist/hooks/session-end/__tests__/session-end-timeout.test.js",
       "dist/hooks/session-end/__tests__/session-end-timeout.test.js.map",
+      "dist/hooks/session-end/__tests__/spawn-next.test.d.ts",
+      "dist/hooks/session-end/__tests__/spawn-next.test.d.ts.map",
+      "dist/hooks/session-end/__tests__/spawn-next.test.js",
+      "dist/hooks/session-end/__tests__/spawn-next.test.js.map",
       "dist/hooks/session-end/__tests__/subdirectory-cwd.test.d.ts",
       "dist/hooks/session-end/__tests__/subdirectory-cwd.test.d.ts.map",
       "dist/hooks/session-end/__tests__/subdirectory-cwd.test.js",
@@ -3730,9 +4117,13 @@
       "dist/hooks/session-end/callbacks.js",
       "dist/hooks/session-end/callbacks.js.map",
       "dist/hooks/session-end/chain-enqueuer.d.ts",
+      "dist/hooks/session-end/chain-enqueuer.d.ts.map",
       "dist/hooks/session-end/chain-enqueuer.js",
+      "dist/hooks/session-end/chain-enqueuer.js.map",
       "dist/hooks/session-end/check-evidence.d.ts",
+      "dist/hooks/session-end/check-evidence.d.ts.map",
       "dist/hooks/session-end/check-evidence.js",
+      "dist/hooks/session-end/check-evidence.js.map",
       "dist/hooks/session-end/cleanup-manifest.d.ts",
       "dist/hooks/session-end/cleanup-manifest.d.ts.map",
       "dist/hooks/session-end/cleanup-manifest.js",
@@ -3742,15 +4133,21 @@
       "dist/hooks/session-end/foreground-bootstrap.js",
       "dist/hooks/session-end/foreground-bootstrap.js.map",
       "dist/hooks/session-end/guardrails.d.ts",
+      "dist/hooks/session-end/guardrails.d.ts.map",
       "dist/hooks/session-end/guardrails.js",
+      "dist/hooks/session-end/guardrails.js.map",
       "dist/hooks/session-end/index.d.ts",
       "dist/hooks/session-end/index.d.ts.map",
       "dist/hooks/session-end/index.js",
       "dist/hooks/session-end/index.js.map",
       "dist/hooks/session-end/routing.d.ts",
+      "dist/hooks/session-end/routing.d.ts.map",
       "dist/hooks/session-end/routing.js",
+      "dist/hooks/session-end/routing.js.map",
       "dist/hooks/session-end/spawn-next.d.ts",
+      "dist/hooks/session-end/spawn-next.d.ts.map",
       "dist/hooks/session-end/spawn-next.js",
+      "dist/hooks/session-end/spawn-next.js.map",
       "dist/hooks/session-end/worker.d.ts",
       "dist/hooks/session-end/worker.d.ts.map",
       "dist/hooks/session-end/worker.js",
@@ -3832,12 +4229,18 @@
       "dist/hooks/task-size-detector/__tests__/index.test.d.ts.map",
       "dist/hooks/task-size-detector/__tests__/index.test.js",
       "dist/hooks/task-size-detector/__tests__/index.test.js.map",
+      "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts",
+      "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts.map",
+      "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js",
+      "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js.map",
       "dist/hooks/task-size-detector/index.d.ts",
       "dist/hooks/task-size-detector/index.d.ts.map",
       "dist/hooks/task-size-detector/index.js",
       "dist/hooks/task-size-detector/index.js.map",
       "dist/hooks/task-size-detector/jev-shadow.d.ts",
+      "dist/hooks/task-size-detector/jev-shadow.d.ts.map",
       "dist/hooks/task-size-detector/jev-shadow.js",
+      "dist/hooks/task-size-detector/jev-shadow.js.map",
       "dist/hooks/team-canonical-state.d.ts",
       "dist/hooks/team-canonical-state.d.ts.map",
       "dist/hooks/team-canonical-state.js",
@@ -4147,7 +4550,9 @@
       "dist/hud/elements/token-usage.js",
       "dist/hud/elements/token-usage.js.map",
       "dist/hud/elements/update-hint.d.ts",
+      "dist/hud/elements/update-hint.d.ts.map",
       "dist/hud/elements/update-hint.js",
+      "dist/hud/elements/update-hint.js.map",
       "dist/hud/index.d.ts",
       "dist/hud/index.d.ts.map",
       "dist/hud/index.js",
@@ -4196,6 +4601,10 @@
       "dist/index.d.ts.map",
       "dist/index.js",
       "dist/index.js.map",
+      "dist/installer/__tests__/bundled-skill-sync.test.d.ts",
+      "dist/installer/__tests__/bundled-skill-sync.test.d.ts.map",
+      "dist/installer/__tests__/bundled-skill-sync.test.js",
+      "dist/installer/__tests__/bundled-skill-sync.test.js.map",
       "dist/installer/__tests__/claude-md-analysis.test.d.ts",
       "dist/installer/__tests__/claude-md-analysis.test.d.ts.map",
       "dist/installer/__tests__/claude-md-analysis.test.js",
@@ -4269,6 +4678,10 @@
       "dist/installer/__tests__/standalone-hook-reconcile.test.d.ts.map",
       "dist/installer/__tests__/standalone-hook-reconcile.test.js",
       "dist/installer/__tests__/standalone-hook-reconcile.test.js.map",
+      "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts",
+      "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts.map",
+      "dist/installer/__tests__/standalone-state-lock-bridge.test.js",
+      "dist/installer/__tests__/standalone-state-lock-bridge.test.js.map",
       "dist/installer/__tests__/user-skill-compat.test.d.ts",
       "dist/installer/__tests__/user-skill-compat.test.d.ts.map",
       "dist/installer/__tests__/user-skill-compat.test.js",
@@ -4329,10 +4742,18 @@
       "dist/lib/__tests__/atomic-write.test.d.ts.map",
       "dist/lib/__tests__/atomic-write.test.js",
       "dist/lib/__tests__/atomic-write.test.js.map",
+      "dist/lib/__tests__/host-load-gate.test.d.ts",
+      "dist/lib/__tests__/host-load-gate.test.d.ts.map",
+      "dist/lib/__tests__/host-load-gate.test.js",
+      "dist/lib/__tests__/host-load-gate.test.js.map",
       "dist/lib/__tests__/mode-state-io.test.d.ts",
       "dist/lib/__tests__/mode-state-io.test.d.ts.map",
       "dist/lib/__tests__/mode-state-io.test.js",
       "dist/lib/__tests__/mode-state-io.test.js.map",
+      "dist/lib/__tests__/mode-state-lock.test.d.ts",
+      "dist/lib/__tests__/mode-state-lock.test.d.ts.map",
+      "dist/lib/__tests__/mode-state-lock.test.js",
+      "dist/lib/__tests__/mode-state-lock.test.js.map",
       "dist/lib/__tests__/payload-limits.test.d.ts",
       "dist/lib/__tests__/payload-limits.test.d.ts.map",
       "dist/lib/__tests__/payload-limits.test.js",
@@ -4341,6 +4762,10 @@
       "dist/lib/__tests__/plugin-dir.test.d.ts.map",
       "dist/lib/__tests__/plugin-dir.test.js",
       "dist/lib/__tests__/plugin-dir.test.js.map",
+      "dist/lib/__tests__/runs-ledger.test.d.ts",
+      "dist/lib/__tests__/runs-ledger.test.d.ts.map",
+      "dist/lib/__tests__/runs-ledger.test.js",
+      "dist/lib/__tests__/runs-ledger.test.js.map",
       "dist/lib/__tests__/session-id.test.d.ts",
       "dist/lib/__tests__/session-id.test.d.ts.map",
       "dist/lib/__tests__/session-id.test.js",
@@ -4365,10 +4790,42 @@
       "dist/lib/__tests__/worktree-cleanup-safety.test.d.ts.map",
       "dist/lib/__tests__/worktree-cleanup-safety.test.js",
       "dist/lib/__tests__/worktree-cleanup-safety.test.js.map",
+      "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-bare-container.test.js",
+      "dist/lib/__tests__/worktree-paths-bare-container.test.js.map",
+      "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-foreign-root.test.js",
+      "dist/lib/__tests__/worktree-paths-foreign-root.test.js.map",
+      "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js",
+      "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js.map",
+      "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js",
+      "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js.map",
+      "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-git-timeout.test.js",
+      "dist/lib/__tests__/worktree-paths-git-timeout.test.js.map",
+      "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js",
+      "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js.map",
+      "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-split-warning.test.js",
+      "dist/lib/__tests__/worktree-paths-split-warning.test.js.map",
       "dist/lib/__tests__/worktree-paths-superproject-cache.test.d.ts",
       "dist/lib/__tests__/worktree-paths-superproject-cache.test.d.ts.map",
       "dist/lib/__tests__/worktree-paths-superproject-cache.test.js",
       "dist/lib/__tests__/worktree-paths-superproject-cache.test.js.map",
+      "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts",
+      "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts.map",
+      "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js",
+      "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js.map",
       "dist/lib/__tests__/worktree-paths.test.d.ts",
       "dist/lib/__tests__/worktree-paths.test.d.ts.map",
       "dist/lib/__tests__/worktree-paths.test.js",
@@ -4390,7 +4847,9 @@
       "dist/lib/file-lock.js",
       "dist/lib/file-lock.js.map",
       "dist/lib/host-load-gate.d.ts",
+      "dist/lib/host-load-gate.d.ts.map",
       "dist/lib/host-load-gate.js",
+      "dist/lib/host-load-gate.js.map",
       "dist/lib/hud-wrapper-template.d.ts",
       "dist/lib/hud-wrapper-template.d.ts.map",
       "dist/lib/hud-wrapper-template.js",
@@ -4428,7 +4887,9 @@
       "dist/lib/release-generation.js",
       "dist/lib/release-generation.js.map",
       "dist/lib/runs-ledger.d.ts",
+      "dist/lib/runs-ledger.d.ts.map",
       "dist/lib/runs-ledger.js",
+      "dist/lib/runs-ledger.js.map",
       "dist/lib/security-config.d.ts",
       "dist/lib/security-config.d.ts.map",
       "dist/lib/security-config.js",
@@ -4541,6 +5002,10 @@
       "dist/mcp/tool-registry.d.ts.map",
       "dist/mcp/tool-registry.js",
       "dist/mcp/tool-registry.js.map",
+      "dist/notifications/__tests__/approval-reply.test.d.ts",
+      "dist/notifications/__tests__/approval-reply.test.d.ts.map",
+      "dist/notifications/__tests__/approval-reply.test.js",
+      "dist/notifications/__tests__/approval-reply.test.js.map",
       "dist/notifications/__tests__/config-merge.test.d.ts",
       "dist/notifications/__tests__/config-merge.test.d.ts.map",
       "dist/notifications/__tests__/config-merge.test.js",
@@ -5137,6 +5602,10 @@
       "dist/team/__tests__/runtime-prompt-mode.test.d.ts.map",
       "dist/team/__tests__/runtime-prompt-mode.test.js",
       "dist/team/__tests__/runtime-prompt-mode.test.js.map",
+      "dist/team/__tests__/runtime-storage-boundary.test.d.ts",
+      "dist/team/__tests__/runtime-storage-boundary.test.d.ts.map",
+      "dist/team/__tests__/runtime-storage-boundary.test.js",
+      "dist/team/__tests__/runtime-storage-boundary.test.js.map",
       "dist/team/__tests__/runtime-v2-role-routing.test.d.ts",
       "dist/team/__tests__/runtime-v2-role-routing.test.d.ts.map",
       "dist/team/__tests__/runtime-v2-role-routing.test.js",
@@ -5169,6 +5638,10 @@
       "dist/team/__tests__/runtime-v2.service-repair.test.d.ts.map",
       "dist/team/__tests__/runtime-v2.service-repair.test.js",
       "dist/team/__tests__/runtime-v2.service-repair.test.js.map",
+      "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts",
+      "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts.map",
+      "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js",
+      "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js.map",
       "dist/team/__tests__/runtime-v2.shutdown-pane-cleanup.test.d.ts",
       "dist/team/__tests__/runtime-v2.shutdown-pane-cleanup.test.d.ts.map",
       "dist/team/__tests__/runtime-v2.shutdown-pane-cleanup.test.js",
@@ -5205,6 +5678,10 @@
       "dist/team/__tests__/stage-router.test.d.ts.map",
       "dist/team/__tests__/stage-router.test.js",
       "dist/team/__tests__/stage-router.test.js.map",
+      "dist/team/__tests__/startup-claim-error.test.d.ts",
+      "dist/team/__tests__/startup-claim-error.test.d.ts.map",
+      "dist/team/__tests__/startup-claim-error.test.js",
+      "dist/team/__tests__/startup-claim-error.test.js.map",
       "dist/team/__tests__/state-paths.test.d.ts",
       "dist/team/__tests__/state-paths.test.d.ts.map",
       "dist/team/__tests__/state-paths.test.js",
@@ -5225,10 +5702,18 @@
       "dist/team/__tests__/task-router.test.d.ts.map",
       "dist/team/__tests__/task-router.test.js",
       "dist/team/__tests__/task-router.test.js.map",
+      "dist/team/__tests__/task-storage-integrity.test.d.ts",
+      "dist/team/__tests__/task-storage-integrity.test.d.ts.map",
+      "dist/team/__tests__/task-storage-integrity.test.js",
+      "dist/team/__tests__/task-storage-integrity.test.js.map",
       "dist/team/__tests__/team-config-revision-lock.test.d.ts",
       "dist/team/__tests__/team-config-revision-lock.test.d.ts.map",
       "dist/team/__tests__/team-config-revision-lock.test.js",
       "dist/team/__tests__/team-config-revision-lock.test.js.map",
+      "dist/team/__tests__/team-instance.test.d.ts",
+      "dist/team/__tests__/team-instance.test.d.ts.map",
+      "dist/team/__tests__/team-instance.test.js",
+      "dist/team/__tests__/team-instance.test.js.map",
       "dist/team/__tests__/team-leader-nudge-hook.logging.test.d.ts",
       "dist/team/__tests__/team-leader-nudge-hook.logging.test.d.ts.map",
       "dist/team/__tests__/team-leader-nudge-hook.logging.test.js",
@@ -5289,6 +5774,10 @@
       "dist/team/__tests__/tmux-session.kill-team-session.test.d.ts.map",
       "dist/team/__tests__/tmux-session.kill-team-session.test.js",
       "dist/team/__tests__/tmux-session.kill-team-session.test.js.map",
+      "dist/team/__tests__/tmux-session.pane-env.test.d.ts",
+      "dist/team/__tests__/tmux-session.pane-env.test.d.ts.map",
+      "dist/team/__tests__/tmux-session.pane-env.test.js",
+      "dist/team/__tests__/tmux-session.pane-env.test.js.map",
       "dist/team/__tests__/tmux-session.spawn.test.d.ts",
       "dist/team/__tests__/tmux-session.spawn.test.d.ts.map",
       "dist/team/__tests__/tmux-session.spawn.test.js",
@@ -5345,6 +5834,10 @@
       "dist/team/__tests__/worker-launch-posix-transport.test.d.ts.map",
       "dist/team/__tests__/worker-launch-posix-transport.test.js",
       "dist/team/__tests__/worker-launch-posix-transport.test.js.map",
+      "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts",
+      "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts.map",
+      "dist/team/__tests__/worker-launch-wrapper-posix.test.js",
+      "dist/team/__tests__/worker-launch-wrapper-posix.test.js.map",
       "dist/team/__tests__/worker-restart.test.d.ts",
       "dist/team/__tests__/worker-restart.test.d.ts.map",
       "dist/team/__tests__/worker-restart.test.js",
@@ -5578,7 +6071,9 @@
       "dist/team/task-router.js",
       "dist/team/task-router.js.map",
       "dist/team/team-instance.d.ts",
+      "dist/team/team-instance.d.ts.map",
       "dist/team/team-instance.js",
+      "dist/team/team-instance.js.map",
       "dist/team/team-name.d.ts",
       "dist/team/team-name.d.ts.map",
       "dist/team/team-name.js",
@@ -5671,10 +6166,26 @@
       "dist/tools/__tests__/schema-conversion.test.d.ts.map",
       "dist/tools/__tests__/schema-conversion.test.js",
       "dist/tools/__tests__/schema-conversion.test.js.map",
+      "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts",
+      "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts.map",
+      "dist/tools/__tests__/state-tools-nongit-ownership.test.js",
+      "dist/tools/__tests__/state-tools-nongit-ownership.test.js.map",
       "dist/tools/__tests__/state-tools.test.d.ts",
       "dist/tools/__tests__/state-tools.test.d.ts.map",
       "dist/tools/__tests__/state-tools.test.js",
       "dist/tools/__tests__/state-tools.test.js.map",
+      "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts",
+      "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts.map",
+      "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js",
+      "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js.map",
+      "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts",
+      "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts.map",
+      "dist/tools/__tests__/wiki-tools-foreign-root.test.js",
+      "dist/tools/__tests__/wiki-tools-foreign-root.test.js.map",
+      "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts",
+      "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts.map",
+      "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js",
+      "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js.map",
       "dist/tools/__tests__/wiki-tools-working-directory.test.d.ts",
       "dist/tools/__tests__/wiki-tools-working-directory.test.d.ts.map",
       "dist/tools/__tests__/wiki-tools-working-directory.test.js",
@@ -5715,6 +6226,10 @@
       "dist/tools/lsp/__tests__/client-devcontainer.test.d.ts.map",
       "dist/tools/lsp/__tests__/client-devcontainer.test.js",
       "dist/tools/lsp/__tests__/client-devcontainer.test.js.map",
+      "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts",
+      "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts.map",
+      "dist/tools/lsp/__tests__/client-document-lifecycle.test.js",
+      "dist/tools/lsp/__tests__/client-document-lifecycle.test.js.map",
       "dist/tools/lsp/__tests__/client-eviction.test.d.ts",
       "dist/tools/lsp/__tests__/client-eviction.test.d.ts.map",
       "dist/tools/lsp/__tests__/client-eviction.test.js",
@@ -6615,6 +7130,11 @@
         "id": ".github/FUNDING.yml",
         "kind": "other",
         "path": ".github/FUNDING.yml"
+      },
+      {
+        "id": ".github/RELEASE_SIGNOFF",
+        "kind": "other",
+        "path": ".github/RELEASE_SIGNOFF"
       },
       {
         "id": ".github/SPONSOR_TIERS.md",
@@ -7817,6 +8337,26 @@
         "path": "dist/__tests__/bridge-help-question-regex.test.js.map"
       },
       {
+        "id": "dist/__tests__/chain-enqueuer-registration.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/chain-enqueuer-registration.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/chain-enqueuer-registration.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/chain-enqueuer-registration.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/chain-enqueuer-registration.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/chain-enqueuer-registration.test.js"
+      },
+      {
+        "id": "dist/__tests__/chain-enqueuer-registration.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/chain-enqueuer-registration.test.js.map"
+      },
+      {
         "id": "dist/__tests__/claude-goal-adapter-doc.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/claude-goal-adapter-doc.test.d.ts"
@@ -8237,6 +8777,26 @@
         "path": "dist/__tests__/delegation-enforcer.test.js.map"
       },
       {
+        "id": "dist/__tests__/directory-context-injector-registration.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/directory-context-injector-registration.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/directory-context-injector-registration.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/directory-context-injector-registration.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/directory-context-injector-registration.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/directory-context-injector-registration.test.js"
+      },
+      {
+        "id": "dist/__tests__/directory-context-injector-registration.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/directory-context-injector-registration.test.js.map"
+      },
+      {
         "id": "dist/__tests__/directory-context-injector.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/directory-context-injector.test.d.ts"
@@ -8415,6 +8975,26 @@
         "id": "dist/__tests__/helpers/prompt-test-helpers.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/helpers/prompt-test-helpers.js.map"
+      },
+      {
+        "id": "dist/__tests__/hook-bridge-main-module.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hook-bridge-main-module.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/hook-bridge-main-module.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hook-bridge-main-module.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/hook-bridge-main-module.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hook-bridge-main-module.test.js"
+      },
+      {
+        "id": "dist/__tests__/hook-bridge-main-module.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hook-bridge-main-module.test.js.map"
       },
       {
         "id": "dist/__tests__/hooks-command-escaping.test.d.ts",
@@ -8615,6 +9195,26 @@
         "id": "dist/__tests__/hud-build-guidance.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/hud-build-guidance.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/hud-cache-wrapper-4237.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud-cache-wrapper-4237.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/hud-cache-wrapper-4237.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud-cache-wrapper-4237.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/hud-cache-wrapper-4237.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud-cache-wrapper-4237.test.js"
+      },
+      {
+        "id": "dist/__tests__/hud-cache-wrapper-4237.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud-cache-wrapper-4237.test.js.map"
       },
       {
         "id": "dist/__tests__/hud-cache-wrapper.test.d.ts",
@@ -9437,6 +10037,46 @@
         "path": "dist/__tests__/hud/transcript-agent-lifecycle.test.js.map"
       },
       {
+        "id": "dist/__tests__/hud/update-hint.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/update-hint.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/hud/update-hint.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/update-hint.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/hud/update-hint.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/update-hint.test.js"
+      },
+      {
+        "id": "dist/__tests__/hud/update-hint.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/update-hint.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-header-fallback.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-header-fallback.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-header-fallback.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-header-fallback.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-header-fallback.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-header-fallback.test.js"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-header-fallback.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-header-fallback.test.js.map"
+      },
+      {
         "id": "dist/__tests__/hud/usage-api-lock.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/hud/usage-api-lock.test.d.ts"
@@ -9475,6 +10115,26 @@
         "id": "dist/__tests__/hud/usage-api-stale.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/hud/usage-api-stale.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-user-agent.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-user-agent.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-user-agent.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-user-agent.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-user-agent.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-user-agent.test.js"
+      },
+      {
+        "id": "dist/__tests__/hud/usage-api-user-agent.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/hud/usage-api-user-agent.test.js.map"
       },
       {
         "id": "dist/__tests__/hud/usage-api.test.d.ts",
@@ -9715,6 +10375,26 @@
         "id": "dist/__tests__/issue-2652-runtime-wiring-and-output-contract.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/issue-2652-runtime-wiring-and-output-contract.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/issue-3867-legacy-l-update.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/issue-3867-legacy-l-update.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/issue-3867-legacy-l-update.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/issue-3867-legacy-l-update.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/issue-3867-legacy-l-update.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/issue-3867-legacy-l-update.test.js"
+      },
+      {
+        "id": "dist/__tests__/issue-3867-legacy-l-update.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/issue-3867-legacy-l-update.test.js.map"
       },
       {
         "id": "dist/__tests__/job-management-sqlite.test.d.ts",
@@ -10737,6 +11417,26 @@
         "path": "dist/__tests__/pre-compact-cwd.test.js.map"
       },
       {
+        "id": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js"
+      },
+      {
+        "id": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/pre-tool-enforcer-jev-wiring.test.js.map"
+      },
+      {
         "id": "dist/__tests__/pre-tool-enforcer.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/pre-tool-enforcer.test.d.ts"
@@ -10795,6 +11495,26 @@
         "id": "dist/__tests__/project-memory-merge.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/project-memory-merge.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/project-memory-posttool.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/project-memory-posttool.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/project-memory-posttool.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/project-memory-posttool.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/project-memory-posttool.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/project-memory-posttool.test.js"
+      },
+      {
+        "id": "dist/__tests__/project-memory-posttool.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/project-memory-posttool.test.js.map"
       },
       {
         "id": "dist/__tests__/project-session-manager-review-worktree.test.d.ts",
@@ -11217,6 +11937,26 @@
         "path": "dist/__tests__/rate-limit-wait/daemon-bootstrap.test.js.map"
       },
       {
+        "id": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js"
+      },
+      {
+        "id": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/rate-limit-wait/daemon-cache-context.test.js.map"
+      },
+      {
         "id": "dist/__tests__/rate-limit-wait/daemon.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/rate-limit-wait/daemon.test.d.ts"
@@ -11315,6 +12055,26 @@
         "id": "dist/__tests__/rate-limit-wait/tmux-detector.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/rate-limit-wait/tmux-detector.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/read-budget-preflight.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/read-budget-preflight.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/read-budget-preflight.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/read-budget-preflight.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/read-budget-preflight.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/read-budget-preflight.test.js"
+      },
+      {
+        "id": "dist/__tests__/read-budget-preflight.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/read-budget-preflight.test.js.map"
       },
       {
         "id": "dist/__tests__/release-boundary.test.d.ts",
@@ -11517,6 +12277,46 @@
         "path": "dist/__tests__/run-cjs-graceful-fallback.test.js.map"
       },
       {
+        "id": "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-windows-stdio-contract.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-windows-stdio-contract.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-windows-stdio-contract.test.js"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-windows-stdio-contract.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-windows-stdio-contract.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-worker-skip-guard.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-worker-skip-guard.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-worker-skip-guard.test.js"
+      },
+      {
+        "id": "dist/__tests__/run-cjs-worker-skip-guard.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/run-cjs-worker-skip-guard.test.js.map"
+      },
+      {
         "id": "dist/__tests__/runtime-guidance-plan-ralph.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/runtime-guidance-plan-ralph.test.d.ts"
@@ -11595,6 +12395,26 @@
         "id": "dist/__tests__/session-end-empty-stdin.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/session-end-empty-stdin.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/session-end-forwarder-fallback.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-end-forwarder-fallback.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/session-end-forwarder-fallback.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-end-forwarder-fallback.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/session-end-forwarder-fallback.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-end-forwarder-fallback.test.js"
+      },
+      {
+        "id": "dist/__tests__/session-end-forwarder-fallback.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-end-forwarder-fallback.test.js.map"
       },
       {
         "id": "dist/__tests__/session-end-process-exit.test.d.ts",
@@ -11697,6 +12517,26 @@
         "path": "dist/__tests__/session-start-cache-cleanup.test.js.map"
       },
       {
+        "id": "dist/__tests__/session-start-context-budget.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-context-budget.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/session-start-context-budget.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-context-budget.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/session-start-context-budget.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-context-budget.test.js"
+      },
+      {
+        "id": "dist/__tests__/session-start-context-budget.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-context-budget.test.js.map"
+      },
+      {
         "id": "dist/__tests__/session-start-precompact-restore.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/__tests__/session-start-precompact-restore.test.d.ts"
@@ -11755,6 +12595,46 @@
         "id": "dist/__tests__/session-start-timeout-cleanup.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/session-start-timeout-cleanup.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-check.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-check.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-check.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-check.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-check.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-check.test.js"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-check.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-check.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-refresh.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-refresh.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-refresh.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-refresh.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-refresh.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-refresh.test.js"
+      },
+      {
+        "id": "dist/__tests__/session-start-update-refresh.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/session-start-update-refresh.test.js.map"
       },
       {
         "id": "dist/__tests__/session-summary-pid-tracking.test.d.ts",
@@ -11935,6 +12815,46 @@
         "id": "dist/__tests__/shared-state-locking.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/shared-state-locking.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/shipyard-seed-locale.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-seed-locale.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/shipyard-seed-locale.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-seed-locale.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/shipyard-seed-locale.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-seed-locale.test.js"
+      },
+      {
+        "id": "dist/__tests__/shipyard-seed-locale.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-seed-locale.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/shipyard-skills.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-skills.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/shipyard-skills.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-skills.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/shipyard-skills.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-skills.test.js"
+      },
+      {
+        "id": "dist/__tests__/shipyard-skills.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/shipyard-skills.test.js.map"
       },
       {
         "id": "dist/__tests__/skill-entitlements-cross-surface.test.d.ts",
@@ -12475,6 +13395,26 @@
         "id": "dist/__tests__/tools/trace-tools.test.js.map",
         "kind": "generated-dist",
         "path": "dist/__tests__/tools/trace-tools.test.js.map"
+      },
+      {
+        "id": "dist/__tests__/trusted-publishing-contract.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/trusted-publishing-contract.test.d.ts"
+      },
+      {
+        "id": "dist/__tests__/trusted-publishing-contract.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/trusted-publishing-contract.test.d.ts.map"
+      },
+      {
+        "id": "dist/__tests__/trusted-publishing-contract.test.js",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/trusted-publishing-contract.test.js"
+      },
+      {
+        "id": "dist/__tests__/trusted-publishing-contract.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/__tests__/trusted-publishing-contract.test.js.map"
       },
       {
         "id": "dist/__tests__/types.test.d.ts",
@@ -13737,6 +14677,26 @@
         "path": "dist/cli/__tests__/hud-watch.test.js.map"
       },
       {
+        "id": "dist/cli/__tests__/launch-secure-transport.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/launch-secure-transport.test.d.ts"
+      },
+      {
+        "id": "dist/cli/__tests__/launch-secure-transport.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/launch-secure-transport.test.d.ts.map"
+      },
+      {
+        "id": "dist/cli/__tests__/launch-secure-transport.test.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/launch-secure-transport.test.js"
+      },
+      {
+        "id": "dist/cli/__tests__/launch-secure-transport.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/launch-secure-transport.test.js.map"
+      },
+      {
         "id": "dist/cli/__tests__/launch.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/__tests__/launch.test.d.ts"
@@ -13757,6 +14717,26 @@
         "path": "dist/cli/__tests__/launch.test.js.map"
       },
       {
+        "id": "dist/cli/__tests__/lookout-cli.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/lookout-cli.test.d.ts"
+      },
+      {
+        "id": "dist/cli/__tests__/lookout-cli.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/lookout-cli.test.d.ts.map"
+      },
+      {
+        "id": "dist/cli/__tests__/lookout-cli.test.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/lookout-cli.test.js"
+      },
+      {
+        "id": "dist/cli/__tests__/lookout-cli.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/lookout-cli.test.js.map"
+      },
+      {
         "id": "dist/cli/__tests__/plugin-dir-capture.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/__tests__/plugin-dir-capture.test.d.ts"
@@ -13775,6 +14755,26 @@
         "id": "dist/cli/__tests__/plugin-dir-capture.test.js.map",
         "kind": "generated-dist",
         "path": "dist/cli/__tests__/plugin-dir-capture.test.js.map"
+      },
+      {
+        "id": "dist/cli/__tests__/ralph-afk.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/ralph-afk.test.d.ts"
+      },
+      {
+        "id": "dist/cli/__tests__/ralph-afk.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/ralph-afk.test.d.ts.map"
+      },
+      {
+        "id": "dist/cli/__tests__/ralph-afk.test.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/ralph-afk.test.js"
+      },
+      {
+        "id": "dist/cli/__tests__/ralph-afk.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/__tests__/ralph-afk.test.js.map"
       },
       {
         "id": "dist/cli/__tests__/self-improve-paths.test.d.ts",
@@ -14172,6 +15172,11 @@
         "path": "dist/cli/checkpoint.js"
       },
       {
+        "id": "dist/cli/checkpoint.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/checkpoint.js.map"
+      },
+      {
         "id": "dist/cli/claude-md-coordinator.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/claude-md-coordinator.d.ts"
@@ -14230,6 +15235,66 @@
         "id": "dist/cli/commands/__tests__/doctor-team-routing.test.js.map",
         "kind": "generated-dist",
         "path": "dist/cli/commands/__tests__/doctor-team-routing.test.js.map"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/factory-init.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/factory-init.test.d.ts"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/factory-init.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/factory-init.test.d.ts.map"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/factory-init.test.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/factory-init.test.js"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/factory-init.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/factory-init.test.js.map"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake-headless-flag.test.d.ts.map"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake-headless-flag.test.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake-headless-flag.test.js"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake-headless-flag.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake-headless-flag.test.js.map"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake.test.d.ts"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake.test.d.ts.map"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake.test.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake.test.js"
+      },
+      {
+        "id": "dist/cli/commands/__tests__/intake.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/__tests__/intake.test.js.map"
       },
       {
         "id": "dist/cli/commands/__tests__/team-role-shorthand.test.d.ts",
@@ -14397,9 +15462,19 @@
         "path": "dist/cli/commands/factory.d.ts"
       },
       {
+        "id": "dist/cli/commands/factory.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/factory.d.ts.map"
+      },
+      {
         "id": "dist/cli/commands/factory.js",
         "kind": "generated-dist",
         "path": "dist/cli/commands/factory.js"
+      },
+      {
+        "id": "dist/cli/commands/factory.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/factory.js.map"
       },
       {
         "id": "dist/cli/commands/intake.d.ts",
@@ -14407,9 +15482,19 @@
         "path": "dist/cli/commands/intake.d.ts"
       },
       {
+        "id": "dist/cli/commands/intake.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/intake.d.ts.map"
+      },
+      {
         "id": "dist/cli/commands/intake.js",
         "kind": "generated-dist",
         "path": "dist/cli/commands/intake.js"
+      },
+      {
+        "id": "dist/cli/commands/intake.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/intake.js.map"
       },
       {
         "id": "dist/cli/commands/ralph.d.ts",
@@ -14417,9 +15502,19 @@
         "path": "dist/cli/commands/ralph.d.ts"
       },
       {
+        "id": "dist/cli/commands/ralph.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/ralph.d.ts.map"
+      },
+      {
         "id": "dist/cli/commands/ralph.js",
         "kind": "generated-dist",
         "path": "dist/cli/commands/ralph.js"
+      },
+      {
+        "id": "dist/cli/commands/ralph.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/ralph.js.map"
       },
       {
         "id": "dist/cli/commands/ralphthon.d.ts",
@@ -14567,9 +15662,19 @@
         "path": "dist/cli/graph.d.ts"
       },
       {
+        "id": "dist/cli/graph.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/graph.d.ts.map"
+      },
+      {
         "id": "dist/cli/graph.js",
         "kind": "generated-dist",
         "path": "dist/cli/graph.js"
+      },
+      {
+        "id": "dist/cli/graph.js.map",
+        "kind": "generated-dist",
+        "path": "dist/cli/graph.js.map"
       },
       {
         "id": "dist/cli/hud-watch.d.ts",
@@ -14997,9 +16102,134 @@
         "path": "dist/constants/names.js.map"
       },
       {
+        "id": "dist/factory/__tests__/check-run.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/check-run.test.d.ts"
+      },
+      {
+        "id": "dist/factory/__tests__/check-run.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/check-run.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/__tests__/check-run.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/check-run.test.js"
+      },
+      {
+        "id": "dist/factory/__tests__/check-run.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/check-run.test.js.map"
+      },
+      {
+        "id": "dist/factory/__tests__/listener.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/listener.test.d.ts"
+      },
+      {
+        "id": "dist/factory/__tests__/listener.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/listener.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/__tests__/listener.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/listener.test.js"
+      },
+      {
+        "id": "dist/factory/__tests__/listener.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/listener.test.js.map"
+      },
+      {
+        "id": "dist/factory/__tests__/map-frontier.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-frontier.test.d.ts"
+      },
+      {
+        "id": "dist/factory/__tests__/map-frontier.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-frontier.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/__tests__/map-frontier.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-frontier.test.js"
+      },
+      {
+        "id": "dist/factory/__tests__/map-frontier.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-frontier.test.js.map"
+      },
+      {
+        "id": "dist/factory/__tests__/map-ingest.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-ingest.test.d.ts"
+      },
+      {
+        "id": "dist/factory/__tests__/map-ingest.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-ingest.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/__tests__/map-ingest.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-ingest.test.js"
+      },
+      {
+        "id": "dist/factory/__tests__/map-ingest.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-ingest.test.js.map"
+      },
+      {
+        "id": "dist/factory/__tests__/map-run.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-run.test.d.ts"
+      },
+      {
+        "id": "dist/factory/__tests__/map-run.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-run.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/__tests__/map-run.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-run.test.js"
+      },
+      {
+        "id": "dist/factory/__tests__/map-run.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/map-run.test.js.map"
+      },
+      {
+        "id": "dist/factory/__tests__/status.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/status.test.d.ts"
+      },
+      {
+        "id": "dist/factory/__tests__/status.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/status.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/__tests__/status.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/status.test.js"
+      },
+      {
+        "id": "dist/factory/__tests__/status.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/__tests__/status.test.js.map"
+      },
+      {
         "id": "dist/factory/listener.d.ts",
         "kind": "generated-dist",
         "path": "dist/factory/listener.d.ts"
+      },
+      {
+        "id": "dist/factory/listener.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/listener.d.ts.map"
       },
       {
         "id": "dist/factory/listener.js",
@@ -15007,9 +16237,79 @@
         "path": "dist/factory/listener.js"
       },
       {
+        "id": "dist/factory/listener.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/listener.js.map"
+      },
+      {
+        "id": "dist/factory/map-frontier.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-frontier.d.ts"
+      },
+      {
+        "id": "dist/factory/map-frontier.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-frontier.d.ts.map"
+      },
+      {
+        "id": "dist/factory/map-frontier.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-frontier.js"
+      },
+      {
+        "id": "dist/factory/map-frontier.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-frontier.js.map"
+      },
+      {
+        "id": "dist/factory/map-ingest.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-ingest.d.ts"
+      },
+      {
+        "id": "dist/factory/map-ingest.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-ingest.d.ts.map"
+      },
+      {
+        "id": "dist/factory/map-ingest.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-ingest.js"
+      },
+      {
+        "id": "dist/factory/map-ingest.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-ingest.js.map"
+      },
+      {
+        "id": "dist/factory/map-run.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-run.d.ts"
+      },
+      {
+        "id": "dist/factory/map-run.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-run.d.ts.map"
+      },
+      {
+        "id": "dist/factory/map-run.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-run.js"
+      },
+      {
+        "id": "dist/factory/map-run.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/map-run.js.map"
+      },
+      {
         "id": "dist/factory/status.d.ts",
         "kind": "generated-dist",
         "path": "dist/factory/status.d.ts"
+      },
+      {
+        "id": "dist/factory/status.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/status.d.ts.map"
       },
       {
         "id": "dist/factory/status.js",
@@ -15017,9 +16317,19 @@
         "path": "dist/factory/status.js"
       },
       {
+        "id": "dist/factory/status.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/status.js.map"
+      },
+      {
         "id": "dist/factory/watchdog.d.ts",
         "kind": "generated-dist",
         "path": "dist/factory/watchdog.d.ts"
+      },
+      {
+        "id": "dist/factory/watchdog.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/watchdog.d.ts.map"
       },
       {
         "id": "dist/factory/watchdog.js",
@@ -15027,9 +16337,89 @@
         "path": "dist/factory/watchdog.js"
       },
       {
+        "id": "dist/factory/watchdog.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/watchdog.js.map"
+      },
+      {
         "id": "dist/factory/watchdog.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/factory/watchdog.test.d.ts"
+      },
+      {
+        "id": "dist/factory/watchdog.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/watchdog.test.d.ts.map"
+      },
+      {
+        "id": "dist/factory/watchdog.test.js",
+        "kind": "generated-dist",
+        "path": "dist/factory/watchdog.test.js"
+      },
+      {
+        "id": "dist/factory/watchdog.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/factory/watchdog.test.js.map"
+      },
+      {
+        "id": "dist/features/__tests__/checkpoint.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/checkpoint.test.d.ts"
+      },
+      {
+        "id": "dist/features/__tests__/checkpoint.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/checkpoint.test.d.ts.map"
+      },
+      {
+        "id": "dist/features/__tests__/checkpoint.test.js",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/checkpoint.test.js"
+      },
+      {
+        "id": "dist/features/__tests__/checkpoint.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/checkpoint.test.js.map"
+      },
+      {
+        "id": "dist/features/__tests__/jev-model-routing.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-model-routing.test.d.ts"
+      },
+      {
+        "id": "dist/features/__tests__/jev-model-routing.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-model-routing.test.d.ts.map"
+      },
+      {
+        "id": "dist/features/__tests__/jev-model-routing.test.js",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-model-routing.test.js"
+      },
+      {
+        "id": "dist/features/__tests__/jev-model-routing.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-model-routing.test.js.map"
+      },
+      {
+        "id": "dist/features/__tests__/jev-slop-warning.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-slop-warning.test.d.ts"
+      },
+      {
+        "id": "dist/features/__tests__/jev-slop-warning.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-slop-warning.test.d.ts.map"
+      },
+      {
+        "id": "dist/features/__tests__/jev-slop-warning.test.js",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-slop-warning.test.js"
+      },
+      {
+        "id": "dist/features/__tests__/jev-slop-warning.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/__tests__/jev-slop-warning.test.js.map"
       },
       {
         "id": "dist/features/__tests__/magic-keywords.test.d.ts",
@@ -15387,6 +16777,11 @@
         "path": "dist/features/checkpoint/index.js"
       },
       {
+        "id": "dist/features/checkpoint/index.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/checkpoint/index.js.map"
+      },
+      {
         "id": "dist/features/context-injector/collector.d.ts",
         "kind": "generated-dist",
         "path": "dist/features/context-injector/collector.d.ts"
@@ -15692,9 +17087,19 @@
         "path": "dist/features/jev-model-routing.d.ts"
       },
       {
+        "id": "dist/features/jev-model-routing.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/jev-model-routing.d.ts.map"
+      },
+      {
         "id": "dist/features/jev-model-routing.js",
         "kind": "generated-dist",
         "path": "dist/features/jev-model-routing.js"
+      },
+      {
+        "id": "dist/features/jev-model-routing.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/jev-model-routing.js.map"
       },
       {
         "id": "dist/features/jev-slop-warning.d.ts",
@@ -15702,9 +17107,59 @@
         "path": "dist/features/jev-slop-warning.d.ts"
       },
       {
+        "id": "dist/features/jev-slop-warning.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/jev-slop-warning.d.ts.map"
+      },
+      {
         "id": "dist/features/jev-slop-warning.js",
         "kind": "generated-dist",
         "path": "dist/features/jev-slop-warning.js"
+      },
+      {
+        "id": "dist/features/jev-slop-warning.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/jev-slop-warning.js.map"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout-workspace.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout-workspace.test.d.ts"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout-workspace.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout-workspace.test.d.ts.map"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout-workspace.test.js",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout-workspace.test.js"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout-workspace.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout-workspace.test.js.map"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout.test.d.ts"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout.test.d.ts.map"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout.test.js",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout.test.js"
+      },
+      {
+        "id": "dist/features/lookout/__tests__/lookout.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/lookout/__tests__/lookout.test.js.map"
       },
       {
         "id": "dist/features/lookout/command-parser.d.ts",
@@ -16085,6 +17540,26 @@
         "id": "dist/features/model-routing/types.js.map",
         "kind": "generated-dist",
         "path": "dist/features/model-routing/types.js.map"
+      },
+      {
+        "id": "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts"
+      },
+      {
+        "id": "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/features/notepad-wisdom/__tests__/extractor.test.d.ts.map"
+      },
+      {
+        "id": "dist/features/notepad-wisdom/__tests__/extractor.test.js",
+        "kind": "generated-dist",
+        "path": "dist/features/notepad-wisdom/__tests__/extractor.test.js"
+      },
+      {
+        "id": "dist/features/notepad-wisdom/__tests__/extractor.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/features/notepad-wisdom/__tests__/extractor.test.js.map"
       },
       {
         "id": "dist/features/notepad-wisdom/extractor.d.ts",
@@ -16567,6 +18042,326 @@
         "path": "dist/graph/__tests__/fixtures.js.map"
       },
       {
+        "id": "dist/graph/__tests__/runtime/approval.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/approval.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/approval.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/approval.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/approval.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/approval.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/approval.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/approval.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/cli.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/cli.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/cli.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/cli.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/cli.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/cli.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/cli.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/cli.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/e2e-crash-recovery.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/agent.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/agent.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/agent.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/agent.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/agent.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/agent.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/agent.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/agent.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/command.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/command.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/command.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/command.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/command.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/command.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/executors/command.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/executors/command.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/fence.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/fence.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/fence.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/fence.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/fence.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/fence.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/fence.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/fence.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal-epoch.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal-epoch.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal-epoch.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal-epoch.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal-epoch.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal-epoch.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal-epoch.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal-epoch.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/journal.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/journal.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/native-contained-fs.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/native-contained-fs.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/native-contained-fs.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/native-contained-fs.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/native-contained-fs.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/progress.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/progress.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/progress.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/progress.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/progress.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/progress.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/progress.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/progress.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/regression-matrix.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/regression-matrix.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/regression-matrix.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/regression-matrix.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/regression-matrix.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/regression-matrix.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/regression-matrix.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/regression-matrix.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/remote-approval.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/remote-approval.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/remote-approval.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/remote-approval.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/remote-approval.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/remote-approval.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/remote-approval.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/remote-approval.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/run-dir.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/run-dir.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/run-dir.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/run-dir.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/run-dir.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/run-dir.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/run-dir.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/run-dir.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/runner.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/runner.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/runner.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/runner.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/runner.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/runner.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/runner.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/runner.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/safe-fs.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/safe-fs.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/safe-fs.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/safe-fs.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/safe-fs.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/safe-fs.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/safe-fs.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/safe-fs.test.js.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/store.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/store.test.d.ts"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/store.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/store.test.d.ts.map"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/store.test.js",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/store.test.js"
+      },
+      {
+        "id": "dist/graph/__tests__/runtime/store.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/__tests__/runtime/store.test.js.map"
+      },
+      {
         "id": "dist/graph/__tests__/scheduler.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/graph/__tests__/scheduler.test.d.ts"
@@ -16632,9 +18427,19 @@
         "path": "dist/graph/runtime/approval.d.ts"
       },
       {
+        "id": "dist/graph/runtime/approval.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/approval.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/approval.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/approval.js"
+      },
+      {
+        "id": "dist/graph/runtime/approval.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/approval.js.map"
       },
       {
         "id": "dist/graph/runtime/contained-fd.d.ts",
@@ -16662,9 +18467,19 @@
         "path": "dist/graph/runtime/executors/agent.d.ts"
       },
       {
+        "id": "dist/graph/runtime/executors/agent.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/agent.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/executors/agent.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/executors/agent.js"
+      },
+      {
+        "id": "dist/graph/runtime/executors/agent.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/agent.js.map"
       },
       {
         "id": "dist/graph/runtime/executors/authority.d.ts",
@@ -16672,9 +18487,19 @@
         "path": "dist/graph/runtime/executors/authority.d.ts"
       },
       {
+        "id": "dist/graph/runtime/executors/authority.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/authority.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/executors/authority.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/executors/authority.js"
+      },
+      {
+        "id": "dist/graph/runtime/executors/authority.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/authority.js.map"
       },
       {
         "id": "dist/graph/runtime/executors/command.d.ts",
@@ -16682,9 +18507,19 @@
         "path": "dist/graph/runtime/executors/command.d.ts"
       },
       {
+        "id": "dist/graph/runtime/executors/command.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/command.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/executors/command.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/executors/command.js"
+      },
+      {
+        "id": "dist/graph/runtime/executors/command.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/executors/command.js.map"
       },
       {
         "id": "dist/graph/runtime/fence.d.ts",
@@ -16692,9 +18527,19 @@
         "path": "dist/graph/runtime/fence.d.ts"
       },
       {
+        "id": "dist/graph/runtime/fence.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/fence.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/fence.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/fence.js"
+      },
+      {
+        "id": "dist/graph/runtime/fence.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/fence.js.map"
       },
       {
         "id": "dist/graph/runtime/journal.d.ts",
@@ -16702,9 +18547,19 @@
         "path": "dist/graph/runtime/journal.d.ts"
       },
       {
+        "id": "dist/graph/runtime/journal.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/journal.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/journal.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/journal.js"
+      },
+      {
+        "id": "dist/graph/runtime/journal.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/journal.js.map"
       },
       {
         "id": "dist/graph/runtime/native-contained-fs.d.ts",
@@ -16712,9 +18567,19 @@
         "path": "dist/graph/runtime/native-contained-fs.d.ts"
       },
       {
+        "id": "dist/graph/runtime/native-contained-fs.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/native-contained-fs.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/native-contained-fs.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/native-contained-fs.js"
+      },
+      {
+        "id": "dist/graph/runtime/native-contained-fs.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/native-contained-fs.js.map"
       },
       {
         "id": "dist/graph/runtime/progress.d.ts",
@@ -16722,9 +18587,19 @@
         "path": "dist/graph/runtime/progress.d.ts"
       },
       {
+        "id": "dist/graph/runtime/progress.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/progress.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/progress.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/progress.js"
+      },
+      {
+        "id": "dist/graph/runtime/progress.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/progress.js.map"
       },
       {
         "id": "dist/graph/runtime/remote-approval.d.ts",
@@ -16742,9 +18617,19 @@
         "path": "dist/graph/runtime/remote-approval.js"
       },
       {
+        "id": "dist/graph/runtime/remote-approval.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/remote-approval.js.map"
+      },
+      {
         "id": "dist/graph/runtime/run-dir.d.ts",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/run-dir.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/run-dir.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/run-dir.d.ts.map"
       },
       {
         "id": "dist/graph/runtime/run-dir.js",
@@ -16752,9 +18637,19 @@
         "path": "dist/graph/runtime/run-dir.js"
       },
       {
+        "id": "dist/graph/runtime/run-dir.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/run-dir.js.map"
+      },
+      {
         "id": "dist/graph/runtime/runner.d.ts",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/runner.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/runner.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/runner.d.ts.map"
       },
       {
         "id": "dist/graph/runtime/runner.js",
@@ -16762,9 +18657,19 @@
         "path": "dist/graph/runtime/runner.js"
       },
       {
+        "id": "dist/graph/runtime/runner.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/runner.js.map"
+      },
+      {
         "id": "dist/graph/runtime/safe-fs.d.ts",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/safe-fs.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/safe-fs.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/safe-fs.d.ts.map"
       },
       {
         "id": "dist/graph/runtime/safe-fs.js",
@@ -16772,9 +18677,19 @@
         "path": "dist/graph/runtime/safe-fs.js"
       },
       {
+        "id": "dist/graph/runtime/safe-fs.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/safe-fs.js.map"
+      },
+      {
         "id": "dist/graph/runtime/store.d.ts",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/store.d.ts"
+      },
+      {
+        "id": "dist/graph/runtime/store.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/store.d.ts.map"
       },
       {
         "id": "dist/graph/runtime/store.js",
@@ -16782,14 +18697,29 @@
         "path": "dist/graph/runtime/store.js"
       },
       {
+        "id": "dist/graph/runtime/store.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/store.js.map"
+      },
+      {
         "id": "dist/graph/runtime/types.d.ts",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/types.d.ts"
       },
       {
+        "id": "dist/graph/runtime/types.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/types.d.ts.map"
+      },
+      {
         "id": "dist/graph/runtime/types.js",
         "kind": "generated-dist",
         "path": "dist/graph/runtime/types.js"
+      },
+      {
+        "id": "dist/graph/runtime/types.js.map",
+        "kind": "generated-dist",
+        "path": "dist/graph/runtime/types.js.map"
       },
       {
         "id": "dist/graph/scheduler.d.ts",
@@ -18192,6 +20122,46 @@
         "path": "dist/hooks/bridge.js.map"
       },
       {
+        "id": "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/global-config-path.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/global-config-path.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/global-config-path.test.js"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/global-config-path.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/global-config-path.test.js.map"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/__tests__/jev-trigger-shadow.test.js.map"
+      },
+      {
         "id": "dist/hooks/code-simplifier/index.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/code-simplifier/index.d.ts"
@@ -18217,9 +20187,19 @@
         "path": "dist/hooks/code-simplifier/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/code-simplifier/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/code-simplifier/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/code-simplifier/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/code-simplifier/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/code-simplifier/jev-shadow.js.map"
       },
       {
         "id": "dist/hooks/codebase-map.d.ts",
@@ -18662,9 +20642,94 @@
         "path": "dist/hooks/index.js.map"
       },
       {
+        "id": "dist/hooks/jev/__tests__/active-mode.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/active-mode.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/active-mode.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/active-mode.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/active-mode.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/active-mode.test.js"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/active-mode.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/active-mode.test.js.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/client.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/client.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/client.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/client.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/client.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/client.test.js"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/client.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/client.test.js.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/points-wire-shape.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/points-wire-shape.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/points-wire-shape.test.js"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/points-wire-shape.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/points-wire-shape.test.js.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/resolver.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/resolver.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/resolver.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/resolver.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/resolver.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/resolver.test.js"
+      },
+      {
+        "id": "dist/hooks/jev/__tests__/resolver.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/__tests__/resolver.test.js.map"
+      },
+      {
         "id": "dist/hooks/jev/client.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/client.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/client.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/client.d.ts.map"
       },
       {
         "id": "dist/hooks/jev/client.js",
@@ -18672,9 +20737,19 @@
         "path": "dist/hooks/jev/client.js"
       },
       {
+        "id": "dist/hooks/jev/client.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/client.js.map"
+      },
+      {
         "id": "dist/hooks/jev/config.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/config.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/config.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/config.d.ts.map"
       },
       {
         "id": "dist/hooks/jev/config.js",
@@ -18682,9 +20757,19 @@
         "path": "dist/hooks/jev/config.js"
       },
       {
+        "id": "dist/hooks/jev/config.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/config.js.map"
+      },
+      {
         "id": "dist/hooks/jev/index.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/index.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/index.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/index.d.ts.map"
       },
       {
         "id": "dist/hooks/jev/index.js",
@@ -18692,9 +20777,19 @@
         "path": "dist/hooks/jev/index.js"
       },
       {
+        "id": "dist/hooks/jev/index.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/index.js.map"
+      },
+      {
         "id": "dist/hooks/jev/points.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/points.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/points.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/points.d.ts.map"
       },
       {
         "id": "dist/hooks/jev/points.js",
@@ -18702,9 +20797,19 @@
         "path": "dist/hooks/jev/points.js"
       },
       {
+        "id": "dist/hooks/jev/points.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/points.js.map"
+      },
+      {
         "id": "dist/hooks/jev/resolver.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/resolver.d.ts"
+      },
+      {
+        "id": "dist/hooks/jev/resolver.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/resolver.d.ts.map"
       },
       {
         "id": "dist/hooks/jev/resolver.js",
@@ -18712,14 +20817,29 @@
         "path": "dist/hooks/jev/resolver.js"
       },
       {
+        "id": "dist/hooks/jev/resolver.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/resolver.js.map"
+      },
+      {
         "id": "dist/hooks/jev/types.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/types.d.ts"
       },
       {
+        "id": "dist/hooks/jev/types.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/types.d.ts.map"
+      },
+      {
         "id": "dist/hooks/jev/types.js",
         "kind": "generated-dist",
         "path": "dist/hooks/jev/types.js"
+      },
+      {
+        "id": "dist/hooks/jev/types.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/jev/types.js.map"
       },
       {
         "id": "dist/hooks/keyword-detector/__tests__/index.test.d.ts",
@@ -18740,6 +20860,26 @@
         "id": "dist/hooks/keyword-detector/__tests__/index.test.js.map",
         "kind": "generated-dist",
         "path": "dist/hooks/keyword-detector/__tests__/index.test.js.map"
+      },
+      {
+        "id": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/keyword-detector/__tests__/jev-shadow.test.js.map"
       },
       {
         "id": "dist/hooks/keyword-detector/index.d.ts",
@@ -18767,9 +20907,39 @@
         "path": "dist/hooks/keyword-detector/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/keyword-detector/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/keyword-detector/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/keyword-detector/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/keyword-detector/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/keyword-detector/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/keyword-detector/jev-shadow.js.map"
+      },
+      {
+        "id": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/learner/__tests__/jev-extraction-shadow.test.js.map"
       },
       {
         "id": "dist/hooks/learner/auto-invoke.d.ts",
@@ -18957,9 +21127,19 @@
         "path": "dist/hooks/learner/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/learner/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/learner/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/learner/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/learner/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/learner/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/learner/jev-shadow.js.map"
       },
       {
         "id": "dist/hooks/learner/loader.d.ts",
@@ -19662,6 +21842,26 @@
         "path": "dist/hooks/persistent-mode/__tests__/idle-repo-state.test.js.map"
       },
       {
+        "id": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/persistent-mode/__tests__/jev-loop-continuation-shadow.test.js.map"
+      },
+      {
         "id": "dist/hooks/persistent-mode/__tests__/oversize-tool-result-redirect.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/persistent-mode/__tests__/oversize-tool-result-redirect.test.d.ts"
@@ -19987,9 +22187,19 @@
         "path": "dist/hooks/persistent-mode/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/persistent-mode/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/persistent-mode/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/persistent-mode/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/persistent-mode/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/persistent-mode/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/persistent-mode/jev-shadow.js.map"
       },
       {
         "id": "dist/hooks/persistent-mode/session-isolation.test.d.ts",
@@ -20112,6 +22322,26 @@
         "path": "dist/hooks/pre-compact/restore.js.map"
       },
       {
+        "id": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/preemptive-compaction/__tests__/jev-shadow.test.js.map"
+      },
+      {
         "id": "dist/hooks/preemptive-compaction/constants.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/preemptive-compaction/constants.d.ts"
@@ -20157,9 +22387,19 @@
         "path": "dist/hooks/preemptive-compaction/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/preemptive-compaction/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/preemptive-compaction/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/preemptive-compaction/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/preemptive-compaction/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/preemptive-compaction/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/preemptive-compaction/jev-shadow.js.map"
       },
       {
         "id": "dist/hooks/preemptive-compaction/types.d.ts",
@@ -20582,14 +22822,64 @@
         "path": "dist/hooks/prompt-prerequisites/index.js.map"
       },
       {
+        "id": "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/feedback-baseline.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/feedback-baseline.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/feedback-baseline.test.js"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/feedback-baseline.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/feedback-baseline.test.js.map"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/__tests__/jev-verdict-shadow.test.js.map"
+      },
+      {
         "id": "dist/hooks/ralph/feedback-baseline.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/ralph/feedback-baseline.d.ts"
       },
       {
+        "id": "dist/hooks/ralph/feedback-baseline.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/feedback-baseline.d.ts.map"
+      },
+      {
         "id": "dist/hooks/ralph/feedback-baseline.js",
         "kind": "generated-dist",
         "path": "dist/hooks/ralph/feedback-baseline.js"
+      },
+      {
+        "id": "dist/hooks/ralph/feedback-baseline.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/feedback-baseline.js.map"
       },
       {
         "id": "dist/hooks/ralph/index.d.ts",
@@ -20617,9 +22907,19 @@
         "path": "dist/hooks/ralph/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/ralph/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/ralph/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/ralph/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/ralph/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/ralph/jev-shadow.js.map"
       },
       {
         "id": "dist/hooks/ralph/loop.d.ts",
@@ -21187,6 +23487,21 @@
         "path": "dist/hooks/rules-injector/matcher.test.d.ts"
       },
       {
+        "id": "dist/hooks/rules-injector/matcher.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/rules-injector/matcher.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/rules-injector/matcher.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/rules-injector/matcher.test.js"
+      },
+      {
+        "id": "dist/hooks/rules-injector/matcher.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/rules-injector/matcher.test.js.map"
+      },
+      {
         "id": "dist/hooks/rules-injector/parser.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/rules-injector/parser.d.ts"
@@ -21327,6 +23642,46 @@
         "path": "dist/hooks/session-end/__tests__/callbacks.test.js.map"
       },
       {
+        "id": "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/chain-enqueuer.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/chain-enqueuer.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/chain-enqueuer.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/chain-enqueuer.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/chain-enqueuer.test.js.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/check-evidence.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/check-evidence.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/check-evidence.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/check-evidence.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/check-evidence.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/check-evidence.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/check-evidence.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/check-evidence.test.js.map"
+      },
+      {
         "id": "dist/hooks/session-end/__tests__/cleanup-manifest.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/__tests__/cleanup-manifest.test.d.ts"
@@ -21365,6 +23720,46 @@
         "id": "dist/hooks/session-end/__tests__/duplicate-notifications.test.js.map",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/__tests__/duplicate-notifications.test.js.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/foreground-bootstrap.test.js.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/guardrails.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/guardrails.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/guardrails.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/guardrails.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/guardrails.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/guardrails.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/guardrails.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/guardrails.test.js.map"
       },
       {
         "id": "dist/hooks/session-end/__tests__/mode-state-cleanup.test.d.ts",
@@ -21407,6 +23802,26 @@
         "path": "dist/hooks/session-end/__tests__/openclaw-session-end.test.js.map"
       },
       {
+        "id": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/process-session-end-worker-spawn.test.js.map"
+      },
+      {
         "id": "dist/hooks/session-end/__tests__/python-repl-cleanup.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/__tests__/python-repl-cleanup.test.d.ts"
@@ -21425,6 +23840,26 @@
         "id": "dist/hooks/session-end/__tests__/python-repl-cleanup.test.js.map",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/__tests__/python-repl-cleanup.test.js.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/routing.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/routing.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/routing.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/routing.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/routing.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/routing.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/routing.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/routing.test.js.map"
       },
       {
         "id": "dist/hooks/session-end/__tests__/session-duration.test.d.ts",
@@ -21485,6 +23920,26 @@
         "id": "dist/hooks/session-end/__tests__/session-end-timeout.test.js.map",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/__tests__/session-end-timeout.test.js.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/spawn-next.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/spawn-next.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/spawn-next.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/spawn-next.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/spawn-next.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/spawn-next.test.js"
+      },
+      {
+        "id": "dist/hooks/session-end/__tests__/spawn-next.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/__tests__/spawn-next.test.js.map"
       },
       {
         "id": "dist/hooks/session-end/__tests__/subdirectory-cwd.test.d.ts",
@@ -21612,9 +24067,19 @@
         "path": "dist/hooks/session-end/chain-enqueuer.d.ts"
       },
       {
+        "id": "dist/hooks/session-end/chain-enqueuer.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/chain-enqueuer.d.ts.map"
+      },
+      {
         "id": "dist/hooks/session-end/chain-enqueuer.js",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/chain-enqueuer.js"
+      },
+      {
+        "id": "dist/hooks/session-end/chain-enqueuer.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/chain-enqueuer.js.map"
       },
       {
         "id": "dist/hooks/session-end/check-evidence.d.ts",
@@ -21622,9 +24087,19 @@
         "path": "dist/hooks/session-end/check-evidence.d.ts"
       },
       {
+        "id": "dist/hooks/session-end/check-evidence.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/check-evidence.d.ts.map"
+      },
+      {
         "id": "dist/hooks/session-end/check-evidence.js",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/check-evidence.js"
+      },
+      {
+        "id": "dist/hooks/session-end/check-evidence.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/check-evidence.js.map"
       },
       {
         "id": "dist/hooks/session-end/cleanup-manifest.d.ts",
@@ -21672,9 +24147,19 @@
         "path": "dist/hooks/session-end/guardrails.d.ts"
       },
       {
+        "id": "dist/hooks/session-end/guardrails.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/guardrails.d.ts.map"
+      },
+      {
         "id": "dist/hooks/session-end/guardrails.js",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/guardrails.js"
+      },
+      {
+        "id": "dist/hooks/session-end/guardrails.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/guardrails.js.map"
       },
       {
         "id": "dist/hooks/session-end/index.d.ts",
@@ -21702,9 +24187,19 @@
         "path": "dist/hooks/session-end/routing.d.ts"
       },
       {
+        "id": "dist/hooks/session-end/routing.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/routing.d.ts.map"
+      },
+      {
         "id": "dist/hooks/session-end/routing.js",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/routing.js"
+      },
+      {
+        "id": "dist/hooks/session-end/routing.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/routing.js.map"
       },
       {
         "id": "dist/hooks/session-end/spawn-next.d.ts",
@@ -21712,9 +24207,19 @@
         "path": "dist/hooks/session-end/spawn-next.d.ts"
       },
       {
+        "id": "dist/hooks/session-end/spawn-next.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/spawn-next.d.ts.map"
+      },
+      {
         "id": "dist/hooks/session-end/spawn-next.js",
         "kind": "generated-dist",
         "path": "dist/hooks/session-end/spawn-next.js"
+      },
+      {
+        "id": "dist/hooks/session-end/spawn-next.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/session-end/spawn-next.js.map"
       },
       {
         "id": "dist/hooks/session-end/worker.d.ts",
@@ -22122,6 +24627,26 @@
         "path": "dist/hooks/task-size-detector/__tests__/index.test.js.map"
       },
       {
+        "id": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts"
+      },
+      {
+        "id": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.d.ts.map"
+      },
+      {
+        "id": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js",
+        "kind": "generated-dist",
+        "path": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js"
+      },
+      {
+        "id": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/task-size-detector/__tests__/jev-shadow.test.js.map"
+      },
+      {
         "id": "dist/hooks/task-size-detector/index.d.ts",
         "kind": "generated-dist",
         "path": "dist/hooks/task-size-detector/index.d.ts"
@@ -22147,9 +24672,19 @@
         "path": "dist/hooks/task-size-detector/jev-shadow.d.ts"
       },
       {
+        "id": "dist/hooks/task-size-detector/jev-shadow.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/task-size-detector/jev-shadow.d.ts.map"
+      },
+      {
         "id": "dist/hooks/task-size-detector/jev-shadow.js",
         "kind": "generated-dist",
         "path": "dist/hooks/task-size-detector/jev-shadow.js"
+      },
+      {
+        "id": "dist/hooks/task-size-detector/jev-shadow.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hooks/task-size-detector/jev-shadow.js.map"
       },
       {
         "id": "dist/hooks/team-canonical-state.d.ts",
@@ -23697,9 +26232,19 @@
         "path": "dist/hud/elements/update-hint.d.ts"
       },
       {
+        "id": "dist/hud/elements/update-hint.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/hud/elements/update-hint.d.ts.map"
+      },
+      {
         "id": "dist/hud/elements/update-hint.js",
         "kind": "generated-dist",
         "path": "dist/hud/elements/update-hint.js"
+      },
+      {
+        "id": "dist/hud/elements/update-hint.js.map",
+        "kind": "generated-dist",
+        "path": "dist/hud/elements/update-hint.js.map"
       },
       {
         "id": "dist/hud/index.d.ts",
@@ -23940,6 +26485,26 @@
         "id": "dist/index.js.map",
         "kind": "generated-dist",
         "path": "dist/index.js.map"
+      },
+      {
+        "id": "dist/installer/__tests__/bundled-skill-sync.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/bundled-skill-sync.test.d.ts"
+      },
+      {
+        "id": "dist/installer/__tests__/bundled-skill-sync.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/bundled-skill-sync.test.d.ts.map"
+      },
+      {
+        "id": "dist/installer/__tests__/bundled-skill-sync.test.js",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/bundled-skill-sync.test.js"
+      },
+      {
+        "id": "dist/installer/__tests__/bundled-skill-sync.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/bundled-skill-sync.test.js.map"
       },
       {
         "id": "dist/installer/__tests__/claude-md-analysis.test.d.ts",
@@ -24307,6 +26872,26 @@
         "path": "dist/installer/__tests__/standalone-hook-reconcile.test.js.map"
       },
       {
+        "id": "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts"
+      },
+      {
+        "id": "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/standalone-state-lock-bridge.test.d.ts.map"
+      },
+      {
+        "id": "dist/installer/__tests__/standalone-state-lock-bridge.test.js",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/standalone-state-lock-bridge.test.js"
+      },
+      {
+        "id": "dist/installer/__tests__/standalone-state-lock-bridge.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/installer/__tests__/standalone-state-lock-bridge.test.js.map"
+      },
+      {
         "id": "dist/installer/__tests__/user-skill-compat.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/installer/__tests__/user-skill-compat.test.d.ts"
@@ -24607,6 +27192,26 @@
         "path": "dist/lib/__tests__/atomic-write.test.js.map"
       },
       {
+        "id": "dist/lib/__tests__/host-load-gate.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/host-load-gate.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/host-load-gate.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/host-load-gate.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/host-load-gate.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/host-load-gate.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/host-load-gate.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/host-load-gate.test.js.map"
+      },
+      {
         "id": "dist/lib/__tests__/mode-state-io.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/lib/__tests__/mode-state-io.test.d.ts"
@@ -24625,6 +27230,26 @@
         "id": "dist/lib/__tests__/mode-state-io.test.js.map",
         "kind": "generated-dist",
         "path": "dist/lib/__tests__/mode-state-io.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/mode-state-lock.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/mode-state-lock.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/mode-state-lock.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/mode-state-lock.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/mode-state-lock.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/mode-state-lock.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/mode-state-lock.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/mode-state-lock.test.js.map"
       },
       {
         "id": "dist/lib/__tests__/payload-limits.test.d.ts",
@@ -24665,6 +27290,26 @@
         "id": "dist/lib/__tests__/plugin-dir.test.js.map",
         "kind": "generated-dist",
         "path": "dist/lib/__tests__/plugin-dir.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/runs-ledger.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/runs-ledger.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/runs-ledger.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/runs-ledger.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/runs-ledger.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/runs-ledger.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/runs-ledger.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/runs-ledger.test.js.map"
       },
       {
         "id": "dist/lib/__tests__/session-id.test.d.ts",
@@ -24787,6 +27432,146 @@
         "path": "dist/lib/__tests__/worktree-cleanup-safety.test.js.map"
       },
       {
+        "id": "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-bare-container.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-bare-container.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-bare-container.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-bare-container.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-bare-container.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-foreign-root.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-foreign-root.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-foreign-root.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-foreign-root.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-foreign-root.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-failclosed.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-probe-locale.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-timeout.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-timeout.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-timeout.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-git-timeout.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-git-timeout.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-nongit-anchor.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-split-warning.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-split-warning.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-split-warning.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-split-warning.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-split-warning.test.js.map"
+      },
+      {
         "id": "dist/lib/__tests__/worktree-paths-superproject-cache.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/lib/__tests__/worktree-paths-superproject-cache.test.d.ts"
@@ -24805,6 +27590,26 @@
         "id": "dist/lib/__tests__/worktree-paths-superproject-cache.test.js.map",
         "kind": "generated-dist",
         "path": "dist/lib/__tests__/worktree-paths-superproject-cache.test.js.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.d.ts.map"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js"
+      },
+      {
+        "id": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/__tests__/worktree-paths-toplevel-cache.test.js.map"
       },
       {
         "id": "dist/lib/__tests__/worktree-paths.test.d.ts",
@@ -24912,9 +27717,19 @@
         "path": "dist/lib/host-load-gate.d.ts"
       },
       {
+        "id": "dist/lib/host-load-gate.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/host-load-gate.d.ts.map"
+      },
+      {
         "id": "dist/lib/host-load-gate.js",
         "kind": "generated-dist",
         "path": "dist/lib/host-load-gate.js"
+      },
+      {
+        "id": "dist/lib/host-load-gate.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/host-load-gate.js.map"
       },
       {
         "id": "dist/lib/hud-wrapper-template.d.ts",
@@ -25102,9 +27917,19 @@
         "path": "dist/lib/runs-ledger.d.ts"
       },
       {
+        "id": "dist/lib/runs-ledger.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/runs-ledger.d.ts.map"
+      },
+      {
         "id": "dist/lib/runs-ledger.js",
         "kind": "generated-dist",
         "path": "dist/lib/runs-ledger.js"
+      },
+      {
+        "id": "dist/lib/runs-ledger.js.map",
+        "kind": "generated-dist",
+        "path": "dist/lib/runs-ledger.js.map"
       },
       {
         "id": "dist/lib/security-config.d.ts",
@@ -25665,6 +28490,26 @@
         "id": "dist/mcp/tool-registry.js.map",
         "kind": "generated-dist",
         "path": "dist/mcp/tool-registry.js.map"
+      },
+      {
+        "id": "dist/notifications/__tests__/approval-reply.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/notifications/__tests__/approval-reply.test.d.ts"
+      },
+      {
+        "id": "dist/notifications/__tests__/approval-reply.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/notifications/__tests__/approval-reply.test.d.ts.map"
+      },
+      {
+        "id": "dist/notifications/__tests__/approval-reply.test.js",
+        "kind": "generated-dist",
+        "path": "dist/notifications/__tests__/approval-reply.test.js"
+      },
+      {
+        "id": "dist/notifications/__tests__/approval-reply.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/notifications/__tests__/approval-reply.test.js.map"
       },
       {
         "id": "dist/notifications/__tests__/config-merge.test.d.ts",
@@ -28647,6 +31492,26 @@
         "path": "dist/team/__tests__/runtime-prompt-mode.test.js.map"
       },
       {
+        "id": "dist/team/__tests__/runtime-storage-boundary.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-storage-boundary.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-storage-boundary.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-storage-boundary.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-storage-boundary.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-storage-boundary.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-storage-boundary.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-storage-boundary.test.js.map"
+      },
+      {
         "id": "dist/team/__tests__/runtime-v2-role-routing.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/runtime-v2-role-routing.test.d.ts"
@@ -28805,6 +31670,26 @@
         "id": "dist/team/__tests__/runtime-v2.service-repair.test.js.map",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/runtime-v2.service-repair.test.js.map"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/runtime-v2.shutdown-interruption.test.js.map"
       },
       {
         "id": "dist/team/__tests__/runtime-v2.shutdown-pane-cleanup.test.d.ts",
@@ -28987,6 +31872,26 @@
         "path": "dist/team/__tests__/stage-router.test.js.map"
       },
       {
+        "id": "dist/team/__tests__/startup-claim-error.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/startup-claim-error.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/startup-claim-error.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/startup-claim-error.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/startup-claim-error.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/startup-claim-error.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/startup-claim-error.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/startup-claim-error.test.js.map"
+      },
+      {
         "id": "dist/team/__tests__/state-paths.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/state-paths.test.d.ts"
@@ -29087,6 +31992,26 @@
         "path": "dist/team/__tests__/task-router.test.js.map"
       },
       {
+        "id": "dist/team/__tests__/task-storage-integrity.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/task-storage-integrity.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/task-storage-integrity.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/task-storage-integrity.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/task-storage-integrity.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/task-storage-integrity.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/task-storage-integrity.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/task-storage-integrity.test.js.map"
+      },
+      {
         "id": "dist/team/__tests__/team-config-revision-lock.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/team-config-revision-lock.test.d.ts"
@@ -29105,6 +32030,26 @@
         "id": "dist/team/__tests__/team-config-revision-lock.test.js.map",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/team-config-revision-lock.test.js.map"
+      },
+      {
+        "id": "dist/team/__tests__/team-instance.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/team-instance.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/team-instance.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/team-instance.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/team-instance.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/team-instance.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/team-instance.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/team-instance.test.js.map"
       },
       {
         "id": "dist/team/__tests__/team-leader-nudge-hook.logging.test.d.ts",
@@ -29407,6 +32352,26 @@
         "path": "dist/team/__tests__/tmux-session.kill-team-session.test.js.map"
       },
       {
+        "id": "dist/team/__tests__/tmux-session.pane-env.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/tmux-session.pane-env.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/tmux-session.pane-env.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/tmux-session.pane-env.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/tmux-session.pane-env.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/tmux-session.pane-env.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/tmux-session.pane-env.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/tmux-session.pane-env.test.js.map"
+      },
+      {
         "id": "dist/team/__tests__/tmux-session.spawn.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/tmux-session.spawn.test.d.ts"
@@ -29685,6 +32650,26 @@
         "id": "dist/team/__tests__/worker-launch-posix-transport.test.js.map",
         "kind": "generated-dist",
         "path": "dist/team/__tests__/worker-launch-posix-transport.test.js.map"
+      },
+      {
+        "id": "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts"
+      },
+      {
+        "id": "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/worker-launch-wrapper-posix.test.d.ts.map"
+      },
+      {
+        "id": "dist/team/__tests__/worker-launch-wrapper-posix.test.js",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/worker-launch-wrapper-posix.test.js"
+      },
+      {
+        "id": "dist/team/__tests__/worker-launch-wrapper-posix.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/__tests__/worker-launch-wrapper-posix.test.js.map"
       },
       {
         "id": "dist/team/__tests__/worker-restart.test.d.ts",
@@ -30852,9 +33837,19 @@
         "path": "dist/team/team-instance.d.ts"
       },
       {
+        "id": "dist/team/team-instance.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/team/team-instance.d.ts.map"
+      },
+      {
         "id": "dist/team/team-instance.js",
         "kind": "generated-dist",
         "path": "dist/team/team-instance.js"
+      },
+      {
+        "id": "dist/team/team-instance.js.map",
+        "kind": "generated-dist",
+        "path": "dist/team/team-instance.js.map"
       },
       {
         "id": "dist/team/team-name.d.ts",
@@ -31317,6 +34312,26 @@
         "path": "dist/tools/__tests__/schema-conversion.test.js.map"
       },
       {
+        "id": "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts"
+      },
+      {
+        "id": "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/state-tools-nongit-ownership.test.d.ts.map"
+      },
+      {
+        "id": "dist/tools/__tests__/state-tools-nongit-ownership.test.js",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/state-tools-nongit-ownership.test.js"
+      },
+      {
+        "id": "dist/tools/__tests__/state-tools-nongit-ownership.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/state-tools-nongit-ownership.test.js.map"
+      },
+      {
         "id": "dist/tools/__tests__/state-tools.test.d.ts",
         "kind": "generated-dist",
         "path": "dist/tools/__tests__/state-tools.test.d.ts"
@@ -31335,6 +34350,66 @@
         "id": "dist/tools/__tests__/state-tools.test.js.map",
         "kind": "generated-dist",
         "path": "dist/tools/__tests__/state-tools.test.js.map"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.d.ts.map"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-direct-dist-failclosed.test.js.map"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-foreign-root.test.d.ts.map"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-foreign-root.test.js",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-foreign-root.test.js"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-foreign-root.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-foreign-root.test.js.map"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.d.ts.map"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js"
+      },
+      {
+        "id": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/__tests__/wiki-tools-git-probe-failclosed.test.js.map"
       },
       {
         "id": "dist/tools/__tests__/wiki-tools-working-directory.test.d.ts",
@@ -31535,6 +34610,26 @@
         "id": "dist/tools/lsp/__tests__/client-devcontainer.test.js.map",
         "kind": "generated-dist",
         "path": "dist/tools/lsp/__tests__/client-devcontainer.test.js.map"
+      },
+      {
+        "id": "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts"
+      },
+      {
+        "id": "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/lsp/__tests__/client-document-lifecycle.test.d.ts.map"
+      },
+      {
+        "id": "dist/tools/lsp/__tests__/client-document-lifecycle.test.js",
+        "kind": "generated-dist",
+        "path": "dist/tools/lsp/__tests__/client-document-lifecycle.test.js"
+      },
+      {
+        "id": "dist/tools/lsp/__tests__/client-document-lifecycle.test.js.map",
+        "kind": "generated-dist",
+        "path": "dist/tools/lsp/__tests__/client-document-lifecycle.test.js.map"
       },
       {
         "id": "dist/tools/lsp/__tests__/client-eviction.test.d.ts",
@@ -83905,12 +87000,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7182,
+      "nodeCount": 7698,
       "edgeCount": 8283,
       "importEdgeCount": 6850,
       "registerEdgeCount": 68
     }
   },
-  "inventorySha256": "1cf0849f3e91a49ae5af7f05f40975797eaa32622a599526b48f2e615c30ac56",
-  "manifestSha256": "0bec9eff32c487e1a0134b7e541272fb9aed69ae35ee4b623dc83743709c567e"
+  "inventorySha256": "33245f2e20a9dbc1e3f29a29fc19a2016dfe27264596258378cad8099b053e31",
+  "manifestSha256": "76325ed8064fd0fb8b25e82a6caec37a44987424e24d930bacbe3309a5952ac8"
 }
