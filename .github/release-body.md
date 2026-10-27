@@ -1,21 +1,27 @@
-# oh-my-claudecode v5.7.18: Keep macOS team workers logged in
+# oh-my-claudecode v5.7.19: Faster reconciliation and safer reinstalls
 
 ## Release Notes
 
-This release preserves Claude Code's macOS keychain OAuth login for team workers by passing `USER` through the POSIX provider environment, preventing workers from starting logged out and being retired with `startup_dispatch_failed`. Thanks to @iyoda for #4625.
+This release makes interactive updates more reliable on slow-I/O hosts, repairs reinstalls when a hook library is a dangling symlink, and reduces unnecessary work during successful update reconciliation. Thanks to @kaneyxx for #4629 and the #4630 report, and to @iyoda for #4631.
 
 ### Bug Fixes
 
-- **fix(team): pass `USER` through the POSIX provider environment so macOS workers retain their Claude login** (#4625, @iyoda)
+- **fix(update): wait up to 600 seconds for interactive update reconciliation while keeping silent auto-updates bounded to 60 seconds, and name the recovery command on timeout** (#4629, fixes #4628; @kaneyxx)
+- **fix(installer): replace dangling `hooks/lib/stdin.mjs` symlinks before copying so reinstalls recover hook imports** (#4631, @iyoda)
+
+### Performance Improvements
+
+- **perf(update): sync the plugin payload once per target during reconciliation, cutting measured reconcile time by about 67%** (#4634, fixes #4630; reported by @kaneyxx)
 
 ### Other Changes
 
-- **chore(sync): merge main's v5.7.17 release into dev** (#4623)
-- **ci: authorize generated artifacts for the v5.7.17 main-to-dev sync** (#4624)
+- **ci: authorize generated files for sync PR #4632 during the superseded v5.7.18 sync attempt** (#4633)
+- **chore(sync): merge main's v5.7.18 release into dev** (#4635)
+- **ci: authorize generated artifacts for sync PR #4635** (#4636)
 
 ### Stats
 
-- **3 PRs merged** | **0 new features** | **1 bug fix** | **0 security/hardening improvements** | **2 other changes**
+- **6 PRs merged** | **0 new features** | **2 bug fixes** | **1 performance improvement** | **0 security/hardening improvements** | **3 other changes**
 
 ### Install / Update
 
@@ -24,7 +30,7 @@ The npm CLI and the Claude Code marketplace/plugin are separate install tracks, 
 **CLI / runtime:**
 
 ```bash
-npm install -g oh-my-claude-sisyphus@5.7.18
+npm install -g oh-my-claude-sisyphus@5.7.19
 ```
 
 **Claude Code plugin:**
@@ -33,10 +39,10 @@ npm install -g oh-my-claude-sisyphus@5.7.18
 /plugin marketplace update omc
 ```
 
-**Full Changelog**: https://github.com/Yeachan-Heo/oh-my-claudecode/compare/v5.7.17...v5.7.18
+**Full Changelog**: https://github.com/Yeachan-Heo/oh-my-claudecode/compare/v5.7.18...v5.7.19
 
 ## Contributors
 
 Thank you to all contributors who made this release possible!
 
-@iyoda @Yeachan-Heo
+@kaneyxx @iyoda @Yeachan-Heo
