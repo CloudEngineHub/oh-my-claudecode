@@ -4,6 +4,104 @@
   "owner": "Yeachan-Heo",
   "authorizations": [
     {
+      "pullNumber": 4639,
+      "targetRef": "dev",
+      "mergeBaseSha": "2985d2a46c9cfe61d15883698127f52e8d1ce26a",
+      "headSha": "19f039fb985cb0ae2fc33e2b205c479d0b35fa65",
+      "owner": "Yeachan-Heo",
+      "expiresAt": "2026-11-26T00:00:00.000Z",
+      "generatedDelta": {
+        "count": 14,
+        "sha256": "8fb8a72cac14b849cf4c38311dae00ccd4baf47154955de0b9afb69755e1a970"
+      },
+      "generatedFiles": [
+        {
+          "status": "modified",
+          "filename": "bridge/claude-md-coordinator.cjs",
+          "sha": "a85c1ebbc169098a1097772f09e9f5ac7f76fb20",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/cli.cjs",
+          "sha": "5005ffef33c91dd93c2cecdf6b3ea3a81e663659",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/auto-update.test.js",
+          "sha": "dd91a2e5ab1e201d691ed00cd68845deec195350",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/auto-update.test.js.map",
+          "sha": "ccd924080b5afcbe80f9def83866db622e57b718",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/features/auto-update.d.ts",
+          "sha": "9709b655a46b01eb616e3385e56341182a9cda78",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/features/auto-update.d.ts.map",
+          "sha": "767db6747b73be60c3e437ff3f3d55a2e53a8fa9",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/features/auto-update.js",
+          "sha": "15c0d7b57b55186a4463079a8841309773bc6933",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/features/auto-update.js.map",
+          "sha": "b6a3863bb4c14d646635bdf7bd95f37db7276797",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/installer/__tests__/standalone-hook-reconcile.test.js",
+          "sha": "6ee1c1a711ecc37c928b3ce42e1ea095e0d93b60",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/installer/__tests__/standalone-hook-reconcile.test.js.map",
+          "sha": "9a84cffb45f877c9f3167070a80e74e146c1d965",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/installer/index.d.ts",
+          "sha": "4557bc4fdc0a27265d76be0ad6af162a5785b953",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/installer/index.d.ts.map",
+          "sha": "d2d53b3dff1fed1814630767406e7555cf9ed76b",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/installer/index.js",
+          "sha": "dbe3e53a4e6f13f78030f994aa89c0a14c687c92",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/installer/index.js.map",
+          "sha": "de57438854efa2694431c908591d82b6decf9dd3",
+          "previousFilename": null
+        }
+      ]
+    },
+    {
       "pullNumber": 3537,
       "targetRef": "main",
       "mergeBaseSha": "76c90920b74494df6e34d6165be963bca8a9adf6",
