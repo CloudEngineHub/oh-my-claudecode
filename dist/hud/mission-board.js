@@ -415,17 +415,31 @@ function mergeMissions(previous, teamMissions, config) {
     })
         .slice(0, config.maxMissions);
 }
-export function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG, sessionId) {
-    const effectiveSessionId = sessionId ?? getProcessSessionId();
-    const config = resolveConfig(rawConfig);
-    const previous = readMissionBoardState(directory, effectiveSessionId);
+function collectTeamMissions(directory, config) {
     const teamsRoot = join(getOmcRoot(directory), 'state', 'team');
-    const teamMissions = existsSync(teamsRoot)
+    return existsSync(teamsRoot)
         ? readdirSync(teamsRoot, { withFileTypes: true })
             .filter((entry) => entry.isDirectory())
             .map((entry) => collectTeamMission(join(teamsRoot, entry.name), entry.name, config))
             .filter((mission) => Boolean(mission))
         : [];
+}
+/**
+ * Build a team-only board view without reading or persisting session snapshots.
+ * Used by readers that have no session ids to aggregate.
+ */
+export function discoverTeamMissionBoardState(directory, rawConfig = DEFAULT_CONFIG) {
+    const config = resolveConfig(rawConfig);
+    return {
+        updatedAt: new Date().toISOString(),
+        missions: mergeMissions(null, collectTeamMissions(directory, config), config),
+    };
+}
+export function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG, sessionId) {
+    const effectiveSessionId = sessionId ?? getProcessSessionId();
+    const config = resolveConfig(rawConfig);
+    const previous = readMissionBoardState(directory, effectiveSessionId);
+    const teamMissions = collectTeamMissions(directory, config);
     const state = {
         updatedAt: new Date().toISOString(),
         missions: mergeMissions(previous, teamMissions, config),

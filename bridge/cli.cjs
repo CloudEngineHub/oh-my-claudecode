@@ -50886,6 +50886,7 @@ var init_worker_canonicalization = __esm({
 var mission_board_exports = {};
 __export(mission_board_exports, {
   DEFAULT_MISSION_BOARD_CONFIG: () => DEFAULT_MISSION_BOARD_CONFIG,
+  discoverTeamMissionBoardState: () => discoverTeamMissionBoardState,
   listMissionBoardSessionIds: () => listMissionBoardSessionIds,
   mergeMissionBoardStates: () => mergeMissionBoardStates,
   readMissionBoardState: () => readMissionBoardState,
@@ -51226,12 +51227,22 @@ function mergeMissions(previous, teamMissions, config2) {
     return parseTime(right.updatedAt) - parseTime(left.updatedAt);
   }).slice(0, config2.maxMissions);
 }
+function collectTeamMissions(directory, config2) {
+  const teamsRoot = (0, import_node_path9.join)(getOmcRoot(directory), "state", "team");
+  return (0, import_node_fs6.existsSync)(teamsRoot) ? (0, import_node_fs6.readdirSync)(teamsRoot, { withFileTypes: true }).filter((entry2) => entry2.isDirectory()).map((entry2) => collectTeamMission((0, import_node_path9.join)(teamsRoot, entry2.name), entry2.name, config2)).filter((mission) => Boolean(mission)) : [];
+}
+function discoverTeamMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4) {
+  const config2 = resolveConfig(rawConfig);
+  return {
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    missions: mergeMissions(null, collectTeamMissions(directory, config2), config2)
+  };
+}
 function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4, sessionId) {
   const effectiveSessionId = sessionId ?? getProcessSessionId();
   const config2 = resolveConfig(rawConfig);
   const previous = readMissionBoardState(directory, effectiveSessionId);
-  const teamsRoot = (0, import_node_path9.join)(getOmcRoot(directory), "state", "team");
-  const teamMissions = (0, import_node_fs6.existsSync)(teamsRoot) ? (0, import_node_fs6.readdirSync)(teamsRoot, { withFileTypes: true }).filter((entry2) => entry2.isDirectory()).map((entry2) => collectTeamMission((0, import_node_path9.join)(teamsRoot, entry2.name), entry2.name, config2)).filter((mission) => Boolean(mission)) : [];
+  const teamMissions = collectTeamMissions(directory, config2);
   const state = {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
     missions: mergeMissions(previous, teamMissions, config2)
@@ -133783,6 +133794,7 @@ program2.command("hud").description("Run the OMC HUD statusline renderer").optio
 });
 program2.command("mission-board").description("Render the opt-in mission board snapshot for the current workspace").option("--json", "Print raw mission-board JSON").option("-s, --session <id>", "Restrict the snapshot to a single session id").action(async (options) => {
   const {
+    discoverTeamMissionBoardState: discoverTeamMissionBoardState2,
     listMissionBoardSessionIds: listMissionBoardSessionIds2,
     mergeMissionBoardStates: mergeMissionBoardStates2,
     refreshMissionBoardState: refreshMissionBoardState2,
@@ -133799,7 +133811,7 @@ program2.command("mission-board").description("Render the opt-in mission board s
   const sessionIds = options.session ? [options.session] : listMissionBoardSessionIds2(cwd2).slice(0, 5);
   let state;
   try {
-    state = mergeMissionBoardStates2(
+    state = sessionIds.length === 0 ? discoverTeamMissionBoardState2(cwd2, config2) : mergeMissionBoardStates2(
       sessionIds.map((sessionId) => refreshMissionBoardState2(cwd2, config2, sessionId)),
       config2
     );
