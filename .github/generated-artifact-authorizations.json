@@ -35557,6 +35557,122 @@
           "previousFilename": null
         }
       ]
+    },
+    {
+      "pullNumber": 4664,
+      "targetRef": "main",
+      "mergeBaseSha": "01235a4b3add20205f960241dcc1cb0b3fa16fbb",
+      "headSha": "7f87283fc304717aa586b20999ab89e9fc941d7e",
+      "owner": "Yeachan-Heo",
+      "expiresAt": "2026-11-28T00:00:00.000Z",
+      "generatedDelta": {
+        "count": 17,
+        "sha256": "03952be771804b6a983bcf4068469e33d633036ffe6e1f8da5d75a79856e698f"
+      },
+      "generatedFiles": [
+        {
+          "status": "modified",
+          "filename": "bridge/claude-md-coordinator.cjs",
+          "sha": "dcfc165da4f6d269fed3c2b53db5618c4f9a53a1",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/cli.cjs",
+          "sha": "55e46d76c0f69c68ce270588f54eeb651cdae256",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/mcp-server.cjs",
+          "sha": "9cdd65185f0b4f9423062fc4fa7af05db6700fd8",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/agent-registry.test.js",
+          "sha": "6a5b7575ee0a07118990375194ae75d27825597b",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/agent-registry.test.js.map",
+          "sha": "c6f41d872327d7008e40e5c5866a0260d29a0705",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/index.d.ts.map",
+          "sha": "88fade69e2b389241b9babac2c67e622d919b63c",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/index.js",
+          "sha": "18313ce8f1204fe60771b6b9d205019b06dc0e7e",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/cli/index.js.map",
+          "sha": "45989e43e28d86c4affd6f23050f44acd17a976f",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hud/mission-board.d.ts",
+          "sha": "00d25cc1dfec05a34e998e45f6551f7b940097b0",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hud/mission-board.d.ts.map",
+          "sha": "4e884bbe8c4d9f91a9ab625c5220a66b5df2c1d0",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hud/mission-board.js",
+          "sha": "43b762d89d950d1d975e60cd7c2aa8bd9c9a63c2",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hud/mission-board.js.map",
+          "sha": "fe2225ba49832e07458558b5ecb36183ee490ad6",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/tools/__tests__/state-tools.test.js",
+          "sha": "3b5d65720788ebe972cc0b8c244d099985231caf",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/tools/__tests__/state-tools.test.js.map",
+          "sha": "749123dec7f4074e16b23d082c458b30c44d2de4",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/tools/state-tools.d.ts.map",
+          "sha": "06242b85f1c295814211a464f1f95c25d9e98a36",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/tools/state-tools.js",
+          "sha": "414371808ad6d0f923031a6861f7aced99a8ec09",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/tools/state-tools.js.map",
+          "sha": "0f5f168757b4c022db91df15889c2b4cb9be7643",
+          "previousFilename": null
+        }
+      ]
     }
   ]
 }
