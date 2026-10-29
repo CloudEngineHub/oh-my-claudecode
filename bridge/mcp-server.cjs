@@ -25005,6 +25005,38 @@ function isWatchedRunMode(modeName) {
 function ledgerPath(omcRoot) {
   return (0, import_path15.join)(omcRoot, "state", "runs", "ledger.jsonl");
 }
+function findLatestStartEdge(omcRoot, mode, sessionId) {
+  try {
+    const path13 = ledgerPath(omcRoot);
+    if (!(0, import_fs15.existsSync)(path13)) return void 0;
+    const lines = (0, import_fs15.readFileSync)(path13, "utf8").split("\n");
+    let unmatchedEnds = 0;
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+      if (lines[i].trim().length === 0) continue;
+      let parsed;
+      try {
+        parsed = JSON.parse(lines[i]);
+      } catch {
+        continue;
+      }
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) continue;
+      const entry = parsed;
+      if (entry.run !== mode || entry.sessionId !== sessionId) continue;
+      if (entry.event === "end") {
+        unmatchedEnds += 1;
+        continue;
+      }
+      if (entry.event !== "start") continue;
+      if (unmatchedEnds > 0) {
+        unmatchedEnds -= 1;
+        continue;
+      }
+      return typeof entry.ts === "string" && Number.isFinite(Date.parse(entry.ts)) ? entry.ts : void 0;
+    }
+  } catch {
+  }
+  return void 0;
+}
 function closeoutWrittenFor(omcRoot, mode, startedAt) {
   if (!startedAt || !Number.isFinite(Date.parse(startedAt))) return false;
   const started = Date.parse(startedAt);
@@ -25058,19 +25090,41 @@ function observeModeStateWrite(omcRoot, filePath, state) {
   } catch {
   }
 }
+function observeModeStateActivation(omcRoot, filePath, previous, next) {
+  try {
+    if (previous?.active === true || next?.active !== true) return;
+    const mode = modeFromStatePath(filePath);
+    if (!mode || !isWatchedRunMode(mode)) return;
+    activeLoggedPaths.set(filePath, true);
+    appendRunLedger(omcRoot, {
+      ts: (/* @__PURE__ */ new Date()).toISOString(),
+      run: mode,
+      sessionId: sessionIdFromStatePath(filePath),
+      event: "start",
+      outcome: "running"
+    });
+  } catch {
+  }
+}
 function observeModeStateClear(omcRoot, filePath, previousState) {
   try {
     const mode = modeFromStatePath(filePath);
     if (!mode || !isWatchedRunMode(mode)) return;
     if (!previousState || previousState.active !== true) return;
     if (previousState.active === true) activeLoggedPaths.delete(filePath);
+    const staleStartedAt = typeof previousState.started_at === "string" ? previousState.started_at : void 0;
+    const sessionId = sessionIdFromStatePath(filePath);
+    const latestStartEdge = findLatestStartEdge(omcRoot, mode, sessionId);
+    const staleStartedAtMs = staleStartedAt ? Date.parse(staleStartedAt) : Number.NaN;
+    const latestStartEdgeMs = latestStartEdge ? Date.parse(latestStartEdge) : Number.NaN;
+    const closeoutBoundary = Number.isFinite(latestStartEdgeMs) && (!Number.isFinite(staleStartedAtMs) || latestStartEdgeMs > staleStartedAtMs) ? latestStartEdge : staleStartedAt;
     appendRunLedger(omcRoot, {
       ts: (/* @__PURE__ */ new Date()).toISOString(),
       run: mode,
-      sessionId: sessionIdFromStatePath(filePath),
+      sessionId,
       event: "end",
       outcome: typeof previousState.current_phase === "string" && /complete|done/i.test(previousState.current_phase) ? "completed" : "cancelled",
-      closeoutWritten: closeoutWrittenFor(omcRoot, mode, typeof previousState.started_at === "string" ? previousState.started_at : void 0)
+      closeoutWritten: closeoutWrittenFor(omcRoot, mode, closeoutBoundary)
     });
   } catch {
   }
@@ -25630,6 +25684,10 @@ function processStartIdentity(pid) {
     return code === "ESRCH" ? "absent" : null;
   }
 }
+function observeStateFileActivation(filePath, previous, next) {
+  const omcRoot = omcRootFromStatePath(filePath);
+  if (omcRoot) observeModeStateActivation(omcRoot, filePath, previous, next);
+}
 function writeStateFileLocked(filePath, state) {
   if (!recoverEmergencyStateFile(filePath)) return false;
   const lock = acquireMutationLock(filePath);
@@ -25726,8 +25784,10 @@ function writeStateFileLockedIf(filePath, predicate, transform2) {
       } else if (!predicate(current)) {
         result = "skipped";
       } else {
-        atomicWriteJsonSync(filePath, transform2(current));
+        const next = transform2(current);
+        atomicWriteJsonSync(filePath, next);
         result = "written";
+        observeStateFileActivation(filePath, current, next);
       }
     }
   } catch {
@@ -25771,8 +25831,10 @@ function writeStateFileLockedCreateIf(filePath, predicate, transform2) {
     } else if (!predicate(current)) {
       result = "skipped";
     } else {
-      atomicWriteJsonSync(filePath, transform2(current));
+      const next = transform2(current);
+      atomicWriteJsonSync(filePath, next);
       result = "written";
+      observeStateFileActivation(filePath, current, next);
     }
   } catch (error2) {
     if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] CreateIf caught-error ${filePath} ${error2?.message}`);
@@ -27669,6 +27731,7 @@ var STATE_WRITE_MODES = [
 ];
 var EXTRA_STATE_ONLY_MODES = ["ralplan", "omc-teams", "skill-active", "ultragoal"];
 var CANCEL_SIGNAL_TTL_MS = 3e4;
+var MAX_REPORTED_STATE_CLEAR_PATHS = 10;
 var TEAM_RUNTIME_PRESERVATION_NOTE = "Native team runtimes and cleanup evidence are not removed by state_clear; use instance-validated team shutdown/job cleanup.";
 var OWNER_SESSION_FALLBACK_MODES = /* @__PURE__ */ new Set(["ralph"]);
 var CONVERGED_STATE_PATH_MODES = /* @__PURE__ */ new Set(["ralph", "ultrawork"]);
@@ -27710,6 +27773,7 @@ async function writeTeamState(statePath, sessionId, patch) {
       if (!(0, import_fs27.existsSync)(statePath)) {
         try {
           atomicWriteJsonSync(statePath, patch);
+          observeStateFileActivation(statePath, null, patch);
           return { result: "written", state: patch };
         } catch (error2) {
           return { result: "failed", error: error2 };
@@ -27731,6 +27795,7 @@ async function writeTeamState(statePath, sessionId, patch) {
       };
       try {
         atomicWriteJsonSync(statePath, merged);
+        observeStateFileActivation(statePath, current, merged);
         return { result: "written", state: merged };
       } catch (error2) {
         return { result: "failed", error: error2 };
@@ -28089,17 +28154,24 @@ function getStateClearCheckedPaths(mode, root, sessionId) {
   const paths = /* @__PURE__ */ new Set();
   if (sessionId) {
     paths.add(getSessionStatePath(mode, root, sessionId));
-  } else {
-    paths.add(getStatePath(mode, root));
+    if (CONVERGED_STATE_PATH_MODES.has(mode)) {
+      for (const omcRoot of getConvergedOmcRoots(root)) {
+        paths.add((0, import_path30.join)(omcRoot, "state", "sessions", sessionId, getStateFileName(mode)));
+      }
+    }
+    if (shouldCheckWorkingDirectoryLocalState(root)) {
+      paths.add(getWorkingDirectoryLocalSessionStatePath(mode, root, sessionId));
+    }
+    return [...paths];
   }
+  paths.add(getStatePath(mode, root));
   for (const legacyPath of getLegacyStateFileCandidates(mode, root)) {
     paths.add(legacyPath);
   }
-  for (const localPath of getWorkingDirectoryLocalStateClearCandidates(mode, root, sessionId)) {
+  for (const localPath of getWorkingDirectoryLocalStateClearCandidates(mode, root)) {
     paths.add(localPath);
   }
-  const sessionIds = sessionId ? [sessionId, ...listSessionIds(root)] : listSessionIds(root);
-  for (const sid of new Set(sessionIds)) {
+  for (const sid of listSessionIds(root)) {
     paths.add(getSessionStatePath(mode, root, sid));
   }
   return [...paths];
@@ -28107,9 +28179,12 @@ function getStateClearCheckedPaths(mode, root, sessionId) {
 function formatStateClearNoopMessage(mode, root, sessionId) {
   const scope = sessionId ? ` in session: ${sessionId}` : "";
   const checkedPaths = getStateClearCheckedPaths(mode, root, sessionId);
+  const displayedPaths = checkedPaths.slice(0, MAX_REPORTED_STATE_CLEAR_PATHS);
+  const omittedPathCount = checkedPaths.length - displayedPaths.length;
   const checked = checkedPaths.length > 0 ? `
 - Checked paths:
-${checkedPaths.map((statePath) => `  - ${statePath}`).join("\n")}` : "";
+${displayedPaths.map((statePath) => `  - ${statePath}`).join("\n")}${omittedPathCount > 0 ? `
+  - ... and ${omittedPathCount} more checked paths` : ""}` : "";
   return `No state found to clear for mode: ${mode}${scope}${checked}`;
 }
 function getModeRuntimeArtifactPaths(mode, root, sessionIds, includeLegacy = true) {
@@ -29422,8 +29497,8 @@ var stateMigrateNonGitTool = {
       }
       const gitProbe = probeGitTopLevel(sourceRoot);
       if (gitProbe.status === "ok") throw new Error("state_migrate_non_git only accepts a non-git source directory");
-      if (gitProbe.status !== "not_a_repository") throw new Error("state_migrate_non_git refused a failed Git probe");
       if (findGitMetadataDir(sourceRoot)) throw new Error("state_migrate_non_git refuses a directory with Git metadata");
+      if (gitProbe.status !== "not_a_repository") throw new Error("state_migrate_non_git refused a failed Git probe");
       const authorizedHome = (0, import_fs27.realpathSync)((0, import_os4.homedir)());
       const sourceFromHome = (0, import_path30.relative)(authorizedHome, sourceRoot);
       if (sourceFromHome === ".." || sourceFromHome.startsWith(`..${import_path30.sep}`) || (0, import_path30.isAbsolute)(sourceFromHome)) {

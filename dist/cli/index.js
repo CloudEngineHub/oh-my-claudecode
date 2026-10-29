@@ -1316,20 +1316,39 @@ program
     .command('mission-board')
     .description('Render the opt-in mission board snapshot for the current workspace')
     .option('--json', 'Print raw mission-board JSON')
+    .option('-s, --session <id>', 'Restrict the snapshot to a single session id')
     .action(async (options) => {
-    const { refreshMissionBoardState, renderMissionBoard } = await import('../hud/mission-board.js');
-    const state = refreshMissionBoardState(process.cwd());
-    if (options.json) {
-        console.log(JSON.stringify(state, null, 2));
-        return;
-    }
-    const lines = renderMissionBoard(state, {
+    const { discoverTeamMissionBoardState, listMissionBoardSessionIds, mergeMissionBoardStates, refreshMissionBoardState, renderMissionBoard, } = await import('../hud/mission-board.js');
+    const config = {
         enabled: true,
         maxMissions: 5,
         maxAgentsPerMission: 8,
         maxTimelineEvents: 8,
         persistCompletedForMinutes: 20,
-    });
+    };
+    const cwd = process.cwd();
+    // This command has no [CC] stdin, so session ids must come from persisted
+    // snapshots. With none, discover teams in memory rather than using a
+    // process-scoped session id that would create disposable state on every read.
+    const sessionIds = options.session
+        ? [options.session]
+        : listMissionBoardSessionIds(cwd).slice(0, 5);
+    let state;
+    try {
+        state = sessionIds.length === 0
+            ? discoverTeamMissionBoardState(cwd, config)
+            : mergeMissionBoardStates(sessionIds.map((sessionId) => refreshMissionBoardState(cwd, config, sessionId)), config);
+    }
+    catch (error) {
+        console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+        process.exitCode = 1;
+        return;
+    }
+    if (options.json) {
+        console.log(JSON.stringify(state, null, 2));
+        return;
+    }
+    const lines = renderMissionBoard(state, config);
     console.log(lines.length > 0 ? lines.join('\n') : '(no active missions)');
 });
 /**
