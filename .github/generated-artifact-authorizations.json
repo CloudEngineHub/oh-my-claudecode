@@ -35302,7 +35302,7 @@
       "pullNumber": 4652,
       "targetRef": "main",
       "mergeBaseSha": "e10206d8789b0ac4e5214eddbfbd203c1b757dea",
-      "headSha": "4205205b270f5ad655ff920883847b2aa59213cf",
+      "headSha": "db985375fb437e110622f059a1111c6d1921060a",
       "owner": "Yeachan-Heo",
       "expiresAt": "2026-11-28T00:00:00.000Z",
       "generatedDelta": {
