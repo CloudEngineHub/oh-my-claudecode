@@ -3222,4 +3222,36 @@ describe('state-tools', () => {
       expect(result.content[0].text).toContain('Successfully wrote');
     });
   });
+
+  describe('run ledger edges', () => {
+    function ledger(): Array<Record<string, unknown>> {
+      const path = join(TEST_DIR, '.omc', 'state', 'runs', 'ledger.jsonl');
+      if (!existsSync(path)) return [];
+      return readFileSync(path, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+    }
+
+    it('records a start and an end for a session-scoped ralph run', async () => {
+      const sessionId = 'ledger-ralph-session';
+      const written = await stateWriteTool.handler({ mode: 'ralph', active: true, session_id: sessionId, workingDirectory: TEST_DIR });
+      expect(written.isError).toBeFalsy();
+      const cleared = await stateClearTool.handler({ mode: 'ralph', session_id: sessionId, workingDirectory: TEST_DIR });
+      expect(cleared.isError).toBeFalsy();
+      expect(ledger().map(({ run, sessionId: id, event }) => ({ run, sessionId: id, event }))).toEqual([
+        { run: 'ralph', sessionId, event: 'start' },
+        { run: 'ralph', sessionId, event: 'end' },
+      ]);
+    });
+
+    it('records a start and an end for a session-scoped team run', async () => {
+      const sessionId = 'ledger-team-session';
+      const written = await publishTeamState(sessionId, 'ledger-team');
+      expect(written.isError).toBeFalsy();
+      const cleared = await stateClearTool.handler({ mode: 'team', session_id: sessionId, workingDirectory: TEST_DIR });
+      expect(cleared.isError).toBeFalsy();
+      expect(ledger().map(({ run, sessionId: id, event }) => ({ run, sessionId: id, event }))).toEqual([
+        { run: 'team', sessionId, event: 'start' },
+        { run: 'team', sessionId, event: 'end' },
+      ]);
+    });
+  });
 });

@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "ccf19fdc8dfea8e1644cf0852a41cbf8e9b760df",
-    "sourceSha256": "ffbb0a804a1b7b9f8a91bd37b8ea7215795baa2a7cbe4c12f73c90db9258214d",
+    "head": "777322032fb4ee70d98fd069ff1d9f5851319508",
+    "sourceSha256": "427245467ff2e3a6ddc85d54dc03890253a5e2f8b655c462a91caaa53d0e49c6",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "ccf19fdc8dfea8e1644cf0852a41cbf8e9b760df",
-  "sourceSha256": "ffbb0a804a1b7b9f8a91bd37b8ea7215795baa2a7cbe4c12f73c90db9258214d",
+  "head": "777322032fb4ee70d98fd069ff1d9f5851319508",
+  "sourceSha256": "427245467ff2e3a6ddc85d54dc03890253a5e2f8b655c462a91caaa53d0e49c6",
   "counts": {
     "public": {
       "skills": 48,
@@ -26,10 +26,10 @@
       "hookFiles": 333,
       "featureFiles": 89,
       "toolFiles": 65,
-      "libFiles": 48,
+      "libFiles": 49,
       "templateHooks": 24,
-      "srcFiles": 1484,
-      "total": 1508
+      "srcFiles": 1485,
+      "total": 1509
     },
     "generated": {
       "distFiles": 5729,
@@ -650,6 +650,7 @@
     "libFiles": [
       "src/lib/__tests__/atomic-write.test.ts",
       "src/lib/__tests__/host-load-gate.test.ts",
+      "src/lib/__tests__/mode-state-activation.test.ts",
       "src/lib/__tests__/mode-state-io.test.ts",
       "src/lib/__tests__/mode-state-lock.test.ts",
       "src/lib/__tests__/payload-limits.test.ts",
@@ -43818,6 +43819,11 @@
         "path": "src/lib/__tests__/host-load-gate.test.ts"
       },
       {
+        "id": "src/lib/__tests__/mode-state-activation.test.ts",
+        "kind": "lib",
+        "path": "src/lib/__tests__/mode-state-activation.test.ts"
+      },
+      {
         "id": "src/lib/__tests__/mode-state-io.test.ts",
         "kind": "lib",
         "path": "src/lib/__tests__/mode-state-io.test.ts"
@@ -74630,6 +74636,31 @@
         "kind": "imports"
       },
       {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "src/lib/mode-state-io.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/lib/__tests__/mode-state-io.test.ts",
         "to": "external:child_process",
         "kind": "imports"
@@ -89756,12 +89787,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7881,
-      "edgeCount": 8624,
-      "importEdgeCount": 7185,
+      "nodeCount": 7882,
+      "edgeCount": 8629,
+      "importEdgeCount": 7190,
       "registerEdgeCount": 69
     }
   },
-  "inventorySha256": "9323b8b40909d1b5f0e652d0b6cfd0d7ee3798ec1f20c0375ef358b3d60cabfe",
-  "manifestSha256": "ebf4fbeb55aed38c4a88c5090a8d96f57646ff060a77174e266ee57e876a215a"
+  "inventorySha256": "d97a9fe25464fb53119b8f712435bacae69bfa6ff428957750eaa11da1e27ee3",
+  "manifestSha256": "ac76321b6cc86a027f5da496f609d8b384e3d13b8d6a5475eb27c7f91e8babeb"
 }

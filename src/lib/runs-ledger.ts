@@ -111,6 +111,35 @@ export function observeModeStateWrite(omcRoot: string, filePath: string, state: 
 }
 
 /**
+ * Observe a conditional state write: append a `start` edge when a watched
+ * mode goes from inactive (or absent) to active. The transition is the
+ * idempotency guard, so this does not consult the per-process map, which a
+ * clear in another process leaves stale.
+ */
+export function observeModeStateActivation(
+  omcRoot: string,
+  filePath: string,
+  previous: Record<string, unknown> | null | undefined,
+  next: Record<string, unknown>,
+): void {
+  try {
+    if (previous?.active === true || next?.active !== true) return;
+    const mode = modeFromStatePath(filePath);
+    if (!mode || !isWatchedRunMode(mode)) return;
+    activeLoggedPaths.set(filePath, true);
+    appendRunLedger(omcRoot, {
+      ts: new Date().toISOString(),
+      run: mode,
+      sessionId: sessionIdFromStatePath(filePath),
+      event: 'start',
+      outcome: 'running',
+    });
+  } catch {
+    // evidence by contract
+  }
+}
+
+/**
  * Observe a successful state clear: append an `end` edge when a watched
  * mode's previously-active state is removed, carrying the outcome and the
  * closeout flag computed against the run's notepad.

@@ -42,6 +42,7 @@ import {
   recoverEmergencyStateFile,
   getStateMutationLockDiagnostic,
   getStateMutationLockFailureMessage,
+  observeStateFileActivation,
 } from '../lib/mode-state-io.js';
 import {
   isModeActive,
@@ -186,6 +187,7 @@ async function writeTeamState(
       if (!existsSync(statePath)) {
         try {
           atomicWriteJsonSync(statePath, patch);
+          observeStateFileActivation(statePath, null, patch);
           return { result: 'written' as const, state: patch };
         } catch (error) {
           return { result: 'failed' as const, error };
@@ -209,6 +211,7 @@ async function writeTeamState(
       };
       try {
         atomicWriteJsonSync(statePath, merged);
+        observeStateFileActivation(statePath, current, merged);
         return { result: 'written' as const, state: merged };
       } catch (error) {
         return { result: 'failed' as const, error };
