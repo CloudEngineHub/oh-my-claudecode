@@ -12,7 +12,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'pat
 import { resolveStatePath, ensureOmcDir, resolveStateWorkingDirectory, isSensitiveStateLocation, probeGitTopLevel, resolveSessionStatePath, resolveSessionStatePaths, ensureSessionStateDir, listSessionIds, validateSessionId, getOmcRoot, findGitMetadataDir, OmcPaths, } from '../lib/worktree-paths.js';
 import { resolveSessionId } from '../lib/session-id.js';
 import { validatePayload } from '../lib/payload-limits.js';
-import { canClearStateForSession, findCompletedSessionStateFiles, findCompletedSessionStateCandidates, findSessionOwnedStateCandidates, getStateSessionOwner, writeStateFileLocked, writeStateFileLockedIf, writeStateFileLockedCreateIf, withStateFileMutationLock, clearStateFileLockedIf, emergencyMutateStateFileIf, recoverEmergencyStateFile, getStateMutationLockDiagnostic, getStateMutationLockFailureMessage, } from '../lib/mode-state-io.js';
+import { canClearStateForSession, findCompletedSessionStateFiles, findCompletedSessionStateCandidates, findSessionOwnedStateCandidates, getStateSessionOwner, writeStateFileLocked, writeStateFileLockedIf, writeStateFileLockedCreateIf, withStateFileMutationLock, clearStateFileLockedIf, emergencyMutateStateFileIf, recoverEmergencyStateFile, getStateMutationLockDiagnostic, getStateMutationLockFailureMessage, observeStateFileActivation, } from '../lib/mode-state-io.js';
 import { isModeActive, getActiveModes, getAllModeStatuses, clearModeState, getStateFilePath, MODE_CONFIGS, getActiveSessionsForMode } from '../hooks/mode-registry/index.js';
 import { atomicWriteJsonSync } from '../lib/atomic-write.js';
 import { namedWorkflowRuntimeSupported, validateNamedWorkflowStateStructure } from '../hooks/autopilot/named-workflow-resume-validator.js';
@@ -123,6 +123,7 @@ async function writeTeamState(statePath, sessionId, patch) {
             if (!existsSync(statePath)) {
                 try {
                     atomicWriteJsonSync(statePath, patch);
+                    observeStateFileActivation(statePath, null, patch);
                     return { result: 'written', state: patch };
                 }
                 catch (error) {
@@ -147,6 +148,7 @@ async function writeTeamState(statePath, sessionId, patch) {
             };
             try {
                 atomicWriteJsonSync(statePath, merged);
+                observeStateFileActivation(statePath, current, merged);
                 return { result: 'written', state: merged };
             }
             catch (error) {
@@ -1970,10 +1972,10 @@ const stateMigrateNonGitTool = {
             const gitProbe = probeGitTopLevel(sourceRoot);
             if (gitProbe.status === 'ok')
                 throw new Error('state_migrate_non_git only accepts a non-git source directory');
-            if (gitProbe.status !== 'not_a_repository')
-                throw new Error('state_migrate_non_git refused a failed Git probe');
             if (findGitMetadataDir(sourceRoot))
                 throw new Error('state_migrate_non_git refuses a directory with Git metadata');
+            if (gitProbe.status !== 'not_a_repository')
+                throw new Error('state_migrate_non_git refused a failed Git probe');
             const authorizedHome = realpathSync(homedir());
             const sourceFromHome = relative(authorizedHome, sourceRoot);
             if (sourceFromHome === '..' || sourceFromHome.startsWith(`..${sep}`) || isAbsolute(sourceFromHome)) {

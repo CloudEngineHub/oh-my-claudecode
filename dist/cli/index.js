@@ -1316,20 +1316,37 @@ program
     .command('mission-board')
     .description('Render the opt-in mission board snapshot for the current workspace')
     .option('--json', 'Print raw mission-board JSON')
+    .option('-s, --session <id>', 'Restrict the snapshot to a single session id')
     .action(async (options) => {
-    const { refreshMissionBoardState, renderMissionBoard } = await import('../hud/mission-board.js');
-    const state = refreshMissionBoardState(process.cwd());
-    if (options.json) {
-        console.log(JSON.stringify(state, null, 2));
-        return;
-    }
-    const lines = renderMissionBoard(state, {
+    const { listMissionBoardSessionIds, mergeMissionBoardStates, refreshMissionBoardState, renderMissionBoard, } = await import('../hud/mission-board.js');
+    const config = {
         enabled: true,
         maxMissions: 5,
         maxAgentsPerMission: 8,
         maxTimelineEvents: 8,
         persistCompletedForMinutes: 20,
-    });
+    };
+    const cwd = process.cwd();
+    // This command has no [CC] stdin, so the session id has to be discovered.
+    // Omitting it would fall back to getProcessSessionId(), a per-process scratch
+    // id that never names a real session, and the board would always be empty.
+    const sessionIds = options.session
+        ? [options.session]
+        : listMissionBoardSessionIds(cwd).slice(0, 5);
+    let state;
+    try {
+        state = mergeMissionBoardStates(sessionIds.map((sessionId) => refreshMissionBoardState(cwd, config, sessionId)), config);
+    }
+    catch (error) {
+        console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+        process.exitCode = 1;
+        return;
+    }
+    if (options.json) {
+        console.log(JSON.stringify(state, null, 2));
+        return;
+    }
+    const lines = renderMissionBoard(state, config);
     console.log(lines.length > 0 ? lines.join('\n') : '(no active missions)');
 });
 /**
