@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "e10206d8789b0ac4e5214eddbfbd203c1b757dea",
-    "sourceSha256": "9c789caa4bdac87f358d5fc586fdeab7ca7d0f8092763f2c4339811053014558",
+    "head": "db985375fb437e110622f059a1111c6d1921060a",
+    "sourceSha256": "8b81cc9088f21b6a13b304ec2680e45f91048b28bab4f7e7e1086029b73aa0b0",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "e10206d8789b0ac4e5214eddbfbd203c1b757dea",
-  "sourceSha256": "9c789caa4bdac87f358d5fc586fdeab7ca7d0f8092763f2c4339811053014558",
+  "head": "db985375fb437e110622f059a1111c6d1921060a",
+  "sourceSha256": "8b81cc9088f21b6a13b304ec2680e45f91048b28bab4f7e7e1086029b73aa0b0",
   "counts": {
     "public": {
       "skills": 48,
@@ -26,10 +26,10 @@
       "hookFiles": 333,
       "featureFiles": 89,
       "toolFiles": 65,
-      "libFiles": 48,
+      "libFiles": 49,
       "templateHooks": 24,
-      "srcFiles": 1484,
-      "total": 1508
+      "srcFiles": 1485,
+      "total": 1509
     },
     "generated": {
       "distFiles": 5729,
@@ -650,6 +650,7 @@
     "libFiles": [
       "src/lib/__tests__/atomic-write.test.ts",
       "src/lib/__tests__/host-load-gate.test.ts",
+      "src/lib/__tests__/mode-state-activation.test.ts",
       "src/lib/__tests__/mode-state-io.test.ts",
       "src/lib/__tests__/mode-state-lock.test.ts",
       "src/lib/__tests__/payload-limits.test.ts",
@@ -43818,6 +43819,11 @@
         "path": "src/lib/__tests__/host-load-gate.test.ts"
       },
       {
+        "id": "src/lib/__tests__/mode-state-activation.test.ts",
+        "kind": "lib",
+        "path": "src/lib/__tests__/mode-state-activation.test.ts"
+      },
+      {
         "id": "src/lib/__tests__/mode-state-io.test.ts",
         "kind": "lib",
         "path": "src/lib/__tests__/mode-state-io.test.ts"
@@ -48662,6 +48668,11 @@
       {
         "from": "scripts/release-boundary.mjs",
         "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "scripts/release-boundary.mjs",
+        "to": "external:node:url",
         "kind": "imports"
       },
       {
@@ -74625,6 +74636,31 @@
         "kind": "imports"
       },
       {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/lib/__tests__/mode-state-activation.test.ts",
+        "to": "src/lib/mode-state-io.ts",
+        "kind": "imports"
+      },
+      {
         "from": "src/lib/__tests__/mode-state-io.test.ts",
         "to": "external:child_process",
         "kind": "imports"
@@ -78587,11 +78623,6 @@
       {
         "from": "src/team/__tests__/conflict-mailbox.test.ts",
         "to": "src/team/conflict-mailbox.ts",
-        "kind": "imports"
-      },
-      {
-        "from": "src/team/__tests__/critic-cli-worker.integration.test.ts",
-        "to": "external:child_process",
         "kind": "imports"
       },
       {
@@ -89756,12 +89787,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7881,
-      "edgeCount": 8624,
-      "importEdgeCount": 7185,
+      "nodeCount": 7882,
+      "edgeCount": 8629,
+      "importEdgeCount": 7190,
       "registerEdgeCount": 69
     }
   },
-  "inventorySha256": "9323b8b40909d1b5f0e652d0b6cfd0d7ee3798ec1f20c0375ef358b3d60cabfe",
-  "manifestSha256": "a0d2b502e320c3bd8d415e4b18f91acb3bdfe125fe55a6c3ab581ad6d0be537a"
+  "inventorySha256": "d97a9fe25464fb53119b8f712435bacae69bfa6ff428957750eaa11da1e27ee3",
+  "manifestSha256": "ab35629f02ae3a4fe429ccc817d7908087c516b2750a895006585d42ff4c7f7a"
 }

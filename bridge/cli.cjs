@@ -34818,6 +34818,38 @@ function isWatchedRunMode(modeName) {
 function ledgerPath(omcRoot) {
   return (0, import_path26.join)(omcRoot, "state", "runs", "ledger.jsonl");
 }
+function findLatestStartEdge(omcRoot, mode, sessionId) {
+  try {
+    const path30 = ledgerPath(omcRoot);
+    if (!(0, import_fs21.existsSync)(path30)) return void 0;
+    const lines = (0, import_fs21.readFileSync)(path30, "utf8").split("\n");
+    let unmatchedEnds = 0;
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+      if (lines[i].trim().length === 0) continue;
+      let parsed;
+      try {
+        parsed = JSON.parse(lines[i]);
+      } catch {
+        continue;
+      }
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) continue;
+      const entry2 = parsed;
+      if (entry2.run !== mode || entry2.sessionId !== sessionId) continue;
+      if (entry2.event === "end") {
+        unmatchedEnds += 1;
+        continue;
+      }
+      if (entry2.event !== "start") continue;
+      if (unmatchedEnds > 0) {
+        unmatchedEnds -= 1;
+        continue;
+      }
+      return typeof entry2.ts === "string" && Number.isFinite(Date.parse(entry2.ts)) ? entry2.ts : void 0;
+    }
+  } catch {
+  }
+  return void 0;
+}
 function closeoutWrittenFor(omcRoot, mode, startedAt) {
   if (!startedAt || !Number.isFinite(Date.parse(startedAt))) return false;
   const started = Date.parse(startedAt);
@@ -34871,19 +34903,41 @@ function observeModeStateWrite(omcRoot, filePath, state) {
   } catch {
   }
 }
+function observeModeStateActivation(omcRoot, filePath, previous, next) {
+  try {
+    if (previous?.active === true || next?.active !== true) return;
+    const mode = modeFromStatePath(filePath);
+    if (!mode || !isWatchedRunMode(mode)) return;
+    activeLoggedPaths.set(filePath, true);
+    appendRunLedger(omcRoot, {
+      ts: (/* @__PURE__ */ new Date()).toISOString(),
+      run: mode,
+      sessionId: sessionIdFromStatePath(filePath),
+      event: "start",
+      outcome: "running"
+    });
+  } catch {
+  }
+}
 function observeModeStateClear(omcRoot, filePath, previousState) {
   try {
     const mode = modeFromStatePath(filePath);
     if (!mode || !isWatchedRunMode(mode)) return;
     if (!previousState || previousState.active !== true) return;
     if (previousState.active === true) activeLoggedPaths.delete(filePath);
+    const staleStartedAt = typeof previousState.started_at === "string" ? previousState.started_at : void 0;
+    const sessionId = sessionIdFromStatePath(filePath);
+    const latestStartEdge = findLatestStartEdge(omcRoot, mode, sessionId);
+    const staleStartedAtMs = staleStartedAt ? Date.parse(staleStartedAt) : Number.NaN;
+    const latestStartEdgeMs = latestStartEdge ? Date.parse(latestStartEdge) : Number.NaN;
+    const closeoutBoundary = Number.isFinite(latestStartEdgeMs) && (!Number.isFinite(staleStartedAtMs) || latestStartEdgeMs > staleStartedAtMs) ? latestStartEdge : staleStartedAt;
     appendRunLedger(omcRoot, {
       ts: (/* @__PURE__ */ new Date()).toISOString(),
       run: mode,
-      sessionId: sessionIdFromStatePath(filePath),
+      sessionId,
       event: "end",
       outcome: typeof previousState.current_phase === "string" && /complete|done/i.test(previousState.current_phase) ? "completed" : "cancelled",
-      closeoutWritten: closeoutWrittenFor(omcRoot, mode, typeof previousState.started_at === "string" ? previousState.started_at : void 0)
+      closeoutWritten: closeoutWrittenFor(omcRoot, mode, closeoutBoundary)
     });
   } catch {
   }
@@ -35432,6 +35486,10 @@ function processStartIdentity2(pid) {
     return code === "ESRCH" ? "absent" : null;
   }
 }
+function observeStateFileActivation(filePath, previous, next) {
+  const omcRoot = omcRootFromStatePath(filePath);
+  if (omcRoot) observeModeStateActivation(omcRoot, filePath, previous, next);
+}
 function writeStateFileLocked(filePath, state) {
   if (!recoverEmergencyStateFile(filePath)) return false;
   const lock = acquireMutationLock(filePath);
@@ -35564,8 +35622,10 @@ function writeStateFileLockedIf(filePath, predicate, transform2) {
       } else if (!predicate(current)) {
         result = "skipped";
       } else {
-        atomicWriteJsonSync(filePath, transform2(current));
+        const next = transform2(current);
+        atomicWriteJsonSync(filePath, next);
         result = "written";
+        observeStateFileActivation(filePath, current, next);
       }
     }
   } catch {
@@ -35609,8 +35669,10 @@ function writeStateFileLockedCreateIf(filePath, predicate, transform2) {
     } else if (!predicate(current)) {
       result = "skipped";
     } else {
-      atomicWriteJsonSync(filePath, transform2(current));
+      const next = transform2(current);
+      atomicWriteJsonSync(filePath, next);
       result = "written";
+      observeStateFileActivation(filePath, current, next);
     }
   } catch (error2) {
     if (process.env.OMC_LOCK_DEBUG) console.error(`[lock-debug] CreateIf caught-error ${filePath} ${error2?.message}`);
@@ -50824,6 +50886,8 @@ var init_worker_canonicalization = __esm({
 var mission_board_exports = {};
 __export(mission_board_exports, {
   DEFAULT_MISSION_BOARD_CONFIG: () => DEFAULT_MISSION_BOARD_CONFIG,
+  listMissionBoardSessionIds: () => listMissionBoardSessionIds,
+  mergeMissionBoardStates: () => mergeMissionBoardStates,
   readMissionBoardState: () => readMissionBoardState,
   recordMissionAgentStart: () => recordMissionAgentStart,
   recordMissionAgentStop: () => recordMissionAgentStop,
@@ -51173,6 +51237,45 @@ function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4, sessio
     missions: mergeMissions(previous, teamMissions, config2)
   };
   return writeState(directory, state, effectiveSessionId);
+}
+function listMissionBoardSessionIds(directory) {
+  const sessionsRoot = (0, import_node_path9.join)(getOmcRoot(directory), "state", "sessions");
+  if (!(0, import_node_fs6.existsSync)(sessionsRoot)) return [];
+  const sessions = [];
+  for (const entry2 of (0, import_node_fs6.readdirSync)(sessionsRoot, { withFileTypes: true })) {
+    if (!entry2.isDirectory() || entry2.name.startsWith("pid-")) continue;
+    try {
+      validateSessionId(entry2.name);
+    } catch {
+      continue;
+    }
+    const file = (0, import_node_path9.join)(sessionsRoot, entry2.name, "mission-state.json");
+    try {
+      sessions.push({ sessionId: entry2.name, updatedAt: (0, import_node_fs6.statSync)(file).mtimeMs });
+    } catch {
+    }
+  }
+  return sessions.sort((left, right) => right.updatedAt - left.updatedAt).map((entry2) => entry2.sessionId);
+}
+function mergeMissionBoardStates(states, rawConfig = DEFAULT_CONFIG4) {
+  const config2 = resolveConfig(rawConfig);
+  const cutoff = Date.now() - config2.persistCompletedForMinutes * 6e4;
+  const byId = /* @__PURE__ */ new Map();
+  for (const state of states) {
+    for (const mission of state.missions) {
+      if (mission.status === "done" && parseTime(mission.updatedAt) < cutoff) continue;
+      const existing = byId.get(mission.id);
+      if (!existing || parseTime(mission.updatedAt) >= parseTime(existing.updatedAt)) {
+        byId.set(mission.id, mission);
+      }
+    }
+  }
+  const missions = [...byId.values()].sort((left, right) => {
+    const statusDelta = STATUS_ORDER[left.status] - STATUS_ORDER[right.status];
+    if (statusDelta !== 0) return statusDelta;
+    return parseTime(right.updatedAt) - parseTime(left.updatedAt);
+  }).slice(0, config2.maxMissions);
+  return { updatedAt: (/* @__PURE__ */ new Date()).toISOString(), missions };
 }
 function renderMissionBoard(state, rawConfig = DEFAULT_CONFIG4) {
   if (!state || !Array.isArray(state.missions) || state.missions.length === 0) return [];
@@ -102308,7 +102411,7 @@ async function mainImpl(watchMode = false, skipInit = false) {
       }
     }
     const missionBoardEnabled = config2.missionBoard?.enabled ?? config2.elements.missionBoard ?? false;
-    const missionBoard = missionBoardEnabled ? await refreshMissionBoardState(cwd2, config2.missionBoard) : null;
+    const missionBoard = missionBoardEnabled ? await refreshMissionBoardState(cwd2, config2.missionBoard, currentSessionId ?? void 0) : null;
     const contextPercent = getContextPercent(stdin);
     const payloadEstimate = estimatePayloadFromTranscriptPath(resolvedTranscriptPath);
     const subscriptionInfo = (() => {
@@ -107483,6 +107586,7 @@ async function writeTeamState(statePath, sessionId, patch) {
       if (!(0, import_fs32.existsSync)(statePath)) {
         try {
           atomicWriteJsonSync(statePath, patch);
+          observeStateFileActivation(statePath, null, patch);
           return { result: "written", state: patch };
         } catch (error2) {
           return { result: "failed", error: error2 };
@@ -107504,6 +107608,7 @@ async function writeTeamState(statePath, sessionId, patch) {
       };
       try {
         atomicWriteJsonSync(statePath, merged);
+        observeStateFileActivation(statePath, current, merged);
         return { result: "written", state: merged };
       } catch (error2) {
         return { result: "failed", error: error2 };
@@ -109195,8 +109300,8 @@ var stateMigrateNonGitTool = {
       }
       const gitProbe = probeGitTopLevel(sourceRoot);
       if (gitProbe.status === "ok") throw new Error("state_migrate_non_git only accepts a non-git source directory");
-      if (gitProbe.status !== "not_a_repository") throw new Error("state_migrate_non_git refused a failed Git probe");
       if (findGitMetadataDir(sourceRoot)) throw new Error("state_migrate_non_git refuses a directory with Git metadata");
+      if (gitProbe.status !== "not_a_repository") throw new Error("state_migrate_non_git refused a failed Git probe");
       const authorizedHome = (0, import_fs32.realpathSync)((0, import_os7.homedir)());
       const sourceFromHome = (0, import_path40.relative)(authorizedHome, sourceRoot);
       if (sourceFromHome === ".." || sourceFromHome.startsWith(`..${import_path40.sep}`) || (0, import_path40.isAbsolute)(sourceFromHome)) {
@@ -133665,20 +133770,38 @@ program2.command("hud").description("Run the OMC HUD statusline renderer").optio
     await hudMain();
   }
 });
-program2.command("mission-board").description("Render the opt-in mission board snapshot for the current workspace").option("--json", "Print raw mission-board JSON").action(async (options) => {
-  const { refreshMissionBoardState: refreshMissionBoardState2, renderMissionBoard: renderMissionBoard2 } = await Promise.resolve().then(() => (init_mission_board(), mission_board_exports));
-  const state = refreshMissionBoardState2(process.cwd());
-  if (options.json) {
-    console.log(JSON.stringify(state, null, 2));
-    return;
-  }
-  const lines = renderMissionBoard2(state, {
+program2.command("mission-board").description("Render the opt-in mission board snapshot for the current workspace").option("--json", "Print raw mission-board JSON").option("-s, --session <id>", "Restrict the snapshot to a single session id").action(async (options) => {
+  const {
+    listMissionBoardSessionIds: listMissionBoardSessionIds2,
+    mergeMissionBoardStates: mergeMissionBoardStates2,
+    refreshMissionBoardState: refreshMissionBoardState2,
+    renderMissionBoard: renderMissionBoard2
+  } = await Promise.resolve().then(() => (init_mission_board(), mission_board_exports));
+  const config2 = {
     enabled: true,
     maxMissions: 5,
     maxAgentsPerMission: 8,
     maxTimelineEvents: 8,
     persistCompletedForMinutes: 20
-  });
+  };
+  const cwd2 = process.cwd();
+  const sessionIds = options.session ? [options.session] : listMissionBoardSessionIds2(cwd2).slice(0, 5);
+  let state;
+  try {
+    state = mergeMissionBoardStates2(
+      sessionIds.map((sessionId) => refreshMissionBoardState2(cwd2, config2, sessionId)),
+      config2
+    );
+  } catch (error2) {
+    console.error(source_default.red(`Error: ${error2 instanceof Error ? error2.message : String(error2)}`));
+    process.exitCode = 1;
+    return;
+  }
+  if (options.json) {
+    console.log(JSON.stringify(state, null, 2));
+    return;
+  }
+  const lines = renderMissionBoard2(state, config2);
   console.log(lines.length > 0 ? lines.join("\n") : "(no active missions)");
 });
 program2.command("team").description("Team CLI API for worker lifecycle operations").helpOption(false).allowUnknownOption(true).allowExcessArguments(true).argument("[args...]", "team subcommand arguments").action(async (args) => {
