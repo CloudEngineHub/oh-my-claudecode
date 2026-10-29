@@ -35659,13 +35659,13 @@
     {
       "pullNumber": 4658,
       "targetRef": "dev",
-      "mergeBaseSha": "c7dc635f406e19760cce3148c06d624c8f3733ce",
-      "headSha": "eb88aea0d4186629ed8ea3676dcaa1e83bba9b33",
+      "mergeBaseSha": "189858095ad47e3e0452efce9c177955a83feb6f",
+      "headSha": "bfc20e29974b6427cf6812116932f3779743f074",
       "owner": "Yeachan-Heo",
       "expiresAt": "2026-11-28T00:00:00.000Z",
       "generatedDelta": {
         "count": 43,
-        "sha256": "7bfe8fba795709c327827c4e0a5cf7d6ab726b0f0f9801e34941368bb6cc2bc3"
+        "sha256": "06e0e46118d3dfc1a49fd0de143313b99916c87ec57c143a274ecd3896a9fd80"
       },
       "generatedFiles": [
         {
@@ -35677,7 +35677,7 @@
         {
           "status": "modified",
           "filename": "bridge/cli.cjs",
-          "sha": "2ed43e7fed822b462c15cc6878fce289375a7908",
+          "sha": "41f8066a9c05c20ed498bdfd483ef47c7be1b3f6",
           "previousFilename": null
         },
         {
@@ -35749,19 +35749,19 @@
         {
           "status": "modified",
           "filename": "dist/cli/index.d.ts.map",
-          "sha": "8d199b8f82ad41cbc46a40b5d64b7952904529a0",
+          "sha": "88fade69e2b389241b9babac2c67e622d919b63c",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/cli/index.js",
-          "sha": "2e9874435e224f7d58df19e8cdcba41125d016e0",
+          "sha": "18313ce8f1204fe60771b6b9d205019b06dc0e7e",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/cli/index.js.map",
-          "sha": "d5a695652be5461acab9ef7b942f171312576421",
+          "sha": "45989e43e28d86c4affd6f23050f44acd17a976f",
           "previousFilename": null
         },
         {
@@ -35779,25 +35779,25 @@
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.d.ts",
-          "sha": "814c1a7d16830eddee154d50e1ed03e20d39c990",
+          "sha": "00d25cc1dfec05a34e998e45f6551f7b940097b0",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.d.ts.map",
-          "sha": "ba0e9fab3a324d5c9a4f801126111e27bc4b4e94",
+          "sha": "4e884bbe8c4d9f91a9ab625c5220a66b5df2c1d0",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.js",
-          "sha": "b631f75ac85ad2c4357dc920990592445d49ec0e",
+          "sha": "fb6a5fb559da24a3f47b068431438c0edbcc9fdb",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.js.map",
-          "sha": "a3203bb065634ed0a39feea256124917e14d8b28",
+          "sha": "39b73053ec46c1f06ee56825193fc8c963261b6e",
           "previousFilename": null
         },
         {
