@@ -35659,13 +35659,13 @@
     {
       "pullNumber": 4658,
       "targetRef": "dev",
-      "mergeBaseSha": "1a0860aeb2827ede63f1862578cbe271d535367c",
-      "headSha": "3b8000c5f44a3ef8544a2b9143620d32a34df76b",
+      "mergeBaseSha": "189858095ad47e3e0452efce9c177955a83feb6f",
+      "headSha": "bfc20e29974b6427cf6812116932f3779743f074",
       "owner": "Yeachan-Heo",
       "expiresAt": "2026-11-28T00:00:00.000Z",
       "generatedDelta": {
-        "count": 41,
-        "sha256": "8f7a4a8a5111f6736eaf2116edf8509a9c4ed1312e66cef53de7d2b1896e4591"
+        "count": 43,
+        "sha256": "06e0e46118d3dfc1a49fd0de143313b99916c87ec57c143a274ecd3896a9fd80"
       },
       "generatedFiles": [
         {
@@ -35677,13 +35677,25 @@
         {
           "status": "modified",
           "filename": "bridge/cli.cjs",
-          "sha": "38d3bfd487dd376e3c01bca8ba2ec060eb02cabe",
+          "sha": "41f8066a9c05c20ed498bdfd483ef47c7be1b3f6",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "bridge/mcp-server.cjs",
-          "sha": "d6e92e6144caa7d35b9247679cf29fe579c3d000",
+          "sha": "9cdd65185f0b4f9423062fc4fa7af05db6700fd8",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/agent-registry.test.js",
+          "sha": "6a5b7575ee0a07118990375194ae75d27825597b",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/__tests__/agent-registry.test.js.map",
+          "sha": "c6f41d872327d7008e40e5c5866a0260d29a0705",
           "previousFilename": null
         },
         {
@@ -35737,19 +35749,19 @@
         {
           "status": "modified",
           "filename": "dist/cli/index.d.ts.map",
-          "sha": "8d199b8f82ad41cbc46a40b5d64b7952904529a0",
+          "sha": "88fade69e2b389241b9babac2c67e622d919b63c",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/cli/index.js",
-          "sha": "2e9874435e224f7d58df19e8cdcba41125d016e0",
+          "sha": "18313ce8f1204fe60771b6b9d205019b06dc0e7e",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/cli/index.js.map",
-          "sha": "d5a695652be5461acab9ef7b942f171312576421",
+          "sha": "45989e43e28d86c4affd6f23050f44acd17a976f",
           "previousFilename": null
         },
         {
@@ -35767,25 +35779,25 @@
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.d.ts",
-          "sha": "814c1a7d16830eddee154d50e1ed03e20d39c990",
+          "sha": "00d25cc1dfec05a34e998e45f6551f7b940097b0",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.d.ts.map",
-          "sha": "ba0e9fab3a324d5c9a4f801126111e27bc4b4e94",
+          "sha": "4e884bbe8c4d9f91a9ab625c5220a66b5df2c1d0",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.js",
-          "sha": "b631f75ac85ad2c4357dc920990592445d49ec0e",
+          "sha": "fb6a5fb559da24a3f47b068431438c0edbcc9fdb",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/hud/mission-board.js.map",
-          "sha": "a3203bb065634ed0a39feea256124917e14d8b28",
+          "sha": "39b73053ec46c1f06ee56825193fc8c963261b6e",
           "previousFilename": null
         },
         {
@@ -35887,31 +35899,31 @@
         {
           "status": "modified",
           "filename": "dist/tools/__tests__/state-tools.test.js",
-          "sha": "ea4ee619959a0cd7960fdaa8e1fb703afae64e5b",
+          "sha": "3b5d65720788ebe972cc0b8c244d099985231caf",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/tools/__tests__/state-tools.test.js.map",
-          "sha": "bb56462028226ddfebbb8b25c7bcd153e666993d",
+          "sha": "749123dec7f4074e16b23d082c458b30c44d2de4",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/tools/state-tools.d.ts.map",
-          "sha": "f53adf65e8fa75a19f7032e461cdee7b6a2e4f4b",
+          "sha": "06242b85f1c295814211a464f1f95c25d9e98a36",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/tools/state-tools.js",
-          "sha": "c3b0e0b642d5ef1ea14b98b39fa3a98237306d17",
+          "sha": "414371808ad6d0f923031a6861f7aced99a8ec09",
           "previousFilename": null
         },
         {
           "status": "modified",
           "filename": "dist/tools/state-tools.js.map",
-          "sha": "c08f3d44203685cd4d3a0913952f0487f4de8357",
+          "sha": "0f5f168757b4c022db91df15889c2b4cb9be7643",
           "previousFilename": null
         }
       ]
