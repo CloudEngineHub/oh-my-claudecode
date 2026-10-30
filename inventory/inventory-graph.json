@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "0735087335b88976ace8ec77d3ee55ec904a85dc",
-    "sourceSha256": "bc10374d1c6a4e613c88acce3e9a9ee96b04cb3dea0810587cf29cea975980ca",
+    "head": "637630b67c3e6121c350681d8d85c21995cfb863",
+    "sourceSha256": "727cce3345bc5d8794b5d421998ec03c3996abfc12442722ff7b3b9a11440e8c",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "0735087335b88976ace8ec77d3ee55ec904a85dc",
-  "sourceSha256": "bc10374d1c6a4e613c88acce3e9a9ee96b04cb3dea0810587cf29cea975980ca",
+  "head": "637630b67c3e6121c350681d8d85c21995cfb863",
+  "sourceSha256": "727cce3345bc5d8794b5d421998ec03c3996abfc12442722ff7b3b9a11440e8c",
   "counts": {
     "public": {
       "skills": 48,
@@ -28,13 +28,13 @@
       "toolFiles": 65,
       "libFiles": 49,
       "templateHooks": 24,
-      "srcFiles": 1486,
-      "total": 1510
+      "srcFiles": 1490,
+      "total": 1514
     },
     "generated": {
-      "distFiles": 5729,
+      "distFiles": 5733,
       "bridgeFiles": 9,
-      "total": 5738
+      "total": 5742
     },
     "prompt": {
       "promptLikeFiles": 61
@@ -2468,6 +2468,8 @@
       "dist/cli/commands/intake.d.ts.map",
       "dist/cli/commands/intake.js",
       "dist/cli/commands/intake.js.map",
+      "dist/cli/commands/quality-gates.d.ts",
+      "dist/cli/commands/quality-gates.js",
       "dist/cli/commands/ralph.d.ts",
       "dist/cli/commands/ralph.d.ts.map",
       "dist/cli/commands/ralph.js",
@@ -2585,6 +2587,8 @@
       "dist/config/plan-output.d.ts.map",
       "dist/config/plan-output.js",
       "dist/config/plan-output.js.map",
+      "dist/config/quality-gates.d.ts",
+      "dist/config/quality-gates.js",
       "dist/constants/index.d.ts",
       "dist/constants/index.d.ts.map",
       "dist/constants/index.js",
@@ -15914,6 +15918,16 @@
         "path": "dist/cli/commands/intake.js.map"
       },
       {
+        "id": "dist/cli/commands/quality-gates.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/quality-gates.d.ts"
+      },
+      {
+        "id": "dist/cli/commands/quality-gates.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/quality-gates.js"
+      },
+      {
         "id": "dist/cli/commands/ralph.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/commands/ralph.d.ts"
@@ -16497,6 +16511,16 @@
         "id": "dist/config/plan-output.js.map",
         "kind": "generated-dist",
         "path": "dist/config/plan-output.js.map"
+      },
+      {
+        "id": "dist/config/quality-gates.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/config/quality-gates.d.ts"
+      },
+      {
+        "id": "dist/config/quality-gates.js",
+        "kind": "generated-dist",
+        "path": "dist/config/quality-gates.js"
       },
       {
         "id": "dist/constants/index.d.ts",
@@ -37054,6 +37078,11 @@
         "path": "docs/issues/windows-hud-missing.png"
       },
       {
+        "id": "docs/quality-gates-configuration.md",
+        "kind": "other",
+        "path": "docs/quality-gates-configuration.md"
+      },
+      {
         "id": "docs/settings-schema.md",
         "kind": "other",
         "path": "docs/settings-schema.md"
@@ -40729,6 +40758,11 @@
         "path": "src/cli/commands/__tests__/intake.test.ts"
       },
       {
+        "id": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "kind": "src",
+        "path": "src/cli/commands/__tests__/quality-gates.test.ts"
+      },
+      {
         "id": "src/cli/commands/__tests__/team-role-shorthand.test.ts",
         "kind": "src",
         "path": "src/cli/commands/__tests__/team-role-shorthand.test.ts"
@@ -40782,6 +40816,11 @@
         "id": "src/cli/commands/intake.ts",
         "kind": "src",
         "path": "src/cli/commands/intake.ts"
+      },
+      {
+        "id": "src/cli/commands/quality-gates.ts",
+        "kind": "src",
+        "path": "src/cli/commands/quality-gates.ts"
       },
       {
         "id": "src/cli/commands/ralph.ts",
@@ -40904,6 +40943,11 @@
         "path": "src/config/__tests__/plan-output.test.ts"
       },
       {
+        "id": "src/config/__tests__/quality-gates.test.ts",
+        "kind": "src",
+        "path": "src/config/__tests__/quality-gates.test.ts"
+      },
+      {
         "id": "src/config/__tests__/test-helpers.ts",
         "kind": "src",
         "path": "src/config/__tests__/test-helpers.ts"
@@ -40932,6 +40976,11 @@
         "id": "src/config/plan-output.ts",
         "kind": "src",
         "path": "src/config/plan-output.ts"
+      },
+      {
+        "id": "src/config/quality-gates.ts",
+        "kind": "src",
+        "path": "src/config/quality-gates.ts"
       },
       {
         "id": "src/constants/index.ts",
@@ -58901,6 +58950,36 @@
         "kind": "type-imports"
       },
       {
+        "from": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "to": "src/cli/commands/quality-gates.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/__tests__/quality-gates.test.ts",
+        "to": "src/shared/types.ts",
+        "kind": "type-imports"
+      },
+      {
         "from": "src/cli/commands/__tests__/team-role-shorthand.test.ts",
         "to": "external:vitest",
         "kind": "imports"
@@ -59219,6 +59298,26 @@
         "from": "src/cli/commands/intake.ts",
         "to": "src/lib/worktree-paths.ts",
         "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/quality-gates.ts",
+        "to": "src/config/loader.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/quality-gates.ts",
+        "to": "src/config/quality-gates.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/commands/quality-gates.ts",
+        "to": "src/config/quality-gates.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/cli/commands/quality-gates.ts",
+        "to": "src/shared/types.ts",
+        "kind": "type-imports"
       },
       {
         "from": "src/cli/commands/ralph.ts",
@@ -59702,6 +59801,11 @@
       },
       {
         "from": "src/cli/index.ts",
+        "to": "src/cli/commands/quality-gates.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/cli/index.ts",
         "to": "src/cli/commands/ralph.ts",
         "kind": "imports"
       },
@@ -60146,6 +60250,46 @@
         "kind": "imports"
       },
       {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "external:node:child_process",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "external:node:os",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "external:node:url",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "external:vitest",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "src/config/quality-gates.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/__tests__/quality-gates.test.ts",
+        "to": "src/shared/types.ts",
+        "kind": "type-imports"
+      },
+      {
         "from": "src/config/index.ts",
         "to": "src/config/loader.ts",
         "kind": "exports"
@@ -60154,6 +60298,16 @@
         "from": "src/config/index.ts",
         "to": "src/config/plan-output.ts",
         "kind": "exports"
+      },
+      {
+        "from": "src/config/index.ts",
+        "to": "src/config/quality-gates.ts",
+        "kind": "exports"
+      },
+      {
+        "from": "src/config/index.ts",
+        "to": "src/config/quality-gates.ts",
+        "kind": "type-exports"
       },
       {
         "from": "src/config/loader.ts",
@@ -60219,6 +60373,41 @@
         "from": "src/config/plan-output.ts",
         "to": "src/shared/types.ts",
         "kind": "type-imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "external:node:fs",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "external:node:path",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "src/config/loader.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "src/features/builtin-skills/skills.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "src/lib/worktree-paths.ts",
+        "kind": "imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "src/shared/types.ts",
+        "kind": "type-imports"
+      },
+      {
+        "from": "src/config/quality-gates.ts",
+        "to": "src/utils/config-dir.ts",
+        "kind": "imports"
       },
       {
         "from": "src/constants/index.ts",
@@ -89827,12 +90016,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7883,
-      "edgeCount": 8636,
-      "importEdgeCount": 7197,
+      "nodeCount": 7892,
+      "edgeCount": 8664,
+      "importEdgeCount": 7218,
       "registerEdgeCount": 69
     }
   },
-  "inventorySha256": "6aad994a8acb52a9de91113a5d58587d23802b10f775a85fda4e5dc6fbd00114",
-  "manifestSha256": "b5f2793f047207e633aa17184289446de2790119ddef1c8eb78e7e575bf10a27"
+  "inventorySha256": "14f8b82c5883192395d60bd0f8ec641f5a0d77fe74e26886856d8e70b18ea0af",
+  "manifestSha256": "de4352fc86f84e9c5c6a3cc30d076d6bb9785a13b044931e4e9e95083735296b"
 }
