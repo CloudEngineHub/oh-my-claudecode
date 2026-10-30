@@ -51233,10 +51233,10 @@ function collectTeamMissions(directory, config2) {
 }
 function discoverTeamMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4) {
   const config2 = resolveConfig(rawConfig);
-  return {
-    updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    missions: mergeMissions(null, collectTeamMissions(directory, config2), config2)
-  };
+  return mergeMissionBoardStates(
+    [{ updatedAt: (/* @__PURE__ */ new Date()).toISOString(), missions: collectTeamMissions(directory, config2) }],
+    config2
+  );
 }
 function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4, sessionId) {
   const effectiveSessionId = sessionId ?? getProcessSessionId();
