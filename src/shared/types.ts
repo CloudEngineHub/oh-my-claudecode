@@ -209,11 +209,11 @@ export interface PluginConfig {
   // Custom quality gates configuration (per-stage skill gates)
   qualityGates?: {
     /** Quality gates for deep-interview final-spec stage */
-    interview?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
+    'deep-interview'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
     /** Quality gates for ralplan Architect→Critic review stage */
-    plan?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
+    'ralplan'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
     /** Quality gates for code-review stage */
-    codeReview?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
+    'code-review'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
   };
 
   // Startup codebase map injection (issue #804)

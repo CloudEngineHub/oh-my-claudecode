@@ -4,11 +4,11 @@ Custom quality gates allow you to attach specialized skill validators to specifi
 
 ## Overview
 
-Quality gates are configured per-stage in `.claude/omc.jsonc` and apply to three workflow stages:
+Custom quality gates are configured per-stage in `.claude/omc.jsonc` and apply to three workflow stages:
 
-- **`interview`** — deep-interview final-spec stage
-- **`plan`** — ralplan Architect→Critic review consensus stage
-- **`codeReview`** — code-review stage
+- **`deep-interview`** — deep-interview final-spec stage
+- **`ralplan`** — ralplan Architect→Critic review consensus stage
+- **`code-review`** — code-review stage
 
 Each gate is a skill name or configuration object. Gates run after standard reviewers complete and their verdicts are recorded in receipts.
 
@@ -21,15 +21,15 @@ Add a `qualityGates` object to `.claude/omc.jsonc`:
 ```jsonc
 {
   "qualityGates": {
-    "interview": [
+    "deep-interview": [
       "requirements-validator",
       { "skill": "ambiguity-checker", "mode": "blocking" }
     ],
-    "plan": [
+    "ralplan": [
       "design-audit",
       { "skill": "security-reviewer", "mode": "advisory" }
     ],
-    "codeReview": [
+    "code-review": [
       { "skill": "performance-analyzer", "mode": "blocking", "model": "claude-opus" }
     ]
   }
@@ -160,7 +160,7 @@ If a blocking gate verdict is "REQUEST CHANGES" or "BLOCK":
 ```jsonc
 {
   "qualityGates": {
-    "plan": [
+    "ralplan": [
       "security-audit",
       "architecture-review"
     ]
@@ -168,14 +168,14 @@ If a blocking gate verdict is "REQUEST CHANGES" or "BLOCK":
 }
 ```
 
-Both gates are blocking (default) and must pass for plan approval.
+Both gates are blocking (default) and must pass for ralplan approval.
 
 ### Mixed Modes
 
 ```jsonc
 {
   "qualityGates": {
-    "codeReview": [
+    "code-review": [
       { "skill": "security-scan", "mode": "blocking" },
       { "skill": "performance-tips", "mode": "advisory" },
       { "skill": "accessibility-check", "mode": "advisory" }
@@ -191,7 +191,7 @@ Security is mandatory; performance and accessibility are informational.
 ```jsonc
 {
   "qualityGates": {
-    "plan": [
+    "ralplan": [
       {
         "skill": "complex-design-review",
         "mode": "blocking",
@@ -214,16 +214,16 @@ Different gates can target different model capabilities.
 ```jsonc
 {
   "qualityGates": {
-    "interview": [
+    "deep-interview": [
       { "skill": "requirements-validator", "mode": "blocking" },
       { "skill": "scope-analyzer", "mode": "advisory" }
     ],
-    "plan": [
+    "ralplan": [
       { "skill": "security-architect", "mode": "blocking", "model": "claude-opus" },
       { "skill": "design-auditor", "mode": "advisory" },
       "performance-estimator"
     ],
-    "codeReview": [
+    "code-review": [
       { "skill": "security-reviewer", "mode": "blocking" },
       { "skill": "code-style-checker", "mode": "advisory" }
     ]

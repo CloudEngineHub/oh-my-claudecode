@@ -23,11 +23,11 @@ import { loadJsoncFile } from './loader.js';
 
 /**
  * Workflow stage where quality gates apply
- * - 'interview': deep-interview final-spec stage
- * - 'plan': ralplan Architect→Critic review (consensus mode)
- * - 'codeReview': code-review stage
+ * - 'deep-interview': deep-interview final-spec stage
+ * - 'ralplan': ralplan Architect→Critic review (consensus mode)
+ * - 'code-review': code-review stage
  */
-export type QualityGateStage = 'interview' | 'plan' | 'codeReview';
+export type QualityGateStage = 'deep-interview' | 'ralplan' | 'code-review';
 
 /**
  * Gate entry: either a skill name string or a gate configuration object
@@ -61,11 +61,11 @@ export interface NormalizedGate {
  */
 export interface QualityGatesConfig {
   /** Quality gates for the deep-interview final-spec stage */
-  interview?: QualityGateEntry[];
+  'deep-interview'?: QualityGateEntry[];
   /** Quality gates for the ralplan Architect→Critic review stage */
-  plan?: QualityGateEntry[];
+  'ralplan'?: QualityGateEntry[];
   /** Quality gates for the code-review stage */
-  codeReview?: QualityGateEntry[];
+  'code-review'?: QualityGateEntry[];
 }
 
 /**
