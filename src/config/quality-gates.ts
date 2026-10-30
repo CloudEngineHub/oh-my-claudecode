@@ -108,8 +108,8 @@ export function validateSkillName(skill: string): { valid: boolean; error?: stri
 
 /**
  * Normalize a gate entry to a NormalizedGate.
- * - String entries default to blocking mode
- * - Objects preserve mode and model
+ * - String entries default to advisory mode
+ * - Objects preserve mode (default advisory if not specified) and model
  */
 export function normalizeGate(entry: QualityGateEntry): NormalizedGate | null {
   if (typeof entry === 'string') {
