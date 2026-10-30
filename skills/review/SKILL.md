@@ -49,3 +49,9 @@ Keep each sub-agent brief under ~400 words and pointed at one axis. Aggregate wi
 - Findings, most-severe first, each with file, line, and concrete failure scenario
 - What was checked and found clean
 - Anything that could not be assessed
+
+## Quality Gates
+
+Before finalizing the review, call `omc quality-gates list --stage omc-review --json` and show every validation error. For each available gate, spawn one independent Claude Code `Task` that loads the named skill from `resolvedPath`, reviews the same changes, and returns `VERDICT: PASS` or `VERDICT: BLOCK` plus findings. Use the configured model override when present; do not pass another reviewer's output to the gate. Reuse the same gate lane if the change is revised and reviewed again.
+
+Record `{ gate, mode, verdict }` for each gate in the review output. Unresolved skills are `gate_unavailable` with a visible warning, never PASS; they do not fail the review stage. A blocking `BLOCK` makes the overall result `REQUEST CHANGES`; advisory results are informational and never block.

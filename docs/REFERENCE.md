@@ -124,6 +124,8 @@ If both configurations exist, **project-scoped takes precedence** over global:
 ./.claude/CLAUDE.md  (project)   →  Overrides  →  ~/.claude/CLAUDE.md  (global)
 ```
 
+For configurable skill reviews in deep-interview, ralplan, and omc-review, see [Quality Gates Configuration](quality-gates-configuration.md).
+
 ### Environment Variables
 
 | Variable                   | Default              | Description                                                                                                                                                                                                                                                                 |

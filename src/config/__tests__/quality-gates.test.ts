@@ -1,262 +1,225 @@
-import assert from 'node:assert/strict';
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
+import type { PluginConfig } from "../../shared/types.js";
 import {
-  validateSkillName,
+  getAdvisoryGatesForStage,
+  getBlockingGatesForStage,
   normalizeGate,
   readQualityGatesConfig,
   readValidatedQualityGates,
-  getGatesForStage,
-  getAdvisoryGatesForStage,
-  getBlockingGatesForStage,
-} from '../quality-gates.js';
+  resolveQualityGateSkillPath,
+  validateSkillName,
+} from "../quality-gates.js";
 
-describe('Quality Gates Configuration', () => {
-  let configDir: string;
+describe("quality gates", () => {
+  let tempDir: string;
 
   beforeEach(() => {
-    configDir = mkdtempSync(join(tmpdir(), 'omc-quality-gates-'));
+    tempDir = mkdtempSync(join(tmpdir(), "omc-quality-gates-"));
   });
 
   afterEach(() => {
-    rmSync(configDir, { recursive: true, force: true });
+    rmSync(tempDir, { recursive: true, force: true });
   });
 
-  describe('validateSkillName', () => {
-    it('accepts valid kebab-case skill names', () => {
-      const valid = ['design-audit', 'security-review', 'my-custom-gate'];
-      for (const name of valid) {
-        const result = validateSkillName(name);
-        assert.strictEqual(result.valid, true, `Expected '${name}' to be valid`);
-      }
+  it("defaults omitted mode to advisory and preserves an explicit blocking mode", () => {
+    expect(normalizeGate({ skill: "requirements-check" })).toEqual({
+      skill: "requirements-check",
+      mode: "advisory",
     });
-
-    it('rejects invalid skill name formats', () => {
-      const invalid = ['Design-Audit', 'design_audit', 'design audit', '123', '', 'design-.audit'];
-      for (const name of invalid) {
-        const result = validateSkillName(name);
-        assert.strictEqual(result.valid, false, `Expected '${name}' to be invalid`);
-        assert(result.error);
-      }
-    });
-
-    it('accepts all non-sunset skill names (no reserved names currently)', () => {
-      // Currently no sunset agents in source, so all valid names are allowed
-      const names = ['code-review', 'deep-interview', 'ralplan', 'plan', 'verification'];
-      for (const name of names) {
-        const result = validateSkillName(name);
-        assert.strictEqual(result.valid, true, `Expected '${name}' to be valid`);
-      }
-    });
-
-    it('accepts skill names with leading $', () => {
-      const result = validateSkillName('$design-audit');
-      assert.strictEqual(result.valid, true);
+    expect(
+      normalizeGate({ skill: "security-check", mode: "blocking" }),
+    ).toEqual({
+      skill: "security-check",
+      mode: "blocking",
     });
   });
 
-  describe('normalizeGate', () => {
-    it('normalizes string entries to advisory mode (default)', () => {
-      const gate = normalizeGate('design-audit');
-      assert.deepEqual(gate, { skill: 'design-audit', mode: 'advisory' });
+  it("rejects malformed and retired skill names with replacement hints", () => {
+    expect(validateSkillName("bad_name").valid).toBe(false);
+    expect(validateSkillName("learner")).toMatchObject({
+      valid: false,
+      error: expect.stringContaining("remember"),
     });
-
-    it('preserves mode in object entries', () => {
-      const gate = normalizeGate({ skill: 'design-audit', mode: 'blocking' });
-      assert.deepEqual(gate, { skill: 'design-audit', mode: 'blocking' });
+    expect(validateSkillName("swarm")).toMatchObject({
+      valid: false,
+      error: expect.stringContaining("team"),
     });
-
-    it('defaults to advisory mode when not specified', () => {
-      const gate = normalizeGate({ skill: 'design-audit' });
-      assert.deepEqual(gate, { skill: 'design-audit', mode: 'advisory' });
-    });
-
-    it('preserves model override', () => {
-      const gate = normalizeGate({ skill: 'design-audit', mode: 'advisory', model: 'claude-opus' });
-      assert.deepEqual(gate, {
-        skill: 'design-audit',
-        mode: 'advisory',
-        model: 'claude-opus',
-      });
-    });
-
-    it('returns null for invalid entries', () => {
-      assert.strictEqual(normalizeGate(['invalid'] as any), null);
-      assert.strictEqual(normalizeGate(123 as any), null);
-    });
+    expect(validateSkillName("project-audit").valid).toBe(true);
+    expect(validateSkillName("constructor").valid).toBe(true);
   });
 
-  describe('readQualityGatesConfig', () => {
-    it('returns null when config file does not exist', () => {
-      const result = readQualityGatesConfig(configDir);
-      assert.strictEqual(result, null);
-    });
+  it("reports legacy stage keys with their exact replacement and does not accept them", () => {
+    const config = {
+      qualityGates: {
+        "code-review": [{ skill: "old-review-gate" }],
+        interview: [],
+        plan: [],
+        codeReview: [],
+      },
+    } as unknown as PluginConfig;
 
-    it('reads quality gates from omc.jsonc', () => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: {
-            'ralplan': ['design-audit'],
-            'deep-interview': ['requirements-validator'],
-          },
-        }),
-      );
-
-      const result = readQualityGatesConfig(configDir);
-      assert(result);
-      assert.deepEqual(result['ralplan'], ['design-audit']);
-      assert.deepEqual(result['deep-interview'], ['requirements-validator']);
-    });
-
-    it('returns null when qualityGates is not an object', () => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: 'not an object',
-        }),
-      );
-
-      const result = readQualityGatesConfig(configDir);
-      assert.strictEqual(result, null);
-    });
+    const { gates, errors } = readValidatedQualityGates("omc-review", config);
+    expect(gates).toEqual([]);
+    expect(errors.map(({ stage, error }) => [stage, error])).toEqual([
+      [
+        "code-review",
+        "Legacy stage key 'code-review' is not accepted; use 'omc-review'",
+      ],
+      [
+        "interview",
+        "Legacy stage key 'interview' is not accepted; use 'deep-interview'",
+      ],
+      ["plan", "Legacy stage key 'plan' is not accepted; use 'ralplan'"],
+      [
+        "codeReview",
+        "Legacy stage key 'codeReview' is not accepted; use 'omc-review'",
+      ],
+    ]);
   });
 
-  describe('readValidatedQualityGates', () => {
-    beforeEach(() => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: {
-            'ralplan': ['design-audit', { skill: 'security-audit', mode: 'blocking' }],
-            'deep-interview': ['requirements-validator', { skill: 'invalid!', mode: 'advisory' }],
-            'code-review': [],
-          } as any,
-        }),
-      );
+  it("reads user and project quality gates through the merged PluginConfig loader", () => {
+    const project = join(tempDir, "project");
+    const xdgConfig = join(tempDir, "xdg");
+    const userConfigPath = join(xdgConfig, "claude-omc", "config.jsonc");
+    mkdirSync(join(project, ".claude"), { recursive: true });
+    mkdirSync(join(xdgConfig, "claude-omc"), { recursive: true });
+    writeFileSync(
+      userConfigPath,
+      JSON.stringify({
+        qualityGates: {
+          "deep-interview": [{ skill: "user-interview-check" }],
+          ralplan: [{ skill: "user-plan-check" }],
+        },
+      }),
+    );
+    writeFileSync(
+      join(project, ".claude", "omc.jsonc"),
+      JSON.stringify({
+        qualityGates: {
+          ralplan: [{ skill: "project-plan-check", mode: "blocking" }],
+        },
+      }),
+    );
+
+    const loaderUrl = pathToFileURL(resolve("src/config/loader.ts")).href;
+    const tsxLoader = pathToFileURL(
+      resolve("node_modules/tsx/dist/loader.mjs"),
+    ).href;
+    const script = `import { loadConfig } from ${JSON.stringify(loaderUrl)}; process.stdout.write(JSON.stringify(loadConfig().qualityGates));`;
+    const mergedConfig = JSON.parse(
+      execFileSync(
+        process.execPath,
+        ["--import", tsxLoader, "--input-type=module", "-e", script],
+        {
+          cwd: project,
+          encoding: "utf8",
+          env: { ...process.env, XDG_CONFIG_HOME: xdgConfig },
+        },
+      ),
+    ) as unknown;
+
+    expect(
+      readQualityGatesConfig({ qualityGates: mergedConfig } as PluginConfig),
+    ).toMatchObject({
+      "deep-interview": [{ skill: "user-interview-check" }],
+      ralplan: [{ skill: "project-plan-check", mode: "blocking" }],
     });
-
-    it('validates and normalizes gates for a stage', () => {
-      const { gates, errors } = readValidatedQualityGates('ralplan', configDir);
-
-      assert.strictEqual(gates.length, 2);
-      assert.deepEqual(gates[0], { skill: 'design-audit', mode: 'advisory' });
-      assert.deepEqual(gates[1], { skill: 'security-audit', mode: 'blocking' });
-      assert.strictEqual(errors.length, 0);
-    });
-
-    it('reports validation errors but continues processing', () => {
-      const { gates, errors } = readValidatedQualityGates('deep-interview', configDir);
-
-      assert.strictEqual(gates.length, 1);
-      assert.deepEqual(gates[0], { skill: 'requirements-validator', mode: 'advisory' });
-      assert.strictEqual(errors.length, 1);
-      assert.strictEqual(errors[0]?.skillIndex, 1);
-      assert(errors[0]?.error);
-    });
-
-    it('handles empty stage list', () => {
-      const { gates, errors } = readValidatedQualityGates('code-review', configDir);
-      assert.strictEqual(gates.length, 0);
-      assert.strictEqual(errors.length, 0);
-    });
-
-    it('handles missing stage', () => {
-      const { gates, errors } = readValidatedQualityGates('code-review', configDir);
-      assert.strictEqual(gates.length, 0);
-      assert.strictEqual(errors.length, 0);
-    });
+    expect(
+      readValidatedQualityGates("deep-interview", {
+        qualityGates: mergedConfig,
+      } as PluginConfig).gates,
+    ).toEqual([{ skill: "user-interview-check", mode: "advisory" }]);
+    expect(
+      readValidatedQualityGates("ralplan", {
+        qualityGates: mergedConfig,
+      } as PluginConfig).gates,
+    ).toEqual([{ skill: "project-plan-check", mode: "blocking" }]);
   });
 
-  describe('getGatesForStage', () => {
-    beforeEach(() => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: {
-            'ralplan': ['design-audit', { skill: 'security-audit', mode: 'blocking' }],
-          } as any,
-        }),
-      );
-    });
+  it("resolves project, OMC project, compatibility, user, plugin, and bundled skill roots in order", () => {
+    const project = join(tempDir, "project");
+    const userConfig = join(tempDir, "user-config");
+    const omcRoot = join(tempDir, "omc-root");
+    const bundled = join(tempDir, "bundled");
+    const pluginRoot = join(tempDir, "plugin");
+    const options = {
+      cwd: project,
+      userConfigDir: userConfig,
+      omcRoot,
+      bundledSkillsDir: bundled,
+      pluginRoot,
+    };
+    const roots = [
+      join(project, ".claude", "skills"),
+      join(omcRoot, "skills"),
+      join(project, ".agents", "skills"),
+      join(userConfig, "skills"),
+      join(pluginRoot, "skills"),
+      bundled,
+      join(project, "skills"),
+    ];
+    const createSkill = (root: string, name: string): string => {
+      const path = join(root, name, "SKILL.md");
+      mkdirSync(join(root, name), { recursive: true });
+      writeFileSync(path, `---\nname: ${name}\n---\n`);
+      return path;
+    };
 
-    it('returns all gates for a stage', () => {
-      const gates = getGatesForStage('ralplan', configDir);
-      assert.strictEqual(gates.length, 2);
-      assert.deepEqual(gates[0], { skill: 'design-audit', mode: 'advisory' });
-      assert.deepEqual(gates[1], { skill: 'security-audit', mode: 'blocking' });
-    });
+    const projectPath = createSkill(roots[0]!, "project-check");
+    const omcPath = createSkill(roots[1]!, "omc-check");
+    const compatibilityPath = createSkill(roots[2]!, "compat-check");
+    const userPath = createSkill(roots[3]!, "user-check");
+    const pluginPath = createSkill(roots[4]!, "plugin-check");
+    const bundledPath = createSkill(roots[5]!, "bundled-check");
+    const cwdPath = createSkill(roots[6]!, "cwd-check");
+
+    expect(resolveQualityGateSkillPath("project-check", options)).toBe(
+      projectPath,
+    );
+    expect(resolveQualityGateSkillPath("omc-check", options)).toBe(omcPath);
+    expect(resolveQualityGateSkillPath("compat-check", options)).toBe(
+      compatibilityPath,
+    );
+    expect(resolveQualityGateSkillPath("user-check", options)).toBe(userPath);
+    expect(resolveQualityGateSkillPath("plugin-check", options)).toBe(
+      pluginPath,
+    );
+    expect(resolveQualityGateSkillPath("bundled-check", options)).toBe(
+      bundledPath,
+    );
+    expect(resolveQualityGateSkillPath("cwd-check", options)).toBe(cwdPath);
+    expect(resolveQualityGateSkillPath("missing-check", options)).toBeNull();
   });
 
-  describe('getAdvisoryGatesForStage', () => {
-    beforeEach(() => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: {
-            'ralplan': [
-              'design-audit',
-              { skill: 'security-audit', mode: 'advisory' },
-              { skill: 'perf-review', mode: 'blocking' },
-            ],
-          } as any,
-        }),
-      );
+  it("resolves OMC bundled names that differ from their skill directory names", () => {
+    const path = resolveQualityGateSkillPath("omc-review", {
+      cwd: tempDir,
+      userConfigDir: join(tempDir, "user"),
+      omcRoot: join(tempDir, "omc"),
+      pluginRoot: null,
     });
-
-    it('returns only advisory gates for a stage', () => {
-      const gates = getAdvisoryGatesForStage('ralplan', configDir);
-      assert.strictEqual(gates.length, 2);
-      assert(gates.every((g) => g.mode === 'advisory'));
-    });
+    expect(path).toMatch(/skills[\\/]review[\\/]SKILL\.md$/);
   });
 
-  describe('getBlockingGatesForStage', () => {
-    beforeEach(() => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: {
-            'ralplan': [
-              'design-audit',
-              { skill: 'security-audit', mode: 'advisory' },
-              { skill: 'arch-review', mode: 'blocking' },
-            ],
-          } as any,
-        }),
-      );
-    });
-
-    it('returns only blocking gates for a stage', () => {
-      const gates = getBlockingGatesForStage('ralplan', configDir);
-      assert.strictEqual(gates.length, 1);
-      assert(gates.every((g) => g.mode === 'blocking'));
-    });
-  });
-
-  describe('model overrides', () => {
-    beforeEach(() => {
-      writeFileSync(
-        join(configDir, 'omc.jsonc'),
-        JSON.stringify({
-          qualityGates: {
-            'ralplan': [
-              { skill: 'design-audit', mode: 'blocking', model: 'claude-opus' },
-              { skill: 'security-audit', model: 'claude-sonnet' },
-            ],
-          } as any,
-        }),
-      );
-    });
-
-    it('preserves model overrides in gates', () => {
-      const gates = getGatesForStage('ralplan', configDir);
-      assert.strictEqual(gates[0]?.model, 'claude-opus');
-      assert.strictEqual(gates[1]?.model, 'claude-sonnet');
-      assert.strictEqual(gates[0]?.mode, 'blocking');
-      assert.strictEqual(gates[1]?.mode, 'advisory');
-    });
+  it("filters gates by mode after normalization", () => {
+    const config = {
+      qualityGates: {
+        ralplan: [
+          "advisory-check",
+          { skill: "blocking-check", mode: "blocking" },
+        ],
+      },
+    } as unknown as PluginConfig;
+    expect(getAdvisoryGatesForStage("ralplan", config)).toEqual([
+      { skill: "advisory-check", mode: "advisory" },
+    ]);
+    expect(getBlockingGatesForStage("ralplan", config)).toEqual([
+      { skill: "blocking-check", mode: "blocking" },
+    ]);
   });
 });

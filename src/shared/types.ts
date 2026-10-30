@@ -212,8 +212,8 @@ export interface PluginConfig {
     'deep-interview'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
     /** Quality gates for ralplan Architect→Critic review stage */
     'ralplan'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
-    /** Quality gates for code-review stage */
-    'code-review'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
+    /** Quality gates for the omc-review stage */
+    'omc-review'?: (string | { skill: string; mode?: 'blocking' | 'advisory'; model?: string })[];
   };
 
   // Startup codebase map injection (issue #804)
