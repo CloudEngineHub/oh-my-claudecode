@@ -5,15 +5,15 @@
   "provenance": {
     "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
     "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-    "head": "e602f4e29475908ac6da64368c844a0f6b702e29",
-    "sourceSha256": "d0114d322430aa39e78e38bc6b61bec8373141957d2d6b119ea7a0d6f0cfc86e",
+    "head": "637630b67c3e6121c350681d8d85c21995cfb863",
+    "sourceSha256": "727cce3345bc5d8794b5d421998ec03c3996abfc12442722ff7b3b9a11440e8c",
     "generatedAt": null,
     "generator": "scripts/generate-inventory-graph.mjs"
   },
   "base": "05c800f40d1ad53b42a78609d2667ef4f726808b",
   "planningHead": "0a91273e61dbbd47eb0af4c02844409251e08398",
-  "head": "e602f4e29475908ac6da64368c844a0f6b702e29",
-  "sourceSha256": "d0114d322430aa39e78e38bc6b61bec8373141957d2d6b119ea7a0d6f0cfc86e",
+  "head": "637630b67c3e6121c350681d8d85c21995cfb863",
+  "sourceSha256": "727cce3345bc5d8794b5d421998ec03c3996abfc12442722ff7b3b9a11440e8c",
   "counts": {
     "public": {
       "skills": 48,
@@ -32,9 +32,9 @@
       "total": 1514
     },
     "generated": {
-      "distFiles": 5729,
+      "distFiles": 5733,
       "bridgeFiles": 9,
-      "total": 5738
+      "total": 5742
     },
     "prompt": {
       "promptLikeFiles": 61
@@ -2468,6 +2468,8 @@
       "dist/cli/commands/intake.d.ts.map",
       "dist/cli/commands/intake.js",
       "dist/cli/commands/intake.js.map",
+      "dist/cli/commands/quality-gates.d.ts",
+      "dist/cli/commands/quality-gates.js",
       "dist/cli/commands/ralph.d.ts",
       "dist/cli/commands/ralph.d.ts.map",
       "dist/cli/commands/ralph.js",
@@ -2585,6 +2587,8 @@
       "dist/config/plan-output.d.ts.map",
       "dist/config/plan-output.js",
       "dist/config/plan-output.js.map",
+      "dist/config/quality-gates.d.ts",
+      "dist/config/quality-gates.js",
       "dist/constants/index.d.ts",
       "dist/constants/index.d.ts.map",
       "dist/constants/index.js",
@@ -15914,6 +15918,16 @@
         "path": "dist/cli/commands/intake.js.map"
       },
       {
+        "id": "dist/cli/commands/quality-gates.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/quality-gates.d.ts"
+      },
+      {
+        "id": "dist/cli/commands/quality-gates.js",
+        "kind": "generated-dist",
+        "path": "dist/cli/commands/quality-gates.js"
+      },
+      {
         "id": "dist/cli/commands/ralph.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/commands/ralph.d.ts"
@@ -16497,6 +16511,16 @@
         "id": "dist/config/plan-output.js.map",
         "kind": "generated-dist",
         "path": "dist/config/plan-output.js.map"
+      },
+      {
+        "id": "dist/config/quality-gates.d.ts",
+        "kind": "generated-dist",
+        "path": "dist/config/quality-gates.d.ts"
+      },
+      {
+        "id": "dist/config/quality-gates.js",
+        "kind": "generated-dist",
+        "path": "dist/config/quality-gates.js"
       },
       {
         "id": "dist/constants/index.d.ts",
@@ -89992,12 +90016,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7888,
+      "nodeCount": 7892,
       "edgeCount": 8664,
       "importEdgeCount": 7218,
       "registerEdgeCount": 69
     }
   },
   "inventorySha256": "14f8b82c5883192395d60bd0f8ec641f5a0d77fe74e26886856d8e70b18ea0af",
-  "manifestSha256": "e4f4ec11fc8eb485d3916d5e26499ec07f17235d463bc34dceb99176e1e41e1a"
+  "manifestSha256": "de4352fc86f84e9c5c6a3cc30d076d6bb9785a13b044931e4e9e95083735296b"
 }
