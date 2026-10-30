@@ -32,9 +32,9 @@
       "total": 1514
     },
     "generated": {
-      "distFiles": 5733,
+      "distFiles": 5729,
       "bridgeFiles": 9,
-      "total": 5742
+      "total": 5738
     },
     "prompt": {
       "promptLikeFiles": 61
@@ -2468,8 +2468,6 @@
       "dist/cli/commands/intake.d.ts.map",
       "dist/cli/commands/intake.js",
       "dist/cli/commands/intake.js.map",
-      "dist/cli/commands/quality-gates.d.ts",
-      "dist/cli/commands/quality-gates.js",
       "dist/cli/commands/ralph.d.ts",
       "dist/cli/commands/ralph.d.ts.map",
       "dist/cli/commands/ralph.js",
@@ -2587,8 +2585,6 @@
       "dist/config/plan-output.d.ts.map",
       "dist/config/plan-output.js",
       "dist/config/plan-output.js.map",
-      "dist/config/quality-gates.d.ts",
-      "dist/config/quality-gates.js",
       "dist/constants/index.d.ts",
       "dist/constants/index.d.ts.map",
       "dist/constants/index.js",
@@ -15918,16 +15914,6 @@
         "path": "dist/cli/commands/intake.js.map"
       },
       {
-        "id": "dist/cli/commands/quality-gates.d.ts",
-        "kind": "generated-dist",
-        "path": "dist/cli/commands/quality-gates.d.ts"
-      },
-      {
-        "id": "dist/cli/commands/quality-gates.js",
-        "kind": "generated-dist",
-        "path": "dist/cli/commands/quality-gates.js"
-      },
-      {
         "id": "dist/cli/commands/ralph.d.ts",
         "kind": "generated-dist",
         "path": "dist/cli/commands/ralph.d.ts"
@@ -16511,16 +16497,6 @@
         "id": "dist/config/plan-output.js.map",
         "kind": "generated-dist",
         "path": "dist/config/plan-output.js.map"
-      },
-      {
-        "id": "dist/config/quality-gates.d.ts",
-        "kind": "generated-dist",
-        "path": "dist/config/quality-gates.d.ts"
-      },
-      {
-        "id": "dist/config/quality-gates.js",
-        "kind": "generated-dist",
-        "path": "dist/config/quality-gates.js"
       },
       {
         "id": "dist/constants/index.d.ts",
@@ -90016,12 +89992,12 @@
       }
     ],
     "stats": {
-      "nodeCount": 7892,
+      "nodeCount": 7888,
       "edgeCount": 8664,
       "importEdgeCount": 7218,
       "registerEdgeCount": 69
     }
   },
   "inventorySha256": "14f8b82c5883192395d60bd0f8ec641f5a0d77fe74e26886856d8e70b18ea0af",
-  "manifestSha256": "ce7940c8702bdee3258f16fb842235b00b08f92044d14cb00a2a0de4647f7647"
+  "manifestSha256": "6e9d467b80fbf41dd7a23f532c2ae6abd1b94320219ef4fb67fd526c1904a710"
 }
