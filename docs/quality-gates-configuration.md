@@ -49,24 +49,24 @@ Each gate entry is either:
    ```json
    {
      "skill": "design-audit",
-     "mode": "blocking",        // optional, default: "blocking"
+     "mode": "advisory",        // optional, default: "advisory"
      "model": "claude-opus"     // optional, model override for this gate
    }
    ```
 
 ### Gate Modes
 
-- **`blocking` (default)**
-  - Gate verdict is required for workflow completion
-  - If a blocking gate fails, the workflow enters revision loop (max 5 iterations)
-  - Gate must approve before handoff or execution proceeds
-  - Used for critical validations (security, compliance, architecture)
-
-- **`advisory`**
+- **`advisory` (default)**
   - Gate verdict is recorded but does not block workflow
   - Used for recommendations (performance tips, best practices)
   - Advisory verdicts appear in receipts as residual risks or notes
   - Workflow proceeds regardless of advisory verdict
+
+- **`blocking`**
+  - Gate verdict is required for workflow completion
+  - If a blocking gate fails, the workflow enters revision loop (max 5 iterations)
+  - Gate must approve before handoff or execution proceeds
+  - Used for critical validations (security, compliance, architecture)
 
 ### Model Overrides
 
@@ -87,8 +87,9 @@ Model overrides apply only to that gate's execution and do not affect other gate
 Skill names must:
 
 - Be **kebab-case** (lowercase letters, numbers, hyphens only)
-- Not be **reserved** (code-review, deep-interview, ralplan, plan, verification, ai-slop-cleaner)
-- Not be **sunset/deprecated** skills
+- Not be **sunset/deprecated** skills (currently none in OMC source)
+
+Note: No skill names are reserved. Quality gates can reference any skill name that follows the kebab-case format.
 
 Invalid skill names are reported as configuration errors and gates are skipped.
 
@@ -162,13 +163,13 @@ If a blocking gate verdict is "REQUEST CHANGES" or "BLOCK":
   "qualityGates": {
     "ralplan": [
       "security-audit",
-      "architecture-review"
+      { "skill": "architecture-review", "mode": "blocking" }
     ]
   }
 }
 ```
 
-Both gates are blocking (default) and must pass for ralplan approval.
+First gate is advisory (default); second gate must pass for ralplan approval.
 
 ### Mixed Modes
 
@@ -277,15 +278,17 @@ For high-impact gates, consider:
 - Limiting total gates per stage (1-3 recommended)
 - Targeting blocking gates for genuinely critical checks
 
-## Porting from oh-my-codex
+### Porting from oh-my-codex
 
 OMC quality gates are a direct port of [oh-my-codex#3956](https://github.com/Yeachan-Heo/oh-my-codex/pull/3956).
 
 Key differences from OMX:
 
 - **Config file**: `.claude/omc.jsonc` (OMX uses `.omx-config.json`)
-- **Stage names**: `interview`, `plan`, `codeReview` (OMX uses camelCase with hyphenated names)
+- **Stage names**: `deep-interview`, `ralplan`, `code-review` (exact OMC workflow names)
+- **Default mode**: `advisory` (OMX defaults to `blocking`)
+- **Reserved names**: None currently; OMC has no sunset agents to restrict
 - **Schema integration**: Part of PluginConfig in OMC (separate module in OMX)
-- **CLI**: Not exposed in OMC CLI (OMX has `omx quality-gates list --stage`)
+- **Runtime integration**: Gates are wired into actual skills (in progress)
 
-Functional behavior is identical: advisory/blocking modes, model overrides, missing skill handling, and revision loops work the same.
+Functional behavior: advisory/blocking modes, model overrides, missing skill handling with warnings, and bounded revision loops.

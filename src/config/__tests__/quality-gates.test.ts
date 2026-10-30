@@ -42,12 +42,12 @@ describe('Quality Gates Configuration', () => {
       }
     });
 
-    it('rejects reserved skill names', () => {
-      const reserved = ['code-review', 'deep-interview', 'ralplan', 'plan', 'verification'];
-      for (const name of reserved) {
+    it('accepts all non-sunset skill names (no reserved names currently)', () => {
+      // Currently no sunset agents in source, so all valid names are allowed
+      const names = ['code-review', 'deep-interview', 'ralplan', 'plan', 'verification'];
+      for (const name of names) {
         const result = validateSkillName(name);
-        assert.strictEqual(result.valid, false, `Expected '${name}' to be reserved`);
-        assert(result.error && /reserved/i.test(result.error));
+        assert.strictEqual(result.valid, true, `Expected '${name}' to be valid`);
       }
     });
 
@@ -58,19 +58,19 @@ describe('Quality Gates Configuration', () => {
   });
 
   describe('normalizeGate', () => {
-    it('normalizes string entries to blocking mode', () => {
+    it('normalizes string entries to advisory mode (default)', () => {
       const gate = normalizeGate('design-audit');
-      assert.deepEqual(gate, { skill: 'design-audit', mode: 'blocking' });
-    });
-
-    it('preserves mode in object entries', () => {
-      const gate = normalizeGate({ skill: 'design-audit', mode: 'advisory' });
       assert.deepEqual(gate, { skill: 'design-audit', mode: 'advisory' });
     });
 
-    it('defaults to blocking mode when not specified', () => {
-      const gate = normalizeGate({ skill: 'design-audit' });
+    it('preserves mode in object entries', () => {
+      const gate = normalizeGate({ skill: 'design-audit', mode: 'blocking' });
       assert.deepEqual(gate, { skill: 'design-audit', mode: 'blocking' });
+    });
+
+    it('defaults to advisory mode when not specified', () => {
+      const gate = normalizeGate({ skill: 'design-audit' });
+      assert.deepEqual(gate, { skill: 'design-audit', mode: 'advisory' });
     });
 
     it('preserves model override', () => {
@@ -130,8 +130,8 @@ describe('Quality Gates Configuration', () => {
         join(configDir, 'omc.jsonc'),
         JSON.stringify({
           qualityGates: {
-            'ralplan': ['design-audit', { skill: 'security-audit', mode: 'advisory' }],
-            'deep-interview': ['requirements-validator', { skill: 'invalid!', mode: 'blocking' }],
+            'ralplan': ['design-audit', { skill: 'security-audit', mode: 'blocking' }],
+            'deep-interview': ['requirements-validator', { skill: 'invalid!', mode: 'advisory' }],
             'code-review': [],
           } as any,
         }),
@@ -142,8 +142,8 @@ describe('Quality Gates Configuration', () => {
       const { gates, errors } = readValidatedQualityGates('ralplan', configDir);
 
       assert.strictEqual(gates.length, 2);
-      assert.deepEqual(gates[0], { skill: 'design-audit', mode: 'blocking' });
-      assert.deepEqual(gates[1], { skill: 'security-audit', mode: 'advisory' });
+      assert.deepEqual(gates[0], { skill: 'design-audit', mode: 'advisory' });
+      assert.deepEqual(gates[1], { skill: 'security-audit', mode: 'blocking' });
       assert.strictEqual(errors.length, 0);
     });
 
@@ -151,7 +151,7 @@ describe('Quality Gates Configuration', () => {
       const { gates, errors } = readValidatedQualityGates('deep-interview', configDir);
 
       assert.strictEqual(gates.length, 1);
-      assert.deepEqual(gates[0], { skill: 'requirements-validator', mode: 'blocking' });
+      assert.deepEqual(gates[0], { skill: 'requirements-validator', mode: 'advisory' });
       assert.strictEqual(errors.length, 1);
       assert.strictEqual(errors[0]?.skillIndex, 1);
       assert(errors[0]?.error);
@@ -176,7 +176,7 @@ describe('Quality Gates Configuration', () => {
         join(configDir, 'omc.jsonc'),
         JSON.stringify({
           qualityGates: {
-            'ralplan': ['design-audit', { skill: 'security-audit', mode: 'advisory' }],
+            'ralplan': ['design-audit', { skill: 'security-audit', mode: 'blocking' }],
           } as any,
         }),
       );
@@ -185,6 +185,8 @@ describe('Quality Gates Configuration', () => {
     it('returns all gates for a stage', () => {
       const gates = getGatesForStage('ralplan', configDir);
       assert.strictEqual(gates.length, 2);
+      assert.deepEqual(gates[0], { skill: 'design-audit', mode: 'advisory' });
+      assert.deepEqual(gates[1], { skill: 'security-audit', mode: 'blocking' });
     });
   });
 
@@ -197,7 +199,7 @@ describe('Quality Gates Configuration', () => {
             'ralplan': [
               'design-audit',
               { skill: 'security-audit', mode: 'advisory' },
-              { skill: 'perf-review', mode: 'advisory' },
+              { skill: 'perf-review', mode: 'blocking' },
             ],
           } as any,
         }),
@@ -229,7 +231,7 @@ describe('Quality Gates Configuration', () => {
 
     it('returns only blocking gates for a stage', () => {
       const gates = getBlockingGatesForStage('ralplan', configDir);
-      assert.strictEqual(gates.length, 2);
+      assert.strictEqual(gates.length, 1);
       assert(gates.every((g) => g.mode === 'blocking'));
     });
   });
@@ -241,7 +243,7 @@ describe('Quality Gates Configuration', () => {
         JSON.stringify({
           qualityGates: {
             'ralplan': [
-              { skill: 'design-audit', mode: 'advisory', model: 'claude-opus' },
+              { skill: 'design-audit', mode: 'blocking', model: 'claude-opus' },
               { skill: 'security-audit', model: 'claude-sonnet' },
             ],
           } as any,
@@ -253,6 +255,8 @@ describe('Quality Gates Configuration', () => {
       const gates = getGatesForStage('ralplan', configDir);
       assert.strictEqual(gates[0]?.model, 'claude-opus');
       assert.strictEqual(gates[1]?.model, 'claude-sonnet');
+      assert.strictEqual(gates[0]?.mode, 'blocking');
+      assert.strictEqual(gates[1]?.mode, 'advisory');
     });
   });
 });

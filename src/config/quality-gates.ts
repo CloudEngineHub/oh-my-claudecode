@@ -70,16 +70,12 @@ export interface QualityGatesConfig {
 
 /**
  * Reserved skill names that cannot be used as gates.
- * These are built-in/core skills managed by OMC.
+ * Only sunset/removed agents are reserved.
+ * Currently empty as no sunset agents exist in OMC source.
  */
-const RESERVED_SKILL_NAMES = new Set([
-  'ai-slop-cleaner',
-  'verification',
-  'code-review',
-  'deep-interview',
-  'ralplan',
-  'plan',
-]);
+function getReservedSkillNames(): Set<string> {
+  return new Set();
+}
 
 /**
  * Validate skill name: must be kebab-case, not reserved
@@ -98,11 +94,12 @@ export function validateSkillName(skill: string): { valid: boolean; error?: stri
     };
   }
 
-  // Check if reserved
-  if (RESERVED_SKILL_NAMES.has(normalized)) {
+  // Check if reserved (sunset/removed agents)
+  const reserved = getReservedSkillNames();
+  if (reserved.has(normalized)) {
     return {
       valid: false,
-      error: `Skill name '${normalized}' is reserved and cannot be used as a quality gate`,
+      error: `Skill name '${normalized}' is sunset/removed and cannot be used as a quality gate`,
     };
   }
 
@@ -116,14 +113,14 @@ export function validateSkillName(skill: string): { valid: boolean; error?: stri
  */
 export function normalizeGate(entry: QualityGateEntry): NormalizedGate | null {
   if (typeof entry === 'string') {
-    return { skill: entry, mode: 'blocking' };
+    return { skill: entry, mode: 'advisory' };
   }
 
   if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
     const obj = entry as QualityGateObject;
     return {
       skill: obj.skill,
-      mode: obj.mode || 'blocking',
+      mode: obj.mode || 'advisory',
       model: obj.model,
     };
   }
