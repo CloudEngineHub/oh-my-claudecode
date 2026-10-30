@@ -430,10 +430,7 @@ function collectTeamMissions(directory, config) {
  */
 export function discoverTeamMissionBoardState(directory, rawConfig = DEFAULT_CONFIG) {
     const config = resolveConfig(rawConfig);
-    return {
-        updatedAt: new Date().toISOString(),
-        missions: mergeMissions(null, collectTeamMissions(directory, config), config),
-    };
+    return mergeMissionBoardStates([{ updatedAt: new Date().toISOString(), missions: collectTeamMissions(directory, config) }], config);
 }
 export function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG, sessionId) {
     const effectiveSessionId = sessionId ?? getProcessSessionId();
