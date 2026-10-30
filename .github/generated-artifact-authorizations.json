@@ -35927,6 +35927,44 @@
           "previousFilename": null
         }
       ]
+    },
+    {
+      "pullNumber": 4667,
+      "targetRef": "dev",
+      "mergeBaseSha": "0735087335b88976ace8ec77d3ee55ec904a85dc",
+      "headSha": "25ac6794c7a0e16b929ad9f38f312994f58affe5",
+      "owner": "Yeachan-Heo",
+      "expiresAt": "2026-11-29T00:00:00.000Z",
+      "generatedDelta": {
+        "count": 4,
+        "sha256": "4e2e78137551668c0c42226993a42b763b99409ca67b5abb9c6e4e95c0cb044c"
+      },
+      "generatedFiles": [
+        {
+          "status": "modified",
+          "filename": "bridge/claude-md-coordinator.cjs",
+          "sha": "dcfc165da4f6d269fed3c2b53db5618c4f9a53a1",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "bridge/cli.cjs",
+          "sha": "55e46d76c0f69c68ce270588f54eeb651cdae256",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hud/mission-board.js",
+          "sha": "43b762d89d950d1d975e60cd7c2aa8bd9c9a63c2",
+          "previousFilename": null
+        },
+        {
+          "status": "modified",
+          "filename": "dist/hud/mission-board.js.map",
+          "sha": "fe2225ba49832e07458558b5ecb36183ee490ad6",
+          "previousFilename": null
+        }
+      ]
     }
   ]
 }
