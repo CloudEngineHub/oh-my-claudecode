@@ -40,18 +40,3 @@ export {
   type NormalizedGate,
   type QualityGatesConfig,
 } from "./quality-gates.js";
-
-export {
-  validateSkillName,
-  normalizeGate,
-  readQualityGatesConfig,
-  readValidatedQualityGates,
-  getGatesForStage,
-  getAdvisoryGatesForStage,
-  getBlockingGatesForStage,
-  type QualityGateStage,
-  type QualityGateEntry,
-  type QualityGateObject,
-  type NormalizedGate,
-  type QualityGatesConfig,
-} from "./quality-gates.js";

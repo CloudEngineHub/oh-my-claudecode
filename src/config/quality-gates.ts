@@ -16,9 +16,9 @@
  * Missing skills produce visible warnings and are skipped.
  */
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
-import { getConfigDir } from '../utils/config-dir.js';
+import { getConfigDir } from '../utils/paths.js';
 import { loadJsoncFile } from './loader.js';
 
 /**
