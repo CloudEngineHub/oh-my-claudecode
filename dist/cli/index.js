@@ -1318,7 +1318,7 @@ program
     .option('--json', 'Print raw mission-board JSON')
     .option('-s, --session <id>', 'Restrict the snapshot to a single session id')
     .action(async (options) => {
-    const { listMissionBoardSessionIds, mergeMissionBoardStates, refreshMissionBoardState, renderMissionBoard, } = await import('../hud/mission-board.js');
+    const { discoverTeamMissionBoardState, listMissionBoardSessionIds, mergeMissionBoardStates, refreshMissionBoardState, renderMissionBoard, } = await import('../hud/mission-board.js');
     const config = {
         enabled: true,
         maxMissions: 5,
@@ -1327,15 +1327,17 @@ program
         persistCompletedForMinutes: 20,
     };
     const cwd = process.cwd();
-    // This command has no [CC] stdin, so the session id has to be discovered.
-    // Omitting it would fall back to getProcessSessionId(), a per-process scratch
-    // id that never names a real session, and the board would always be empty.
+    // This command has no [CC] stdin, so session ids must come from persisted
+    // snapshots. With none, discover teams in memory rather than using a
+    // process-scoped session id that would create disposable state on every read.
     const sessionIds = options.session
         ? [options.session]
         : listMissionBoardSessionIds(cwd).slice(0, 5);
     let state;
     try {
-        state = mergeMissionBoardStates(sessionIds.map((sessionId) => refreshMissionBoardState(cwd, config, sessionId)), config);
+        state = sessionIds.length === 0
+            ? discoverTeamMissionBoardState(cwd, config)
+            : mergeMissionBoardStates(sessionIds.map((sessionId) => refreshMissionBoardState(cwd, config, sessionId)), config);
     }
     catch (error) {
         console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));

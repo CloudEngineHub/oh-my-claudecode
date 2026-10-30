@@ -50886,6 +50886,7 @@ var init_worker_canonicalization = __esm({
 var mission_board_exports = {};
 __export(mission_board_exports, {
   DEFAULT_MISSION_BOARD_CONFIG: () => DEFAULT_MISSION_BOARD_CONFIG,
+  discoverTeamMissionBoardState: () => discoverTeamMissionBoardState,
   listMissionBoardSessionIds: () => listMissionBoardSessionIds,
   mergeMissionBoardStates: () => mergeMissionBoardStates,
   readMissionBoardState: () => readMissionBoardState,
@@ -51226,12 +51227,22 @@ function mergeMissions(previous, teamMissions, config2) {
     return parseTime(right.updatedAt) - parseTime(left.updatedAt);
   }).slice(0, config2.maxMissions);
 }
+function collectTeamMissions(directory, config2) {
+  const teamsRoot = (0, import_node_path9.join)(getOmcRoot(directory), "state", "team");
+  return (0, import_node_fs6.existsSync)(teamsRoot) ? (0, import_node_fs6.readdirSync)(teamsRoot, { withFileTypes: true }).filter((entry2) => entry2.isDirectory()).map((entry2) => collectTeamMission((0, import_node_path9.join)(teamsRoot, entry2.name), entry2.name, config2)).filter((mission) => Boolean(mission)) : [];
+}
+function discoverTeamMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4) {
+  const config2 = resolveConfig(rawConfig);
+  return mergeMissionBoardStates(
+    [{ updatedAt: (/* @__PURE__ */ new Date()).toISOString(), missions: collectTeamMissions(directory, config2) }],
+    config2
+  );
+}
 function refreshMissionBoardState(directory, rawConfig = DEFAULT_CONFIG4, sessionId) {
   const effectiveSessionId = sessionId ?? getProcessSessionId();
   const config2 = resolveConfig(rawConfig);
   const previous = readMissionBoardState(directory, effectiveSessionId);
-  const teamsRoot = (0, import_node_path9.join)(getOmcRoot(directory), "state", "team");
-  const teamMissions = (0, import_node_fs6.existsSync)(teamsRoot) ? (0, import_node_fs6.readdirSync)(teamsRoot, { withFileTypes: true }).filter((entry2) => entry2.isDirectory()).map((entry2) => collectTeamMission((0, import_node_path9.join)(teamsRoot, entry2.name), entry2.name, config2)).filter((mission) => Boolean(mission)) : [];
+  const teamMissions = collectTeamMissions(directory, config2);
   const state = {
     updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
     missions: mergeMissions(previous, teamMissions, config2)
@@ -107545,6 +107556,7 @@ var STATE_WRITE_MODES = [
 ];
 var EXTRA_STATE_ONLY_MODES = ["ralplan", "omc-teams", "skill-active", "ultragoal"];
 var CANCEL_SIGNAL_TTL_MS = 3e4;
+var MAX_REPORTED_STATE_CLEAR_PATHS = 10;
 var TEAM_RUNTIME_PRESERVATION_NOTE = "Native team runtimes and cleanup evidence are not removed by state_clear; use instance-validated team shutdown/job cleanup.";
 var OWNER_SESSION_FALLBACK_MODES = /* @__PURE__ */ new Set(["ralph"]);
 var CONVERGED_STATE_PATH_MODES = /* @__PURE__ */ new Set(["ralph", "ultrawork"]);
@@ -107967,17 +107979,24 @@ function getStateClearCheckedPaths(mode, root2, sessionId) {
   const paths = /* @__PURE__ */ new Set();
   if (sessionId) {
     paths.add(getSessionStatePath(mode, root2, sessionId));
-  } else {
-    paths.add(getStatePath(mode, root2));
+    if (CONVERGED_STATE_PATH_MODES.has(mode)) {
+      for (const omcRoot of getConvergedOmcRoots(root2)) {
+        paths.add((0, import_path40.join)(omcRoot, "state", "sessions", sessionId, getStateFileName(mode)));
+      }
+    }
+    if (shouldCheckWorkingDirectoryLocalState(root2)) {
+      paths.add(getWorkingDirectoryLocalSessionStatePath(mode, root2, sessionId));
+    }
+    return [...paths];
   }
+  paths.add(getStatePath(mode, root2));
   for (const legacyPath of getLegacyStateFileCandidates(mode, root2)) {
     paths.add(legacyPath);
   }
-  for (const localPath of getWorkingDirectoryLocalStateClearCandidates(mode, root2, sessionId)) {
+  for (const localPath of getWorkingDirectoryLocalStateClearCandidates(mode, root2)) {
     paths.add(localPath);
   }
-  const sessionIds = sessionId ? [sessionId, ...listSessionIds(root2)] : listSessionIds(root2);
-  for (const sid of new Set(sessionIds)) {
+  for (const sid of listSessionIds(root2)) {
     paths.add(getSessionStatePath(mode, root2, sid));
   }
   return [...paths];
@@ -107985,9 +108004,12 @@ function getStateClearCheckedPaths(mode, root2, sessionId) {
 function formatStateClearNoopMessage(mode, root2, sessionId) {
   const scope = sessionId ? ` in session: ${sessionId}` : "";
   const checkedPaths = getStateClearCheckedPaths(mode, root2, sessionId);
+  const displayedPaths = checkedPaths.slice(0, MAX_REPORTED_STATE_CLEAR_PATHS);
+  const omittedPathCount = checkedPaths.length - displayedPaths.length;
   const checked = checkedPaths.length > 0 ? `
 - Checked paths:
-${checkedPaths.map((statePath) => `  - ${statePath}`).join("\n")}` : "";
+${displayedPaths.map((statePath) => `  - ${statePath}`).join("\n")}${omittedPathCount > 0 ? `
+  - ... and ${omittedPathCount} more checked paths` : ""}` : "";
   return `No state found to clear for mode: ${mode}${scope}${checked}`;
 }
 function getModeRuntimeArtifactPaths(mode, root2, sessionIds, includeLegacy = true) {
@@ -133772,6 +133794,7 @@ program2.command("hud").description("Run the OMC HUD statusline renderer").optio
 });
 program2.command("mission-board").description("Render the opt-in mission board snapshot for the current workspace").option("--json", "Print raw mission-board JSON").option("-s, --session <id>", "Restrict the snapshot to a single session id").action(async (options) => {
   const {
+    discoverTeamMissionBoardState: discoverTeamMissionBoardState2,
     listMissionBoardSessionIds: listMissionBoardSessionIds2,
     mergeMissionBoardStates: mergeMissionBoardStates2,
     refreshMissionBoardState: refreshMissionBoardState2,
@@ -133788,7 +133811,7 @@ program2.command("mission-board").description("Render the opt-in mission board s
   const sessionIds = options.session ? [options.session] : listMissionBoardSessionIds2(cwd2).slice(0, 5);
   let state;
   try {
-    state = mergeMissionBoardStates2(
+    state = sessionIds.length === 0 ? discoverTeamMissionBoardState2(cwd2, config2) : mergeMissionBoardStates2(
       sessionIds.map((sessionId) => refreshMissionBoardState2(cwd2, config2, sessionId)),
       config2
     );

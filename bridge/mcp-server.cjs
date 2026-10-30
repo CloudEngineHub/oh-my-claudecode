@@ -27731,6 +27731,7 @@ var STATE_WRITE_MODES = [
 ];
 var EXTRA_STATE_ONLY_MODES = ["ralplan", "omc-teams", "skill-active", "ultragoal"];
 var CANCEL_SIGNAL_TTL_MS = 3e4;
+var MAX_REPORTED_STATE_CLEAR_PATHS = 10;
 var TEAM_RUNTIME_PRESERVATION_NOTE = "Native team runtimes and cleanup evidence are not removed by state_clear; use instance-validated team shutdown/job cleanup.";
 var OWNER_SESSION_FALLBACK_MODES = /* @__PURE__ */ new Set(["ralph"]);
 var CONVERGED_STATE_PATH_MODES = /* @__PURE__ */ new Set(["ralph", "ultrawork"]);
@@ -28153,17 +28154,24 @@ function getStateClearCheckedPaths(mode, root, sessionId) {
   const paths = /* @__PURE__ */ new Set();
   if (sessionId) {
     paths.add(getSessionStatePath(mode, root, sessionId));
-  } else {
-    paths.add(getStatePath(mode, root));
+    if (CONVERGED_STATE_PATH_MODES.has(mode)) {
+      for (const omcRoot of getConvergedOmcRoots(root)) {
+        paths.add((0, import_path30.join)(omcRoot, "state", "sessions", sessionId, getStateFileName(mode)));
+      }
+    }
+    if (shouldCheckWorkingDirectoryLocalState(root)) {
+      paths.add(getWorkingDirectoryLocalSessionStatePath(mode, root, sessionId));
+    }
+    return [...paths];
   }
+  paths.add(getStatePath(mode, root));
   for (const legacyPath of getLegacyStateFileCandidates(mode, root)) {
     paths.add(legacyPath);
   }
-  for (const localPath of getWorkingDirectoryLocalStateClearCandidates(mode, root, sessionId)) {
+  for (const localPath of getWorkingDirectoryLocalStateClearCandidates(mode, root)) {
     paths.add(localPath);
   }
-  const sessionIds = sessionId ? [sessionId, ...listSessionIds(root)] : listSessionIds(root);
-  for (const sid of new Set(sessionIds)) {
+  for (const sid of listSessionIds(root)) {
     paths.add(getSessionStatePath(mode, root, sid));
   }
   return [...paths];
@@ -28171,9 +28179,12 @@ function getStateClearCheckedPaths(mode, root, sessionId) {
 function formatStateClearNoopMessage(mode, root, sessionId) {
   const scope = sessionId ? ` in session: ${sessionId}` : "";
   const checkedPaths = getStateClearCheckedPaths(mode, root, sessionId);
+  const displayedPaths = checkedPaths.slice(0, MAX_REPORTED_STATE_CLEAR_PATHS);
+  const omittedPathCount = checkedPaths.length - displayedPaths.length;
   const checked = checkedPaths.length > 0 ? `
 - Checked paths:
-${checkedPaths.map((statePath) => `  - ${statePath}`).join("\n")}` : "";
+${displayedPaths.map((statePath) => `  - ${statePath}`).join("\n")}${omittedPathCount > 0 ? `
+  - ... and ${omittedPathCount} more checked paths` : ""}` : "";
   return `No state found to clear for mode: ${mode}${scope}${checked}`;
 }
 function getModeRuntimeArtifactPaths(mode, root, sessionIds, includeLegacy = true) {
